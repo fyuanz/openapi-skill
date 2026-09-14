@@ -5,15 +5,17 @@ Java 包名继续使用 `com.smartdoc.agent`；Maven 坐标迁移不改变 Java 
 
 `1.1.0`（2026-09-14 发布）包含 `outputMode=service|aggregate|both` 多服务汇总配置。
 `1.0.0`（2026-09-11 发布）只支持单服务配置；两个正式版本均不可覆盖。
-当前 Git 源码即为 `1.1.0` 发布版本；后续变更需要新版本和对应 Git 标签。配置见[中文 README](../README.md)。
+当前 Git 源码为 `1.2.0-SNAPSHOT`，新增运行时 Starter，尚未发布；后续正式发布需要新版本和对应 Git 标签。
+配置见[中文 README](../README.md)。
 
 | 构件 | 用途 |
 | --- | --- |
 | `io.github.fyuanz:smart-doc-agent:1.1.0` | 父 POM，提供公共版本和发布元数据 |
 | `io.github.fyuanz:smartdoc-agent-core:1.1.0` | 离线 OpenAPI 转 Skill、汇总装配与安全发布 |
 | `io.github.fyuanz:smartdoc-agent-maven-plugin:1.1.0` | Maven `generate-skill` 目标（含单服务/汇总/共存） |
+| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0-SNAPSHOT` | 运行时 Skill ZIP，当前仅本地 Snapshot，未发布到 Central |
 
-## 在服务中使用
+## 使用已发布 Maven 插件（兼容入口）
 
 发布到 Central 后无需添加额外仓库。将插件配置在服务的唯一生成责任模块；下面沿用本仓库
 SpringDoc 测试项目的身份和目录。实际服务应调整身份、路径和 phase。
@@ -40,15 +42,14 @@ SpringDoc 测试项目的身份和目录。实际服务应调整身份、路径�
 </plugin>
 ```
 
-该片段消费已有 JSON。SpringDoc 导出必须在同次构建的更早阶段完成；完整的启动、导出、停止配置见
-[测试项目 POM](../testbeds/springdoc-multi-package/pom.xml) 和
-[构建/Skill 使用说明](../testbeds/springdoc-multi-package/README.md)。运行时样例使用 `mvn verify`，
-普通 `compile`、`package` 不会执行到这个目标。输出默认在
-`target/generated-resources/smartdoc/<skillName>/`。
+该片段消费已有本地 JSON，适合静态权威契约或显式跨服务汇总。新的 SpringDoc 应用优先使用尚未发布的
+`1.2.0-SNAPSHOT` 运行时 Starter；它不需要 Maven phase 或文档目录。见
+[运行时说明](../smartdoc-agent-spring-boot-starter/README.md)。
 
 ## 维护者发布
 
-只发布根 reactor 的父 POM、core 和 Maven plugin。测试项目保持独立，不能部署到 Central。
+下一版本将发布根 reactor 的父 POM、core、Maven plugin 和 Spring Boot Starter。测试项目保持独立，
+不能部署到 Central。未经用户明确授权，不执行新版本发布。
 普通构建不激活发布 profile：
 
 ```powershell

@@ -31,7 +31,7 @@ the independent outputs, including under parallel Maven builds. It does not infe
 powershell -NoProfile -File testbeds/maven-plugin-integration/verify-aggregate.ps1
 ```
 
-This verifier uses `1.1.0`, installs the current plugin, and checks parallel reactor order, standalone
+This verifier uses `1.2.0-SNAPSHOT`, installs the current compatibility plugin, and checks parallel reactor order, standalone
 `both`, `aggregate`, and `service` modes, repeat execution, failed-member retention, healthy-peer continuation,
 and recovery. Failure injection modifies only copies below ignored `target/aggregate-verification/inputs/`.
 Logs and outputs are in `target/aggregate-verification/`; final `both/` contains `orders-api`, `billing-api`, and

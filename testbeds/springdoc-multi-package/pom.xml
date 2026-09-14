@@ -15,11 +15,7 @@
     <properties>
         <java.version>17</java.version>
         <springdoc.version>2.8.15</springdoc.version>
-        <springdoc.maven.plugin.version>1.5</springdoc.maven.plugin.version>
-        <smartdoc.plugin.version>1.1.0</smartdoc.plugin.version>
-        <smartdoc.application.port>18080</smartdoc.application.port>
-        <smartdoc.springdoc.port>${smartdoc.application.port}</smartdoc.springdoc.port>
-        <smartdoc.jmx.port>9001</smartdoc.jmx.port>
+        <smartdoc.runtime.version>1.2.0-SNAPSHOT</smartdoc.runtime.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
@@ -37,6 +33,11 @@
             <version>${springdoc.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.github.fyuanz</groupId>
+            <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
+            <version>${smartdoc.runtime.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -47,74 +48,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <jvmArguments>-Dspring.application.admin.enabled=true -Dserver.port=${smartdoc.application.port}</jvmArguments>
-                    <jmxPort>${smartdoc.jmx.port}</jmxPort>
-                    <wait>500</wait>
-                    <maxAttempts>60</maxAttempts>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>start-for-openapi-export</id>
-                        <phase>pre-integration-test</phase>
-                        <goals><goal>start</goal></goals>
-                    </execution>
-                    <execution>
-                        <id>stop-after-openapi-export</id>
-                        <phase>post-integration-test</phase>
-                        <goals><goal>stop</goal></goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-maven-plugin</artifactId>
-                <version>${springdoc.maven.plugin.version}</version>
-                <configuration>
-                    <outputDir>${project.build.directory}/generated-openapi</outputDir>
-                    <failOnError>false</failOnError>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>export-account</id>
-                        <phase>integration-test</phase>
-                        <goals><goal>generate</goal></goals>
-                        <configuration>
-                            <apiDocsUrl>http://127.0.0.1:${smartdoc.springdoc.port}/v3/api-docs/account</apiDocsUrl>
-                            <outputFileName>account.json</outputFileName>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>export-business</id>
-                        <phase>integration-test</phase>
-                        <goals><goal>generate</goal></goals>
-                        <configuration>
-                            <apiDocsUrl>http://127.0.0.1:${smartdoc.springdoc.port}/v3/api-docs/business</apiDocsUrl>
-                            <outputFileName>business.json</outputFileName>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.github.fyuanz</groupId>
-                <artifactId>smartdoc-agent-maven-plugin</artifactId>
-                <version>${smartdoc.plugin.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>update-generated-skill</id>
-                        <phase>verify</phase>
-                        <goals><goal>generate-skill</goal></goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <serviceId>springdoc-multi-package</serviceId>
-                    <skillName>springdoc-multi-package-api</skillName>
-                    <outputDirectory>${project.build.directory}/generated-resources/smartdoc</outputDirectory>
-                    <timeoutSeconds>30</timeoutSeconds>
-                    <requireCurrentBuildDocuments>true</requireCurrentBuildDocuments>
-                    <documentsDirectory>${project.build.directory}/generated-openapi</documentsDirectory>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

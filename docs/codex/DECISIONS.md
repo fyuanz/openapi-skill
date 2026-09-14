@@ -1,5 +1,35 @@
 # Decisions
 
+## 2026-09-14 - Replace Build-Time SpringDoc Capture With A Runtime Starter
+
+Status: Accepted and implemented
+
+The user rejects the Maven `verify` chain that starts an application, downloads `/v3/api-docs`, stops the application,
+and then generates a Skill. Make an embedded Spring Boot Starter the primary SpringDoc integration. After the normal
+application starts, expose `GET /smartdoc/skill.zip`; generate from the current in-process SpringDoc model only when the
+endpoint is requested. Do not bind SmartDoc generation to Maven phases or write OpenAPI/Skill intermediates to `target`.
+
+Do not inject an application-defined `OpenAPI` bean as though it were the final document. That bean normally represents
+base configuration and may not contain Controller-derived paths. Treat `GroupedOpenApi` as discovery/filter metadata.
+Obtain final JSON through SpringDoc 2.8.x's public WebMVC resources: enumerate local groups and call
+`MultipleOpenApiWebMvcResource`, or call `OpenApiWebMvcResource` when no groups exist. Supply a wrapped request matching
+the SpringDoc document path so server URL calculation is equivalent to its HTTP endpoint, while making no network call.
+
+Auto-configure only Servlet/WebMVC applications with SpringDoc present. Derive serviceId from `spring.application.name`
+and default skillName to `<serviceId>-api`; expose only optional enabled/path/identity overrides. Hide the download
+controller from OpenAPI to prevent recursive self-documentation. Reuse core unchanged for exact 3.1.0 validation and
+Skill rendering, then write sorted fixed-timestamp ZIP entries under one `<skillName>/` root in memory. A failed request
+returns no partial archive and changes no filesystem state.
+
+The endpoint inherits the application's security chain and accepts no arbitrary input URL. Cross-service runtime
+aggregation, WebFlux, management-port variants, repositories, caching, and installation remain separate work. Retain the
+Maven plugin for static JSON and existing explicit aggregate/both users, but remove its runtime chain from the SpringDoc
+testbed and stop recommending it for an application's own Skill.
+
+Use development version `1.2.0-SNAPSHOT`; published `1.1.0` is immutable and no new release is authorized. Evidence is
+recorded in TASKS.md. This supersedes current-scope statements that ZIP/HTTP download is deferred and that runtime
+SpringDoc export at Maven `verify` is the primary workflow.
+
 ## 2026-09-14 - Publish Aggregate Skills As Maven Central 1.1.0
 
 Status: Accepted and executed

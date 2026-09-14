@@ -8,15 +8,21 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,9 +56,41 @@ class OpenApiContractTest {
                 "account=/v3/api-docs/account", "business=/v3/api-docs/business");
     }
 
+    @Test
+    void downloadsRuntimeSkillZipFromTheCurrentGroupedOpenApi() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(
+                        "http://127.0.0.1:" + port + "/smartdoc/skill.zip"))
+                .timeout(Duration.ofSeconds(20)).GET().build();
+        HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.headers().firstValue("content-type")).hasValue("application/zip");
+        assertThat(response.headers().firstValue("content-disposition"))
+                .hasValue("attachment; filename=springdoc-multi-package-api.zip");
+
+        Map<String, String> files = unzip(response.body());
+        String root = "springdoc-multi-package-api/";
+        assertThat(files).containsKeys(root + "SKILL.md", root + "references/source.json");
+        JsonNode source = mapper.readTree(files.get(root + "references/source.json"));
+        assertThat(source.path("documents").findValuesAsText("documentId"))
+                .containsExactly("account", "business");
+        assertThat(files.get(root + "references/catalog.md"))
+                .contains("GET /users", "POST /orders", "POST /files")
+                .doesNotContain("/smartdoc/skill.zip");
+    }
+
     private HttpResponse<String> get(String path) throws Exception {
         return client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
                 .timeout(Duration.ofSeconds(20)).GET().build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private Map<String, String> unzip(byte[] archive) throws Exception {
+        Map<String, String> files = new HashMap<>();
+        try (ZipInputStream input = new ZipInputStream(new ByteArrayInputStream(archive), StandardCharsets.UTF_8)) {
+            for (ZipEntry entry; (entry = input.getNextEntry()) != null; ) {
+                files.put(entry.getName(), new String(input.readAllBytes(), StandardCharsets.UTF_8));
+            }
+        }
+        return files;
     }
 
     @Test

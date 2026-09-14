@@ -13,7 +13,7 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <smartdoc.plugin.version>1.1.0</smartdoc.plugin.version>
+        <smartdoc.plugin.version>1.2.0-SNAPSHOT</smartdoc.plugin.version>
         <smartdoc.output>${maven.multiModuleProjectDirectory}/target/generated-resources/smartdoc</smartdoc.output>
     </properties>
     <build>

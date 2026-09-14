@@ -2,29 +2,34 @@
 
 **简体中文** | [English](README.en.md)
 
-将 API 文档转换为前端开发可使用的 Skill：每个服务的一份或多份 OpenAPI JSON，生成一套包含接口目录、请求响应契约和 Schema 引用的文档，供编码 Agent 按需查阅。
-
-SmartDoc-Agent 通过 Maven 接入构建，在配置的阶段读取文档并更新 Skill。生成或更新失败会输出警告；已有的完整 Skill 在可恢复的失败场景中保留，业务编译保持自身的成功/失败语义。
+将运行中 Spring Boot 服务的 OpenAPI 文档转换为前端开发可使用的 Skill ZIP。服务启动后访问一个只读接口，
+即可下载包含接口目录、请求响应契约和 Schema 引用的完整 Skill；不再为 SmartDoc 修改 Maven phase、启动第二个
+应用进程、通过 HTTP 抓取 `/v3/api-docs`，也不在构建目录生成中间文件。
 
 ## 功能与边界
 
-- **可配置输出**：默认一服务一 Skill；`1.1.0` 起支持全部服务的完整汇总及两者共存，同名接口和 Schema 按服务/文档隔离。
+- **纯运行时下载**：加入 Starter 后自动提供 `GET /smartdoc/skill.zip`，每次请求基于当前运行实例生成。
+- **自动发现**：直接复用 SpringDoc 最终文档资源；自动枚举 `GroupedOpenApi`，无需重复配置 OpenAPI URL。
+- **可配置输出**：运行时默认一应用一 Skill；已发布的 Maven 插件仍支持全部服务的完整汇总及两者共存。
 - **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供接口、标签和本地引用导航。
-- **安全更新**：完整校验、暂存、替换，以及超时、锁和失败恢复；成功更新会移除已删除接口或分组的旧文件。
+- **无磁盘副作用**：生成结果先完整校验，再确定性地内存打包；相同契约得到相同 ZIP 字节。
 - **本地转换**：核心不调用 LLM、业务接口或外部引用地址；源文档自由文本与可信 Skill 指令分离。
 - **明确输入**：当前仅接受 `openapi: 3.1.0` 的 JSON；生产文档来源限定为 SpringDoc / NextDoc4j。Java 包扫描和文档导出由文档生产工具负责。
 
-当前不支持 YAML、Swagger 2.0、其他 OpenAPI 版本、外部引用、全量 OpenAPI 规范校验、自动跨项目安装/同步、下载服务或 CLI。NextDoc4j 是允许的 JSON 来源；仓库中的运行时集成证据来自 SpringDoc 测试服务。
+当前不支持 YAML、Swagger 2.0、其他 OpenAPI 版本、外部引用、全量 OpenAPI 规范校验、自动跨项目安装/同步、
+WebFlux、跨服务运行时汇总、包仓库或 CLI。仓库中的运行时集成证据来自 SpringDoc WebMVC 测试服务。
 
 ## 版本与环境
 
-`1.1.0` 已发布到 Maven Central，包含单服务与汇总 Skill 全部功能，无需为这些构件添加额外仓库。`1.0.0` 仅提供单服务配置。
+运行时 Starter 当前开发版本为 `1.2.0-SNAPSHOT`，需先从本仓库执行 `mvn -B install`。已发布的 `1.1.0`
+仍提供 Maven 构建期的单服务/汇总兼容能力，但不是新的推荐接入方式。
 
 | 构件 | 用途 |
 | --- | --- |
 | `io.github.fyuanz:smart-doc-agent:1.1.0` | 父 POM |
 | `io.github.fyuanz:smartdoc-agent-core:1.1.0` | 离线转换与安全输出 |
 | `io.github.fyuanz:smartdoc-agent-maven-plugin:1.1.0` | Maven `generate-skill` 目标 |
+| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0-SNAPSHOT` | 运行时自动发现与 ZIP 下载（尚未发布） |
 
 使用 JDK 17 和 Maven；已验证环境为 Maven 3.9.16 / JDK 17.0.19。仓库集成验证脚本使用 PowerShell。示例服务使用 Spring Boot 3.5.9 和 springdoc 2.8.15。
 
@@ -39,78 +44,58 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-第一条 Maven 命令成功后再执行第二条。测试服务会自动启动、导出 `account` / `business` 两组文档、停止，然后生成 Skill，无需提前手动启动应用。默认 HTTP 端口为 `18080`，JMX 端口为 `9001`，运行前应确保可用；动态端口构建方式见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
+第一条命令安装当前 Snapshot，第二条只执行普通测试和打包，不包含 SmartDoc 的应用启停、OpenAPI 抓取或文件生成。
+测试会在随机端口验证运行时 ZIP 接口，详见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
 
-成功后，日志包含 `SmartDoc [springdoc-multi-package] SUCCESS`，完整产物位于：
+手动体验时启动应用：
 
-```text
-testbeds/springdoc-multi-package/target/generated-resources/smartdoc/springdoc-multi-package-api/
+```shell
+mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 ```
 
-该样例包含 19 个文件、4 个接口和 7 个文档内 Schema。**Maven 的 `BUILD SUCCESS` 不代表 Skill 已更新**，还需查看 SmartDoc 日志及本次更新状态，详见下方故障排查。
+随后下载 `http://127.0.0.1:18080/smartdoc/skill.zip`。该样例 ZIP 包含 account/business 两组、4 个接口和
+7 个文档内 Schema。
 
-## 接入自己的 Maven 服务
+## 推荐：接入运行时 Starter
 
-先配置 SpringDoc / NextDoc4j，将本次构建的 OpenAPI JSON 导出到一个明确的目录。然后在该服务唯一负责生成 Skill 的模块中，将下列插件放入 `build/plugins`：
+目标 Spring Boot WebMVC 服务已有 SpringDoc 且输出精确 OpenAPI 3.1.0 时，只增加依赖：
 
 ```xml
-<plugin>
+<dependency>
     <groupId>io.github.fyuanz</groupId>
-    <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.1.0</version>
-    <inherited>false</inherited>
-    <executions>
-        <execution>
-            <id>update-generated-skill</id>
-            <phase>verify</phase>
-            <goals><goal>generate-skill</goal></goals>
-        </execution>
-    </executions>
-    <configuration>
-        <serviceId>my-service</serviceId>
-        <skillName>my-service-api</skillName>
-        <documentsDirectory>${project.build.directory}/generated-openapi</documentsDirectory>
-        <requireCurrentBuildDocuments>true</requireCurrentBuildDocuments>
-    </configuration>
-</plugin>
+    <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
+    <version>1.2.0-SNAPSHOT</version>
+</dependency>
 ```
 
-**此配置只消费 JSON，不负责启动应用或导出文档。** 插件没有默认生命周期阶段，必须显式绑定在文档生产步骤之后。完整的 SpringDoc 启动、导出和停止配置见[示例 POM](testbeds/springdoc-multi-package/pom.xml)。
+无需 SmartDoc Maven plugin、execution、phase、OpenAPI URL、文档目录或输出目录。应用启动后访问
+`GET /smartdoc/skill.zip` 即可下载。Starter 自动执行：
 
-示例的执行顺序是：`package` → 启动应用 → `integration-test` 导出 JSON → 停止应用 → `verify` 更新 Skill。因此应运行 `mvn verify`；普通 `mvn compile` 和 `mvn package` 不会执行该运行时链路。每次执行配置的目标都会尝试更新，内容未变化也不会跳过。独立 IDE 编译不在支持范围内。
+- 从 `GroupedOpenApi` Bean 枚举与 Swagger UI 对应的分组；无分组时使用默认文档。
+- 调用 `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` 在进程内取得扫描 Controller 后的最终 JSON。
+- 将当前文档交给 core 转换和校验，在内存中生成带 `<skillName>/` 顶层目录的确定性 ZIP。
+- 用 `spring.application.name` 自动派生安全的 serviceId，Skill 名默认为 `<serviceId>-api`。
 
-| 参数 | 含义与默认值 |
-| --- | --- |
-| `serviceId` | 必填，服务身份，用于来源与状态记录 |
-| `skillName` | 必填，Skill 名称及最终目录名；每个服务使用独立输出 |
-| `documentsDirectory` | 扫描目录顶层 JSON 文件，不递归；与 `documents` 二选一 |
-| `documents` | 显式文档列表，每项指定 `id` 和 `path`；每份列出的文档都必须存在 |
-| `outputDirectory` | 默认 `${project.build.directory}/generated-resources/smartdoc`，实际输出为其下的 `<skillName>/` |
-| `timeoutSeconds` | 读取和转换任务的超时秒数，默认 `30`，必须大于 0 |
-| `requireCurrentBuildDocuments` | 默认 `false`；启用后，每份文档必须在当前 Maven 会话开始后被重写，读取期间大小和修改时间必须稳定 |
+直接注入业务代码中的基础 `OpenAPI` Bean 并不等于完整文档：它通常只有手工定义的 Info、Components、Servers，
+而 `paths` 是 SpringDoc 资源在运行时扫描和组装的；`GroupedOpenApi` 同样只是分组规则。因此 Starter 使用最终资源，
+但不会对本机发 HTTP 请求。
 
-身份名称使用小写字母、数字及单个连字符分隔，最长 63 个字符，并避开 Windows 保留名称，例如 `my-service-api`。目录模式以文件名去除 `.json` 后作为文档 ID，推荐 `account.json`、`business.json`。
+以下覆盖项全部可选：
 
-目录中实际发现的文件构成本次完整输入集；目录不存在或为空时记录 `SKIPPED`。若某个分组必须存在，使用显式 `documents` 配置替换 `documentsDirectory`：
-
-```xml
-<documents>
-    <document>
-        <id>account</id>
-        <path>${project.build.directory}/generated-openapi/account.json</path>
-    </document>
-    <document>
-        <id>business</id>
-        <path>${project.build.directory}/generated-openapi/business.json</path>
-    </document>
-</documents>
+```properties
+smartdoc.runtime.enabled=true
+smartdoc.runtime.path=/smartdoc/skill.zip
+smartdoc.runtime.service-id=my-service
+smartdoc.runtime.skill-name=my-service-api
 ```
 
-文档生成工具、责任模块、分组和 Maven 阶段均由目标项目明确配置。生成文件建议开启当前构建检查；仓库中的静态权威 JSON 测试路径可关闭该检查并绑定 `compile`，但不能据此证明运行时文档与当前源码同步。
+下载接口沿用应用已有的 Spring Security 规则；受限契约应显式保护该路径。完整说明见
+[Starter README](smartdoc-agent-spring-boot-starter/README.md)。
 
 ## 微服务：独立 Skill 与完整汇总共存
 
-此功能随 **`1.1.0`** 发布到 Maven Central，直接引用该版本即可使用。已发布的 `1.0.0` 仅支持上面的单服务配置。
+下面是已发布 `1.1.0` Maven 插件的兼容能力，适用于仍需离线静态 JSON 或构建期跨服务汇总的项目。
+新接入若只需当前应用的 Skill ZIP，优先使用上面的运行时 Starter。
 
 | `outputMode` | 输出 |
 | --- | --- |
@@ -189,7 +174,7 @@ powershell -NoProfile -File testbeds/maven-plugin-integration/verify-aggregate.p
 
 ## 在前端项目中使用
 
-将生成的**整个 Skill 目录**复制到前端项目的 `.agents/skills/`，保留所有引用文件：
+下载 ZIP 后，将其中的**整个 Skill 目录**解压到前端项目的 `.agents/skills/`，保留所有引用文件：
 
 ```text
 <frontend-project>/.agents/skills/my-service-api/
@@ -200,7 +185,7 @@ powershell -NoProfile -File testbeds/maven-plugin-integration/verify-aggregate.p
     └── documents/
 ```
 
-相邻的 `.smartdoc/` 是构建状态目录，无需复制。然后在前端项目中尝试以下任务，并确认所用 Agent 实际发现并使用了该 Skill：
+然后在前端项目中尝试以下任务，并确认所用 Agent 实际发现并使用了该 Skill：
 
 ```text
 使用 my-service-api Skill，找到创建订单接口，解释必填字段，
@@ -209,21 +194,19 @@ powershell -NoProfile -File testbeds/maven-plugin-integration/verify-aggregate.p
 
 使用仓库样例时，将名称替换为 `springdoc-multi-package-api`。样例描述虚构测试服务，其服务器地址和认证元数据不代表业务生产环境。
 
-后端重建只更新生成目录，不会自动同步前端副本。重新复制时应整体替换旧 Skill，避免残留已删除接口。默认生成目录位于 `target/`，会被 `mvn clean` 删除。
+后端接口变化后重新下载并整体替换旧 Skill，避免残留已删除接口。运行时端点不写 `target/`，也不会自动同步前端副本。
 
-## 更新状态与故障排查
-
-默认状态路径为 `target/generated-resources/smartdoc/.smartdoc/status/<serviceId>.json`，位于服务责任模块下。该文件记录进入更新器的最近一次尝试；配置错误或空目录跳过可能只输出日志，不能把旧状态当成本次成功。
+## 运行时故障排查
 
 | 现象 | 检查方式 |
 | --- | --- |
-| `SUCCESS` | 本次完整 Skill 已发布；检查输出位置和来源信息 |
-| `SKIPPED` | 检查输入目录及顶层 JSON 文件；必要时改为显式必需文档列表 |
-| `FAILED` / `CONFIG` | 检查名称、配置、JSON 版本、本地引用、输出权限和同次构建文档时间 |
-| `TIMED_OUT` / `LOCKED` | 检查输入规模、超时配置，以及是否有任务同时写同一 Skill |
-| Maven 成功但 Skill 未变 | 查看本次 SmartDoc 日志；失败时可能保留上次完整产物 |
+| 下载接口 404 | 确认 Starter 依赖已进入运行时 classpath，且 `smartdoc.runtime.enabled` 未设为 `false` |
+| 下载接口 500 | 检查 SpringDoc 是否启用、最终 JSON 是否为精确 OpenAPI 3.1.0，以及本地 `$ref` 是否完整 |
+| ZIP 名称不符合预期 | 设置 `spring.application.name`，或覆盖 `smartdoc.runtime.service-id` / `skill-name` |
+| 有 Spring Security 时 401/403 | 按项目安全策略授权下载路径；不要为了下载公开受限 API 文档 |
 
-可恢复的更新失败会保留或恢复旧 Skill；若恢复本身失败，会保留完整备份供恢复。首次生成失败或 `clean` 后失败则可能没有旧产物。插件不会掩盖 Java 编译等业务构建错误，示例中 Spring Boot 启动失败也仍会导致 Maven 失败。
+运行时生成没有旧文件回退：请求成功即返回一份完整校验后的 ZIP，请求失败则返回服务错误且不产生半成品。
+旧 Maven 插件的状态、锁、恢复与警告语义仍见[插件说明](smartdoc-agent-maven-plugin/README.md)。
 
 ## 开发与验证
 
@@ -234,26 +217,29 @@ mvn -B clean test
 mvn -B -f testbeds/springdoc-multi-package/pom.xml test
 ```
 
-两套真实 Maven 集成验证独立于根单元测试：
+运行时和旧 Maven 插件集成验证独立于根单元测试：
 
 ```powershell
 powershell -NoProfile -File testbeds/maven-plugin-integration/verify.ps1
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 ```
 
-集成脚本会安装当前插件并执行真实构建。SpringDoc 脚本包含抓取失败注入，最终故意留下 `FAILED` 状态和保留的旧 Skill；需要交付最新成功产物时，重新执行正常 `clean verify`。
+SpringDoc 脚本验证普通构建中没有应用启停、HTTP 抓取或 SmartDoc Maven goal，并在随机真实端口下载、检查 ZIP。
+Maven 插件脚本继续验证旧兼容入口。
 
-发布版基线验证（2026-09-11）：62 个核心/插件测试、5 个测试服务测试通过。开发版增加汇总与输出模式测试，以及真实 Maven 共存验证，最新结果见[任务记录](docs/codex/TASKS.md)。现有测试案例作为生成验收依据；web/前端及真实环境验证已从计划移除，Skill 使用效果由用户人工校验后反馈。
+`1.2.0-SNAPSHOT` 增加运行时 Starter 单文档/多分组测试和 6 项测试服务验证；最新结果见
+[任务记录](docs/codex/TASKS.md)。Skill 使用效果仍由用户人工校验后反馈。
 
 ## 项目结构与文档
 
 | 路径 | 内容 |
 | --- | --- |
 | [smartdoc-agent-core](smartdoc-agent-core/) | 输入校验、契约转换、安全发布 |
+| [smartdoc-agent-spring-boot-starter](smartdoc-agent-spring-boot-starter/) | 运行时 SpringDoc 发现、转换与 ZIP 下载 |
 | [smartdoc-agent-maven-plugin](smartdoc-agent-maven-plugin/) | Maven 配置、目录发现、更新入口 |
 | [SpringDoc 测试服务](testbeds/springdoc-multi-package/) | 多包、多分组示例与运行时验证 |
 | [Maven 集成测试](testbeds/maven-plugin-integration/) | 多服务、重复/并行构建和失败隔离 |
-| [设计文档](docs/smartdoc-agent-design.md) | v3.6 产品范围、汇总模式与测试案例验收边界 |
+| [设计文档](docs/smartdoc-agent-design.md) | v3.7 运行时主链路与兼容边界 |
 | [发布与使用](docs/maven-central.md) | Maven Central 配置与维护者发布流程 |
 | [任务状态](docs/codex/TASKS.md) | 已完成工作、验证证据与后续计划 |
 

@@ -1,5 +1,9 @@
 # SmartDoc Agent Maven Plugin
 
+This is the compatibility entry point for authoritative local JSON and build-time cross-service aggregation. New
+SpringDoc WebMVC applications should use `smartdoc-agent-spring-boot-starter` and its runtime ZIP endpoint, which does
+not require Maven lifecycle integration.
+
 The `generate-skill` goal reads one complete set of local OpenAPI 3.1.0 JSON documents and publishes one
 service-owned Skill through the core updater. It has no default lifecycle phase: configure the execution explicitly
 after SpringDoc / NextDoc4j in the one module that owns generation for the service.
@@ -52,10 +56,8 @@ file left by a failed producer causes a warning and a failed update. The plugin 
 implement springdoc scanning. Bind the execution only in the service's generation-owner module so plugin inheritance
 cannot create duplicate writers.
 
-Runtime springdoc export requires compiled application classes, so the verified sample binds springdoc export to
-`integration-test` and this goal to `verify`. It is a separate entry point from the static-document `compile` mode.
-The testbed also shows that a springdoc HTTP capture failure can remain non-blocking; Spring Boot startup failure is
-still a normal failure of the Spring Boot Maven plugin.
+The former runtime SpringDoc Maven export example has moved to the runtime Starter and no longer starts/captures during
+the build. This plugin remains appropriate only when a caller deliberately owns the local JSON preparation lifecycle.
 
 The default output parent is `${project.build.directory}/generated-resources/smartdoc`; `clean` removes it. Never
 point `outputDirectory` at a source root or a directory containing manual files.
@@ -64,5 +66,4 @@ Run the standalone lifecycle verification from the repository root:
 
 ```powershell
 powershell -NoProfile -File testbeds/maven-plugin-integration/verify.ps1
-powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 ```

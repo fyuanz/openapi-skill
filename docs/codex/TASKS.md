@@ -2,9 +2,12 @@
 
 ## Current Scope
 
-The 2026-09-14 user decision removes web/frontend environment validation and real-target deployment/integration acceptance from the work plan. The existing testbeds are the accepted generation evidence. The user will manually review generated Skills and provide feedback; that feedback is not a pending acceptance gate or a scheduled task.
+Product design v3.7.0 makes an embedded Spring Boot runtime endpoint the primary SpringDoc workflow. The application
+generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no SmartDoc build
+executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-Product design v3.6.0 adds configurable coexistence of a complete aggregate Skill and individual microservice Skills. Cross-project installation, web environments, global release scheduling, and distribution remain outside scope.
+The v3.6 Maven aggregate and safe publication features remain compatible. Cross-service runtime aggregation,
+cross-project installation, WebFlux, package repositories, and release scheduling remain outside scope.
 
 ## Work Plan
 
@@ -16,34 +19,42 @@ Product design v3.6.0 adds configurable coexistence of a complete aggregate Skil
 | P3 | Validated complete publication, timeout, locking, recovery and isolation | Complete |
 | P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
+| P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
 | Release | Maven Central releases | 1.0.0 published 2026-09-11; 1.1.0 (aggregate outputs) published 2026-09-14 |
-| Documentation | Chinese-default README and equivalent English guide | Complete; synchronized for P6 |
+| Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
 
 ## Current Implementation
 
-- Backward-compatible single-service configuration remains the default (`outputMode=service`). An explicit `services` list can select `service`, `aggregate`, or `both` output modes.
-- Aggregate configuration uses a distinct `aggregateId` and `aggregateSkillName`. Every listed member is required. Empty/missing/invalid/stale inputs fail the aggregate instead of silently producing a subset.
-- The aggregate is self-contained: one `SKILL.md`, a service catalog, member source metadata, and service/document-isolated references. It does not merge OpenAPI documents or require installed individual Skills.
-- In `both`, service updates run independently. Only complete successful member results from the current invocation enter the aggregate; no previous output is substituted. A failed member retains the previous aggregate while healthy peers can publish. An aggregate output failure cannot roll back individual updates.
-- Removing a member removes its references on the next successful aggregate update. Disabled or removed standalone outputs are not deleted. Each output has separate ownership, locking, staging and status.
-- One explicit coordinator runs after all document producers. The static reactor fixture orders its coordinator through module dependencies. There is no automatic cross-repository collection or build scheduling.
-- Source is at release version `1.1.0`, published to Maven Central on 2026-09-14 with the aggregate configuration included; `1.0.0` remains the immutable single-service-only release.
+- `smartdoc-agent-spring-boot-starter` auto-configures `GET /smartdoc/skill.zip` for Servlet/WebMVC applications.
+- It derives service identity from `spring.application.name`; enabled/path/serviceId/skillName are optional overrides.
+- `GroupedOpenApi` beans define the complete document set. With no groups, the default SpringDoc document is used.
+- Final JSON comes from `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` in-process, not an HTTP self-request and
+  not the incomplete base `OpenAPI` bean.
+- Each request invokes existing core conversion and returns a sorted, fixed-timestamp ZIP rooted at `<skillName>/`.
+  The hidden endpoint does not enter generated OpenAPI.
+- The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or SmartDoc Maven goal.
+- `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
+- Source is `1.2.0-SNAPSHOT`. Published `1.1.0` is unchanged; the runtime Starter has not been published.
 
 ## Verification
 
-- Test first: four aggregate core tests failed before implementation; after core passed, six multi-service Mojo tests failed before coordinator implementation. Existing tests remained green.
-- Final root `mvn -B install`: 74 tests pass (59 core, 15 plugin), zero failures/errors. The added aggregate file-budget test checks combined output beyond 10000 files; a mode-switch test first failed before retained aggregate settings were allowed in service mode. Final log: `target/aggregate-final-tests.log`.
-- `verify-aggregate.ps1` passes real Maven parallel reactor ordering, all three modes, coexistence, repeated execution, required-member failure with unchanged old trees, healthy-peer continuation and successful recovery. Final review outputs under `testbeds/maven-plugin-integration/target/aggregate-verification/both/` contain orders-api, billing-api and platform-api, with all three statuses SUCCESS. Verifier logs remain in its ignored probe directory.
-- Original `verify.ps1` static integration matrix, SpringDoc `refresh-fixtures.ps1` (5 tests), and `verify-generated-integration.ps1` runtime export/stale-capture checks pass. The SpringDoc fixture JSON bytes remain unchanged; only producer POM metadata changes for the snapshot version.
-- Local verification encountered the previously recorded sandbox javac issue; integration passed in the normal local Maven environment. One final recovery attempt encountered a Windows directory-move failure and correctly retained both old member/aggregate outputs; a full verifier rerun passed. A root clean attempt failed because its redirected log was inside target; the successful final command was install, not clean install.
-- Bilingual README links, XML snippets, command/configuration parity, PowerShell syntax and diff whitespace checks pass. Code, docs and test fixtures are delivered together; generated artifacts/logs remain ignored. No real frontend/web environment or new Central publication is required.
-- The SpringDoc sample still exports at `verify`, not ordinary `compile`/`package`. Startup failures remain owned by the Spring Boot plugin. These are documented support boundaries, not requests for a real web environment.
+- Red: the new Starter integration test returned 404 before auto-configuration existed. Green: the multi-group test downloads
+  two byte-identical archives and validates automatic identity/group discovery, content, and endpoint exclusion.
+- Starter tests: 2 pass, covering grouped and default documents plus optional path/identity overrides.
+- Full four-module `mvn -B install`: 76 tests pass (59 core + 15 Maven plugin + 2 Starter).
+- `verify-generated-integration.ps1` passes in the normal local Maven environment: six SpringDoc testbed tests pass on a
+  real random HTTP port; no generated OpenAPI/Skill directory or build-time start/capture/generation invocation exists.
+- The first sandbox testbed attempt hit the previously recorded Windows `javac` resource-close failure before tests;
+  the same command passed outside that sandbox without source changes.
+- Prior Maven aggregate/static verification remains valid for the unchanged compatibility behavior.
+- `git diff --check` passes after documentation cleanup; bilingual onboarding and v3.7 project records describe the same
+  runtime-first boundary.
 
 ## Deferred Work
 
-- ZIP/package repositories, download/HTTP services, independent CLI or YAML configuration platform.
+- Package repositories, immutable package identity, long-lived artifact caching, independent CLI or YAML platform.
 - Automatic cross-project installation/synchronization, locks/drift management, global version coordination and cross-repository scheduling.
-- A full microservice/web platform, databases, service discovery, gateways, or custom UI.
+- Cross-service runtime aggregation, WebFlux, databases, service discovery, gateways, or custom UI.
 - Other OpenAPI versions, Swagger 2.0, YAML, external references, generic URL ingestion, full specification validation.
 - Search, RAG, AI enrichment, chat, TypeScript generation, additional knowledge sources, Agent plugins or MCP.
 
@@ -53,11 +64,31 @@ No external project path or web environment is required. Future user feedback ma
 
 ## Historical Evidence
 
-The records below retain the decisions and verification at their original dates. Older statements about pending P5/target acceptance and deferred aggregation are superseded by the current scope above.
+The records below retain decisions and evidence at their original dates. Older statements that runtime ZIP/download is
+deferred or that SpringDoc generation runs at Maven `verify` are superseded by P7 above.
 
 ## Last Updated
 
 2026-09-14.
+
+## 2026-09-14 - Runtime Skill ZIP Replaces Build-Time SpringDoc Capture
+
+- Added `smartdoc-agent-spring-boot-starter` and moved development coordinates to `1.2.0-SNAPSHOT`; no Central release
+  was requested. The Starter is discovered through Boot `AutoConfiguration.imports`.
+- Added `GET /smartdoc/skill.zip`, automatic service/Skill identity defaults, optional path/identity overrides, local
+  `GroupedOpenApi` discovery, default-document fallback, direct in-process SpringDoc resource calls, and deterministic
+  in-memory ZIP creation. The endpoint is hidden from OpenAPI.
+- Did not use direct `OpenAPI` injection as the final contract: that bean may lack scanned paths. Did not add HTTP
+  self-requests or arbitrary URL configuration.
+- Red-to-green evidence: initial runtime test returned 404; implementation then passed the grouped test. A default-document
+  test was added for the other discovery branch and optional overrides.
+- Migrated `springdoc-multi-package`: removed Spring Boot lifecycle start/stop, springdoc Maven plugin and SmartDoc Maven
+  plugin. A random-port HTTP test downloads the ZIP and verifies both groups and business operations.
+- The integration verifier confirms six tests, no build-time generated directories, and no removed goal in the build log.
+  Its sandbox run hit the known `javac` resource-close issue; an approved normal-environment rerun passed.
+- Updated v3.7 design, bilingual onboarding, testbed guide, module/context/structure records, and compatibility boundaries.
+- The existing Maven plugin and aggregate behavior remain source-compatible; they are no longer recommended for a
+  SpringDoc application's own runtime Skill download.
 
 ## 2026-09-14 - Maven Central 1.1.0 Release Completed
 

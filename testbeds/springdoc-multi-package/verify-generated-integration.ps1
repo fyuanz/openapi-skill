@@ -2,9 +2,6 @@ $ErrorActionPreference = "Stop"
 
 $testbedRoot = (Resolve-Path $PSScriptRoot).Path
 $repositoryRoot = (Resolve-Path (Join-Path $testbedRoot "../..")).Path
-$generatedRoot = Join-Path $testbedRoot "target/generated-openapi"
-$outputRoot = Join-Path $testbedRoot "target/generated-resources/smartdoc"
-$skillRoot = Join-Path $outputRoot "springdoc-multi-package-api"
 
 function Invoke-CheckedMaven([string] $workingDirectory, [string[]] $arguments) {
     Push-Location $workingDirectory
@@ -28,67 +25,26 @@ function Assert-True([bool] $condition, [string] $message) {
     if (-not $condition) { throw $message }
 }
 
-function Get-FreeTcpPort {
-    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
-    try {
-        $listener.Start()
-        return $listener.LocalEndpoint.Port
-    } finally {
-        $listener.Stop()
-    }
-}
-
-function Read-Status {
-    $path = Join-Path $outputRoot ".smartdoc/status/springdoc-multi-package.json"
-    return Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
-}
-
-function Get-TreeDigest([string] $root) {
-    $builder = [System.Text.StringBuilder]::new()
-    $absoluteRoot = (Resolve-Path -LiteralPath $root).Path.TrimEnd('\') + '\'
-    Get-ChildItem -LiteralPath $root -File -Recurse | Sort-Object FullName | ForEach-Object {
-        $relative = $_.FullName.Substring($absoluteRoot.Length).Replace('\', '/')
-        $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
-        [void] $builder.AppendLine("$relative=$hash")
-    }
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($builder.ToString())
-    $sha256 = [System.Security.Cryptography.SHA256]::Create()
-    try {
-        return -join ($sha256.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") })
-    } finally {
-        $sha256.Dispose()
-    }
-}
-
 Invoke-CheckedMaven $repositoryRoot @("-B", "-DskipTests", "install") | Out-Null
-$successHttpPort = Get-FreeTcpPort
-do { $successJmxPort = Get-FreeTcpPort } while ($successJmxPort -eq $successHttpPort)
-$successLog = Invoke-CheckedMaven $testbedRoot @("-B", "clean",
-        "-Dsmartdoc.application.port=$successHttpPort", "-Dsmartdoc.springdoc.port=$successHttpPort",
-        "-Dsmartdoc.jmx.port=$successJmxPort", "verify")
+$buildLog = Invoke-CheckedMaven $testbedRoot @("-B", "clean", "verify")
 
-$account = Join-Path $generatedRoot "account.json"
-$business = Join-Path $generatedRoot "business.json"
-Assert-True (Test-Path -LiteralPath $account -PathType Leaf) "current-build account document missing"
-Assert-True (Test-Path -LiteralPath $business -PathType Leaf) "current-build business document missing"
-Assert-True (Test-Path -LiteralPath (Join-Path $skillRoot "SKILL.md") -PathType Leaf) "generated-document Skill missing"
-Assert-True ((Read-Status).outcome -eq "SUCCESS") "generated-document Skill update failed"
-Assert-True ((@($successLog | Where-Object { "$_" -match 'springdoc-openapi.*:generate \(export-account\)' })).Count -eq 1) "account export did not run once"
-Assert-True ((@($successLog | Where-Object { "$_" -match 'springdoc-openapi.*:generate \(export-business\)' })).Count -eq 1) "business export did not run once"
-Assert-True ((@($successLog | Where-Object { "$_" -match 'SmartDoc \[springdoc-multi-package\] SUCCESS' })).Count -eq 1) "Skill update did not run once"
+$reports = @(Get-ChildItem -LiteralPath (Join-Path $testbedRoot "target/surefire-reports") -Filter "TEST-*.xml")
+$tests = 0
+$failures = 0
+$errors = 0
+foreach ($report in $reports) {
+    [xml] $xml = Get-Content -LiteralPath $report.FullName -Raw
+    $tests += [int] $xml.testsuite.tests
+    $failures += [int] $xml.testsuite.failures
+    $errors += [int] $xml.testsuite.errors
+}
+Assert-True ($tests -eq 6) "expected six runtime testbed tests, got $tests"
+Assert-True ($failures -eq 0 -and $errors -eq 0) "runtime testbed tests failed"
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $testbedRoot "target/generated-openapi"))) `
+        "build-time OpenAPI export directory must not be created"
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $testbedRoot "target/generated-resources/smartdoc"))) `
+        "build-time Skill output directory must not be created"
+Assert-True ((@($buildLog | Where-Object { "$_" -match "spring-boot:(start|stop)|springdoc-openapi-maven-plugin|smartdoc-agent-maven-plugin" })).Count -eq 0) `
+        "build unexpectedly invoked an application start/export/Skill generation plugin"
 
-$skillDigest = Get-TreeDigest $skillRoot
-$accountTime = (Get-Item -LiteralPath $account).LastWriteTimeUtc
-$businessTime = (Get-Item -LiteralPath $business).LastWriteTimeUtc
-$failureHttpPort = Get-FreeTcpPort
-do { $failureJmxPort = Get-FreeTcpPort } while ($failureJmxPort -eq $failureHttpPort)
-$failureLog = Invoke-CheckedMaven $testbedRoot @("-B", "-Dsmartdoc.application.port=$failureHttpPort",
-        "-Dsmartdoc.springdoc.port=1", "-Dsmartdoc.jmx.port=$failureJmxPort", "verify")
-
-Assert-True ((Read-Status).outcome -eq "FAILED") "stale generated documents did not fail the update"
-Assert-True ((Get-TreeDigest $skillRoot) -eq $skillDigest) "previous Skill changed after document preparation failure"
-Assert-True ((Get-Item -LiteralPath $account).LastWriteTimeUtc -eq $accountTime) "failed producer rewrote account document"
-Assert-True ((Get-Item -LiteralPath $business).LastWriteTimeUtc -eq $businessTime) "failed producer rewrote business document"
-Assert-True ((@($failureLog | Where-Object { "$_" -match 'SmartDoc \[springdoc-multi-package\] FAILED: account: INPUT: document was not prepared during the current Maven build' })).Count -eq 1) "current-build freshness warning missing"
-
-Write-Host "Generated springdoc integration verification passed."
+Write-Host "Runtime SmartDoc integration verification passed without build-time application startup or OpenAPI capture."
