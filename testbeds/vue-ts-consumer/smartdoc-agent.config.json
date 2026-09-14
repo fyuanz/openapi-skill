@@ -1,0 +1,9 @@
+{
+  "serviceId": "springdoc-multi-package",
+  "skillName": "springdoc-multi-package-api",
+  "output": ".agents/skills",
+  "documents": [
+    { "id": "account", "url": "http://127.0.0.1:18080/v3/api-docs/account" },
+    { "id": "business", "url": "http://127.0.0.1:18080/v3/api-docs/business" }
+  ]
+}

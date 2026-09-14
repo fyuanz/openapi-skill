@@ -26,6 +26,13 @@
 |   |   |-- verify-generated-integration.ps1
 |   |   |-- fixtures/         # account/business JSON and metadata
 |   |   `-- src/              # sample application and contract/runtime tests
+|   |-- vue-ts-consumer/    # real Vue 3 + TS consumer; generates Skill from the running service
+|   |   |-- package.json      # installs the packed Node package as a dev dependency
+|   |   |-- smartdoc-agent.config.json # two live document URLs
+|   |   |-- vite.config.ts    # dev proxy /api/* -> 127.0.0.1:18080
+|   |   |-- README.md         # reproducible sequence
+|   |   |-- CLOSURE-REPORT.md # verification evidence and Skill audit findings
+|   |   `-- src/              # App.vue plus the typed client in api/client.ts
 |   `-- maven-plugin-integration/ # static reactor; verify.ps1 and verify-aggregate.ps1
 |       `-- skill-set/          # opt-in aggregate owner depending on both service modules
 |-- smartdoc-agent-core/
@@ -81,12 +88,15 @@ Core, runtime entry point, and Maven compatibility entry point now exist:
 Do not add CLI, package repository, generic URL ingestion, or cross-service runtime aggregation. The standalone fixture at
 `testbeds/springdoc-multi-package/` has `user`, `order`, `file`, and `common` packages plus `account`/`business` groups.
 It consumes the Starter but remains outside the root reactor. Core tests consume frozen sanitized snapshots offline.
+`testbeds/vue-ts-consumer/` is the consumer-side counterpart and also stays outside the Maven reactor; it is a plain npm
+project whose generated Skill, `node_modules/`, and `dist/` are ignored rather than committed.
 
 ## Generated Or Ignored Directories
 
 - Maven `**/target/` output is not source.
 - `smartdoc-agent-core/target/smartdoc/springdoc-multi-package-api/` is the verified test-generated Skill. The P3 publisher is verified in temporary directories; no production build invokes it yet.
 - `testbeds/maven-plugin-integration/target/generated-resources/smartdoc/` is ignored verification output for the Maven goal; it is recreated by the verifier.
+- `testbeds/vue-ts-consumer/` ignores `node_modules/`, `dist/`, `*.tsbuildinfo`, and `.agents/`. The generated Skill is a build artifact produced by `npm run skill:generate` against a running service, so it is regenerated instead of committed.
 - The runtime testbed must not create `target/generated-openapi/` or `target/generated-resources/smartdoc/`; its explicit
   fixture test still writes asserted snapshots to `target/openapi/` for the separate refresh script.
 - For an output parent, the final Skill is `<skillName>/`; updater state is outside it under `.smartdoc/locks/<skillName>.lock`, `.smartdoc/staging/`, `.smartdoc/backups/`, and `.smartdoc/status/<serviceId>.json`.

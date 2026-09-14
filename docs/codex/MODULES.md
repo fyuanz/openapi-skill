@@ -10,6 +10,7 @@
 | `smartdoc-agent-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
 | `smartdoc-agent-node` | TypeScript npm library/CLI for multiple OpenAPI URL download and one safe local Skill publication | 5 Node tests pass; npm package ready |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no SmartDoc build executions |
+| `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 | `testbeds/maven-plugin-integration` | Legacy static multi-service Maven lifecycle verification | Retained and passing at the prior milestone |
 
 ## Parent Project
@@ -75,3 +76,10 @@ The default output parent is `<consumer>/.agents/skills`; `output` supports a re
 Boot start/stop execution, SpringDoc Maven plugin, or SmartDoc Maven plugin. A real random-port test downloads the current
 two-group ZIP and validates its catalog/source structure. The build verifier asserts the removed build directories and
 plugin invocations stay absent. Frozen `fixtures/` remain only as deterministic core test data.
+
+`testbeds/vue-ts-consumer` is the consumer-side counterpart. It is a real Vue 3 + TypeScript + Vite project that installs
+the packed Node package, runs `npm run skill:generate` against the running SpringDoc testbed, and calls all five
+documented operations through a Vite dev-server proxy. `src/api/client.ts` carries the typed client and the error shape.
+`README.md` documents the reproducible sequence; `CLOSURE-REPORT.md` records the verification evidence and the three
+readability gaps found by an independent read-only Skill audit. Generated output (`node_modules/`, `dist/`, `.agents/`)
+is gitignored, so the Skill is regenerated rather than committed.

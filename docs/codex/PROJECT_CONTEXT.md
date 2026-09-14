@@ -36,6 +36,10 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
   JSON and explicit cross-service `aggregate` / `both` generation.
 - `smartdoc-agent-node` is a tested, packable TypeScript package and CLI for atomic multi-URL generation. It defaults to
   the consuming project root's `.agents/skills` and supports an explicit output parent.
+- `testbeds/vue-ts-consumer` closes the consumer loop: a real Vue 3 + TypeScript project generates the Skill from the
+  running SpringDoc testbed and calls all five documented operations through a dev-server proxy. An independent read-only
+  audit of that Skill found it sufficient to write a correct typed client, plus three readability gaps recorded in its
+  `CLOSURE-REPORT.md`.
 - Published releases: `1.0.0` on 2026-09-11, `1.1.0` and `1.2.0` on 2026-09-14.
 
 ## Commands
@@ -45,6 +49,16 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 cd smartdoc-agent-node && npm test
+```
+
+Consumer loop (generate the Skill, then build and run a real frontend):
+
+```text
+cd testbeds/vue-ts-consumer
+npm install
+npm run skill:generate
+npm run build
+npm run dev
 ```
 
 Manual runtime check:

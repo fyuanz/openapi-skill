@@ -22,11 +22,15 @@ outside scope.
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
 | P8 | TypeScript npm package for configured multi-URL Skill generation | Complete and committed; npm publication requires npm credentials |
+| P9 | Real Vue 3 + TypeScript consumer loop against the running SpringDoc service | Complete; build plus seven live call scenarios verified |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
 
 ## Current Implementation
 
+- `testbeds/vue-ts-consumer` is a real Vue 3 + TypeScript + Vite consumer. It installs the packed
+  `@fyuanz/smartdoc-agent` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
+  testbed into its own `.agents/skills/`, and calls all five documented operations through a Vite dev-server proxy.
 - `smartdoc-agent-spring-boot-starter` auto-configures `GET /smartdoc/skill.zip` for Servlet/WebMVC applications.
 - It derives service identity from `spring.application.name`; enabled/path/serviceId/skillName are optional overrides.
 - `GroupedOpenApi` beans define the complete document set. With no groups, the default SpringDoc document is used.
@@ -39,6 +43,38 @@ outside scope.
 - `smartdoc-agent-node` provides `@fyuanz/smartdoc-agent`: a TypeScript library/CLI that downloads explicit grouped
   OpenAPI URLs, generates one core-compatible Skill, and safely replaces `.agents/skills/<skillName>` by default.
 - Source and latest immutable Central release are `1.2.0`, including the runtime Starter.
+
+## Verified
+
+## 2026-09-14 - Real Vue 3 + TypeScript Consumer Loop Complete
+
+- Purpose: close the last unverified gap. All prior testbeds verify the producer; this one verifies a real consuming
+  frontend project end to end.
+- Setup: `testbeds/vue-ts-consumer` (Vue 3 + TypeScript + Vite). The SpringDoc testbed was started on a fixed port
+  `18080`; `@fyuanz/smartdoc-agent@1.3.0` was installed from a locally packed tarball as a dev dependency.
+- Skill generation: `npm run skill:generate` downloaded both live grouped documents and published 19 files to
+  `.agents/skills/springdoc-multi-package-api/`. All five operations appear in the catalog. `source.json` digests
+  (account `686c1b8b…6d87`, business `ae7e7d84…290c`) match the values already recorded in this file, confirming the
+  runtime export is the same data as the frozen contract snapshots.
+- Frontend: `npm run build` passes `vue-tsc` strict type checking and produces a 71.74 kB bundle. Two genuine type
+  errors were fixed during the build (`noUnusedParameters` on a callback, and missing `node:url` types requiring
+  `@types/node`); neither was suppressed or worked around with `any`.
+- Live calls, all through the Vite proxy `:15173` to `:18080`: `GET /users` with a matching and a non-matching
+  `keyword` (200 with one record, 200 with `[]`); `GET /users/1` with `X-Request-Id` (200); `GET /users/999`
+  (404 + `ApiError`); `POST /orders` valid (201 echoing the request) and invalid (400 + `ApiError`);
+  `POST /files` multipart (200 + `{"size":5}`). Seven scenarios, all matching the generated contract.
+- Independent read-only audit: the generated Skill was handed to a separate agent that could only read Skill files and
+  was asked ten frontend-integration questions. It could write a correct typed client for all five operations and found
+  no broken navigation link. It flagged three readability gaps, verified against source data: cross-document
+  same-named schemas are not declared independent-or-shared; `security: null` is not explained at its point of use; and
+  absent `required` lists are not explained as "unconstrained" versus "missing". All three are faithful OpenAPI
+  exports — `first` the source documents genuinely define `Address` twice per group and carry no root-level `security`
+  field — so they are documentation-clarity gaps, not data defects. Details and evidence are in
+  `testbeds/vue-ts-consumer/CLOSURE-REPORT.md`.
+- Recorded but not implemented: making the three OpenAPI default semantics explicit in the generated Skill. That would
+  change generated output and requires a new version, a new tag, and the core test-first flow.
+- Committed scope: consumer source, config, README, and closure report. `node_modules/`, `dist/`, and `.agents/` are
+  gitignored, so the Skill is regenerated rather than committed.
 
 ## Verification
 
@@ -74,7 +110,7 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-14 (Node consumer committed and pushed).
+2026-09-14 (real Vue 3 consumer loop verified).
 
 ## 2026-09-14 - Node Consumer Committed And Pushed
 

@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-09-14 - Verify The Consumer Side With A Real Vue 3 Project
+
+Status: Accepted
+
+Add `testbeds/vue-ts-consumer` as a real Vue 3 + TypeScript consumer rather than another producer fixture. Every earlier
+testbed verifies generation or publication; none verified that a real frontend project can install the Node package,
+generate the Skill from a running service, and integrate against the documented contract. This testbed closes that gap.
+
+The consumer installs `@fyuanz/smartdoc-agent` from a locally packed tarball instead of a registry, because npm
+publication is still a separate credentialed action. Its typed client is written against the live OpenAPI documents, and
+all calls go through a Vite dev-server proxy so they exercise genuine HTTP against the running testbed. Generated output
+(`node_modules/`, `dist/`, `.agents/`) stays gitignored: the Skill is a build artifact and is regenerated on demand.
+
+Scope boundary: this adds a consumer testbed only. It does not change core, Starter, Maven plugin, or Node package
+behavior, and the recorded readability gaps in three OpenAPI default-semantics cases are documented rather than fixed,
+because fixing them would alter generated output and require a new version and tag.
+
+Evidence: `npm run build` passes strict type checking; seven live call scenarios across all five operations match the
+generated contract; an independent read-only Skill audit could produce a correct typed client and reported three
+readability gaps, each verified against source data in `testbeds/vue-ts-consumer/CLOSURE-REPORT.md`.
+
 ## 2026-09-14 - Add A TypeScript npm Consumer For Multi-URL Skill Generation
 
 Status: Accepted
