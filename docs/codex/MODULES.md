@@ -13,7 +13,7 @@
 
 ## Parent Project
 
-Development coordinates: `io.github.fyuanz:smart-doc-agent:1.1.0-SNAPSHOT`. Core and plugin inherit the group/version; Java packages remain unchanged. Published `1.0.0` is immutable and contains only the original per-service output configuration.
+Release coordinates: `io.github.fyuanz:smart-doc-agent:1.1.0` (published 2026-09-14 with the aggregate feature). The prior release `1.0.0` (2026-09-11) is immutable and contains only the original per-service output configuration. Core and plugin inherit the group/version; Java packages remain unchanged.
 
 The opt-in `central-release` profile attaches sources/Javadoc, signs all release files using Maven GPG's BC signer and publishes the three-module reactor through Central Publishing Plugin 0.11.0. Root MIT license, developer and SCM metadata are inherited; the license is also included in both binary/source JARs. Authentication and signing secrets remain outside the repository. `docs/maven-central.md` documents the publisher and consumer workflows.
 

@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-09-14 - Publish Aggregate Skills As Maven Central 1.1.0
+
+Status: Accepted and executed
+
+The user authorized releasing the v3.6 aggregate feature after the 1.1.0-SNAPSHOT verification passed. Publish the unchanged root reactor (parent POM, core, Maven plugin) as immutable `io.github.fyuanz:1.1.0` using the existing opt-in `central-release` profile, BC GPG signer and Central Portal auto-publish flow; reuse signing identity `fyuan <624728873@qq.com>` (fingerprint `B8EDC9D7B1AEBDCA56A1DA28FD9316D8966A3116`). Mark the release source with Git tag `v1.1.0`.
+
+Bump root/core/plugin POMs and both testbed plugin references from `1.1.0-SNAPSHOT` to `1.1.0`; the standalone testbeds' own module versions remain `1.0.0-SNAPSHOT` because they are never deployed. Bilingual READMEs and release documentation describe `1.1.0` as the current version while retaining `1.0.0` as the single-service-only release. Execution evidence (deploymentId `6f9cffda-6cd3-4236-857a-fc5c8a77d961`, 74 tests, nine signatures, testbed regressions, artifact reachability) is recorded in TASKS.md. This adds no new product feature or scope; deferred work stays deferred.
+
 ## 2026-09-14 - Accept Testbed Delivery And Add Configurable Aggregate Skills
 
 Status: Accepted

@@ -8,7 +8,7 @@ SmartDoc-Agent 通过 Maven 接入构建，在配置的阶段读取文档并更�
 
 ## 功能与边界
 
-- **可配置输出**：默认一服务一 Skill；开发版还支持全部服务的完整汇总及两者共存，同名接口和 Schema 按服务/文档隔离。
+- **可配置输出**：默认一服务一 Skill；`1.1.0` 起支持全部服务的完整汇总及两者共存，同名接口和 Schema 按服务/文档隔离。
 - **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供接口、标签和本地引用导航。
 - **安全更新**：完整校验、暂存、替换，以及超时、锁和失败恢复；成功更新会移除已删除接口或分组的旧文件。
 - **本地转换**：核心不调用 LLM、业务接口或外部引用地址；源文档自由文本与可信 Skill 指令分离。
@@ -18,13 +18,13 @@ SmartDoc-Agent 通过 Maven 接入构建，在配置的阶段读取文档并更�
 
 ## 版本与环境
 
-`1.0.0` 已发布到 Maven Central，无需为这些构件添加额外仓库。
+`1.1.0` 已发布到 Maven Central，包含单服务与汇总 Skill 全部功能，无需为这些构件添加额外仓库。`1.0.0` 仅提供单服务配置。
 
 | 构件 | 用途 |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.0.0` | 父 POM |
-| `io.github.fyuanz:smartdoc-agent-core:1.0.0` | 离线转换与安全输出 |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.0.0` | Maven `generate-skill` 目标 |
+| `io.github.fyuanz:smart-doc-agent:1.1.0` | 父 POM |
+| `io.github.fyuanz:smartdoc-agent-core:1.1.0` | 离线转换与安全输出 |
+| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.1.0` | Maven `generate-skill` 目标 |
 
 使用 JDK 17 和 Maven；已验证环境为 Maven 3.9.16 / JDK 17.0.19。仓库集成验证脚本使用 PowerShell。示例服务使用 Spring Boot 3.5.9 和 springdoc 2.8.15。
 
@@ -57,7 +57,7 @@ testbeds/springdoc-multi-package/target/generated-resources/smartdoc/springdoc-m
 <plugin>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>
@@ -110,7 +110,7 @@ testbeds/springdoc-multi-package/target/generated-resources/smartdoc/springdoc-m
 
 ## 微服务：独立 Skill 与完整汇总共存
 
-此功能位于开发版本 **`1.1.0-SNAPSHOT`**，尚未发布到 Maven Central；先在仓库根目录运行 `mvn -B install`。已发布的 `1.0.0` 仍使用上面的单服务配置。
+此功能随 **`1.1.0`** 发布到 Maven Central，直接引用该版本即可使用。已发布的 `1.0.0` 仅支持上面的单服务配置。
 
 | `outputMode` | 输出 |
 | --- | --- |
@@ -124,7 +124,7 @@ testbeds/springdoc-multi-package/target/generated-resources/smartdoc/springdoc-m
 <plugin>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>

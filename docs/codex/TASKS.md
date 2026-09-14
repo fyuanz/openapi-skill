@@ -16,7 +16,7 @@ Product design v3.6.0 adds configurable coexistence of a complete aggregate Skil
 | P3 | Validated complete publication, timeout, locking, recovery and isolation | Complete |
 | P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
-| Release | Maven Central 1.0.0 | Published 2026-09-11 |
+| Release | Maven Central releases | 1.0.0 published 2026-09-11; 1.1.0 (aggregate outputs) published 2026-09-14 |
 | Documentation | Chinese-default README and equivalent English guide | Complete; synchronized for P6 |
 
 ## Current Implementation
@@ -27,7 +27,7 @@ Product design v3.6.0 adds configurable coexistence of a complete aggregate Skil
 - In `both`, service updates run independently. Only complete successful member results from the current invocation enter the aggregate; no previous output is substituted. A failed member retains the previous aggregate while healthy peers can publish. An aggregate output failure cannot roll back individual updates.
 - Removing a member removes its references on the next successful aggregate update. Disabled or removed standalone outputs are not deleted. Each output has separate ownership, locking, staging and status.
 - One explicit coordinator runs after all document producers. The static reactor fixture orders its coordinator through module dependencies. There is no automatic cross-repository collection or build scheduling.
-- Development version is `1.1.0-SNAPSHOT`; the new configuration is not available in published `1.0.0`. No new Central publication is part of this task.
+- Source is at release version `1.1.0`, published to Maven Central on 2026-09-14 with the aggregate configuration included; `1.0.0` remains the immutable single-service-only release.
 
 ## Verification
 
@@ -58,6 +58,15 @@ The records below retain the decisions and verification at their original dates.
 ## Last Updated
 
 2026-09-14.
+
+## 2026-09-14 - Maven Central 1.1.0 Release Completed
+
+- User-authorized release of the v3.6 aggregate feature. Root/core/plugin and both testbed plugin references were bumped from `1.1.0-SNAPSHOT` to `1.1.0`; the testbeds' own `1.0.0-SNAPSHOT` module coordinates are unchanged because they are not published.
+- Plain root `mvn -B install`: BUILD SUCCESS, 74 tests (59 core, 15 plugin) with the release coordinates. Signed `-Pcentral-release -Clean install` rebuilt everything, attached sources/Javadoc and produced nine PGP signatures with key `fyuan <624728873@qq.com>`; all nine `.asc` files independently verify as Good signature.
+- Regression on the released coordinates: `verify-aggregate.ps1` reports PASS for parallel reactor order, all three output modes, repeat execution, member-failure isolation and recovery; final `both/` statuses for orders/billing/platform are SUCCESS. The SpringDoc testbed `clean verify` on dynamic loopback ports completed app start → account/business capture → stop → `smartdoc-agent:1.1.0:generate-skill` SUCCESS (19-file Skill); its status is SUCCESS.
+- Signed `deploy -Clean` uploaded the bundle; Central Portal deploymentId `6f9cffda-6cd3-4236-857a-fc5c8a77d961` with `autoPublish` reached successfully published. Origin `repo.maven.apache.org` serves all 18 artifacts (parent pom+.asc; per module pom/jar/sources/javadoc plus four .asc each). The four auxiliary jars downloaded from `repo1.maven.org` match the locally signed artifacts by SHA-256; repo1 Cloudflare edges propagated directories unevenly at first and were confirmed converging to HTTP 200 after the short propagation window. The Central search index lags independently.
+- Release engineering note: launching the project-external `invoke-release.ps1` through a nested `powershell -NoProfile -File` failed GPG key export (`Bad passphrase`) because that host's stdin pipe is rejected by the Git GnuPG agent; exporting inline from the console host succeeds. A same-machine companion `invoke-release-110.ps1` (outside Git) was used by dot-sourcing/calling it directly in the console host. No credential material entered the repository; temp diagnostics were deleted.
+- Bilingual READMEs, plugin/testbed READMEs, `docs/maven-central.md`, TASKS/CONTEXT/MODULES and POMs were updated to 1.1.0. Git tag `v1.1.0` identifies the release source. Central releases are immutable; later changes need a new version and tag.
 
 ## 2026-09-14 - Bilingual Repository README Complete
 

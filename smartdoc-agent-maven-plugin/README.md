@@ -6,9 +6,9 @@ after SpringDoc / NextDoc4j in the one module that owns generation for the servi
 
 ```xml
 <plugin>
-  <groupId>com.smartdoc.agent</groupId>
+  <groupId>io.github.fyuanz</groupId>
   <artifactId>smartdoc-agent-maven-plugin</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.1.0</version>
   <inherited>false</inherited>
   <executions>
     <execution>

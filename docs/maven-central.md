@@ -1,15 +1,17 @@
 # Maven Central 发布与使用
 
-发布坐标为 `io.github.fyuanz`，首个正式版本为 `1.0.0`，许可证为 MIT。
+发布坐标为 `io.github.fyuanz`，最新正式版本为 `1.1.0`，许可证为 MIT。
 Java 包名继续使用 `com.smartdoc.agent`；Maven 坐标迁移不改变 Java API。
 
-当前源码开发版本为 `1.1.0-SNAPSHOT`，新增 `outputMode` 和多服务汇总配置，尚未发布到 Central。使用新功能需先在仓库根目录执行 `mvn -B install`，再引用该开发版本；配置见[中文 README](../README.md)。下文 `1.0.0` 是已发布版本的单服务用法，不能用它启用新参数。本次功能变动不包含新版本发布。
+`1.1.0`（2026-09-14 发布）包含 `outputMode=service|aggregate|both` 多服务汇总配置。
+`1.0.0`（2026-09-11 发布）只支持单服务配置；两个正式版本均不可覆盖。
+当前 Git 源码即为 `1.1.0` 发布版本；后续变更需要新版本和对应 Git 标签。配置见[中文 README](../README.md)。
 
 | 构件 | 用途 |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.0.0` | 父 POM，提供公共版本和发布元数据 |
-| `io.github.fyuanz:smartdoc-agent-core:1.0.0` | 离线 OpenAPI 转 Skill 与安全发布 |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.0.0` | Maven `generate-skill` 目标 |
+| `io.github.fyuanz:smart-doc-agent:1.1.0` | 父 POM，提供公共版本和发布元数据 |
+| `io.github.fyuanz:smartdoc-agent-core:1.1.0` | 离线 OpenAPI 转 Skill、汇总装配与安全发布 |
+| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.1.0` | Maven `generate-skill` 目标（含单服务/汇总/共存） |
 
 ## 在服务中使用
 
@@ -20,7 +22,7 @@ SpringDoc 测试项目的身份和目录。实际服务应调整身份、路径�
 <plugin>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>

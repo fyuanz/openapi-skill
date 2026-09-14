@@ -8,7 +8,7 @@ SmartDoc-Agent integrates with Maven and updates the Skill at an explicitly conf
 
 ## Features and scope
 
-- **Configurable output**: one Skill per service by default; the development version also supports a complete aggregate and coexistence. Identical operations and Schema names remain isolated by service/document.
+- **Configurable output**: one Skill per service by default; since `1.1.0`, a complete aggregate and coexistence are also supported. Identical operations and Schema names remain isolated by service/document.
 - **Contract preservation**: parameters, request bodies, responses, media types, authentication definitions, and Schema data, with operation, tag, and local-reference navigation.
 - **Safe updates**: complete validation, staging, replacement, timeouts, locking, and recovery. Successful updates remove stale files for deleted operations or groups.
 - **Local conversion**: the core does not call LLMs, business APIs, or external reference URLs. Source free text stays separate from trusted Skill instructions.
@@ -18,13 +18,13 @@ YAML, Swagger 2.0, other OpenAPI versions, external references, full OpenAPI spe
 
 ## Release and requirements
 
-Version `1.0.0` is published to Maven Central. No additional repository is needed for these artifacts.
+Version `1.1.0` is published to Maven Central and includes both single-service and aggregate Skill features. No additional repository is needed for these artifacts. `1.0.0` only provides the single-service configuration.
 
 | Artifact | Purpose |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.0.0` | Parent POM |
-| `io.github.fyuanz:smartdoc-agent-core:1.0.0` | Offline conversion and safe output publication |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.0.0` | Maven `generate-skill` goal |
+| `io.github.fyuanz:smart-doc-agent:1.1.0` | Parent POM |
+| `io.github.fyuanz:smartdoc-agent-core:1.1.0` | Offline conversion and safe output publication |
+| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.1.0` | Maven `generate-skill` goal |
 
 Use JDK 17 and Maven. The verified environment is Maven 3.9.16 / JDK 17.0.19. Repository integration scripts require PowerShell. The sample uses Spring Boot 3.5.9 and springdoc 2.8.15.
 
@@ -57,7 +57,7 @@ First configure SpringDoc / NextDoc4j to export OpenAPI JSON from the current bu
 <plugin>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>
@@ -110,7 +110,7 @@ Each target project explicitly selects its producer, owner module, groups, and M
 
 ## Microservices: individual and complete aggregate Skills
 
-This feature is in development version **`1.1.0-SNAPSHOT`**, not yet published to Maven Central. Run `mvn -B install` from this repository first. Published `1.0.0` continues to use the single-service configuration above.
+This feature is published to Maven Central with **`1.1.0`**; reference that version to use it. Published `1.0.0` only supports the single-service configuration above.
 
 | `outputMode` | Output |
 | --- | --- |
@@ -124,7 +124,7 @@ Configure this plugin under `build/plugins` in one coordinator module. It must r
 <plugin>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>

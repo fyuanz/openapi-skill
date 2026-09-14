@@ -62,7 +62,7 @@ Skill 输出位于 `target/generated-resources/smartdoc/`，执行 `clean` 后�
 `serviceId=springdoc-multi-package`，`skillName=springdoc-multi-package-api`，
 输入为 `target/generated-openapi/`，SmartDoc 在 `verify` 执行，且不向子模块继承。
 2026-09-14 起，真实环境接入和前端/web 验收已从计划移除；本测试案例作为生成依据，Skill 由用户人工校验后反馈。
-当前测试项目引用本地安装的 `1.1.0-SNAPSHOT`；微服务汇总及共存配置见[项目 README](../../README.md)。
+当前测试项目引用已发布的 `1.1.0`（本地先 `mvn -B install` 或直接从 Maven Central 解析）；微服务汇总及共存配置见[项目 README](../../README.md)。
 
 只需生成成功产物时，从仓库根目录执行下面的 PowerShell 命令。先安装当前插件，再为测试应用选择
 空闲 HTTP/JMX 端口，运行完整 Maven 链路；不需要提前手动启动应用。
