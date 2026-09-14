@@ -54,7 +54,7 @@ GET /smartdoc/skill.zip
 <dependency>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -138,7 +138,7 @@ core 的输入/输出、引用深度和文件数上限继续生效。文件按�
 | `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 6 项测试通过 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x
-兼容性变化不会污染转换逻辑。开发版本为 `1.2.0-SNAPSHOT`；Central 已发布的 `1.1.0` 保持不可变。
+兼容性变化不会污染转换逻辑。正式版本为 `1.2.0`；Central 已发布的旧版本保持不可变。
 
 ## 10. 暂不实现
 

@@ -28,7 +28,7 @@
                       }
                   ],
     "sourceSha256":  {
-                         "pom.xml":  "cc761de6a724761ca2052a500d47569ae06b29d4f16f364e446b6f713d5eefd2",
+                         "pom.xml":  "6a63ea352d055f5ee736b94175caa65f7a9f7c9798e01c6db5734cf39ecc8488",
                          "src/main/java/com/smartdoc/testbed/common/Address.java":  "e921d3576eac9374d0d5843cf59abbd5ca7e0f9952b6bee5456d1f24f7e2fa8f",
                          "src/main/java/com/smartdoc/testbed/common/ApiError.java":  "d8e967433781dfa8484f2d264501ccf0ad5658f52eac3183c8f349b8d8cda91e",
                          "src/main/java/com/smartdoc/testbed/common/OpenApiConfiguration.java":  "c6270c2a9d5d3f7c691f463724dcb1c2736058a4aacc0bacd4d2e6126e85f3ec",

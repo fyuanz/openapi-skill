@@ -4,7 +4,7 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `1.2.0-SNAPSHOT`; four-module reactor |
+| Parent project | Java 17/Maven dependency management and module aggregation | `1.2.0`; four-module reactor |
 | `smartdoc-agent-core` | Per-service conversion, aggregate assembly, validation and safe filesystem publication | 59 tests pass |
 | `smartdoc-agent-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
 | `smartdoc-agent-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
@@ -13,10 +13,9 @@
 
 ## Parent Project
 
-Development coordinates are `io.github.fyuanz:1.2.0-SNAPSHOT`. Central `1.1.0` is the latest published immutable release
-and contains the parent, core, and Maven plugin; the new runtime Starter is not published yet. Java packages remain
-`com.smartdoc.agent`. The opt-in Central release profile and signing process remain unchanged; no publication is part of
-the runtime migration.
+Release coordinates are `io.github.fyuanz:1.2.0`. Central `1.2.0` contains the parent, core, Maven plugin, and runtime
+Starter. Java packages remain `com.smartdoc.agent`; the opt-in Central release profile and signing process remain
+unchanged.
 
 ## Core
 

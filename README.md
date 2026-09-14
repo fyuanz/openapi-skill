@@ -21,15 +21,15 @@ WebFlux、跨服务运行时汇总、包仓库或 CLI。仓库中的运行时集
 
 ## 版本与环境
 
-运行时 Starter 当前开发版本为 `1.2.0-SNAPSHOT`，需先从本仓库执行 `mvn -B install`。已发布的 `1.1.0`
-仍提供 Maven 构建期的单服务/汇总兼容能力，但不是新的推荐接入方式。
+当前正式版本为 `1.2.0`。它新增运行时 Starter，并继续提供 Maven 构建期的单服务/汇总兼容能力；
+对于 SpringDoc 应用，推荐使用运行时 Starter。
 
 | 构件 | 用途 |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.1.0` | 父 POM |
-| `io.github.fyuanz:smartdoc-agent-core:1.1.0` | 离线转换与安全输出 |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.1.0` | Maven `generate-skill` 目标 |
-| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0-SNAPSHOT` | 运行时自动发现与 ZIP 下载（尚未发布） |
+| `io.github.fyuanz:smart-doc-agent:1.2.0` | 父 POM |
+| `io.github.fyuanz:smartdoc-agent-core:1.2.0` | 离线转换与安全输出 |
+| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.2.0` | Maven `generate-skill` 目标 |
+| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0` | 运行时自动发现与 ZIP 下载 |
 
 使用 JDK 17 和 Maven；已验证环境为 Maven 3.9.16 / JDK 17.0.19。仓库集成验证脚本使用 PowerShell。示例服务使用 Spring Boot 3.5.9 和 springdoc 2.8.15。
 
@@ -64,7 +64,7 @@ mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 <dependency>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -94,7 +94,7 @@ smartdoc.runtime.skill-name=my-service-api
 
 ## 微服务：独立 Skill 与完整汇总共存
 
-下面是已发布 `1.1.0` Maven 插件的兼容能力，适用于仍需离线静态 JSON 或构建期跨服务汇总的项目。
+下面是 `1.2.0` Maven 插件的兼容能力，适用于仍需离线静态 JSON 或构建期跨服务汇总的项目。
 新接入若只需当前应用的 Skill ZIP，优先使用上面的运行时 Starter。
 
 | `outputMode` | 输出 |
@@ -109,7 +109,7 @@ smartdoc.runtime.skill-name=my-service-api
 <plugin>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>
@@ -227,7 +227,7 @@ powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-in
 SpringDoc 脚本验证普通构建中没有应用启停、HTTP 抓取或 SmartDoc Maven goal，并在随机真实端口下载、检查 ZIP。
 Maven 插件脚本继续验证旧兼容入口。
 
-`1.2.0-SNAPSHOT` 增加运行时 Starter 单文档/多分组测试和 6 项测试服务验证；最新结果见
+`1.2.0` 增加运行时 Starter 单文档/多分组测试和 6 项测试服务验证；最新结果见
 [任务记录](docs/codex/TASKS.md)。Skill 使用效果仍由用户人工校验后反馈。
 
 ## 项目结构与文档

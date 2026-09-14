@@ -22,8 +22,8 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 
 ## Current Status
 
-- Development source is `1.2.0-SNAPSHOT`; Central `1.1.0` remains the latest immutable release and contains core plus
-  the Maven plugin, not the new runtime Starter.
+- Source and Central release are `1.2.0`; the immutable release contains the parent, core, Maven plugin, and runtime
+  Spring Boot Starter.
 - `smartdoc-agent-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/smartdoc/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
@@ -34,7 +34,7 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
   sample APIs, and a real random-port ZIP download.
 - Core retains 59 tests; Maven plugin retains 15 tests. The latter remains a compatibility path for authoritative static
   JSON and explicit cross-service `aggregate` / `both` generation.
-- Published releases: `1.0.0` on 2026-09-11 and `1.1.0` on 2026-09-14. No `1.2.0` publication is authorized.
+- Published releases: `1.0.0` on 2026-09-11, `1.1.0` and `1.2.0` on 2026-09-14.
 
 ## Commands
 

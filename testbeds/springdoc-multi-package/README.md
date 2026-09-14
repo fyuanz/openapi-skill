@@ -3,7 +3,7 @@
 单服务、四个 Java 包、两个显式 OpenAPI 分组。Java 17，Spring Boot 3.5.9，SpringDoc WebMVC UI
 2.8.15；提供 Swagger UI 和 SmartDoc 运行时 Skill ZIP。无数据库、注册中心、网关或 Knife4j，数据均为虚构。
 
-先在仓库根目录安装当前 `1.2.0-SNAPSHOT`，再启动测试服务：
+先在仓库根目录安装当前 `1.2.0`，再启动测试服务：
 
 ```powershell
 mvn -B install

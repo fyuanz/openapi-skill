@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.fyuanz</groupId>
         <artifactId>smart-doc-agent</artifactId>
-        <version>1.2.0-SNAPSHOT</version>
+        <version>1.2.0</version>
     </parent>
     <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
     <name>SmartDoc Agent Spring Boot Starter</name>

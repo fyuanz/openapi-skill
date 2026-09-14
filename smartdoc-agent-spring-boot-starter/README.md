@@ -3,13 +3,13 @@
 在 Spring Boot 应用运行期间，从 SpringDoc 的最终文档资源生成当前 API Skill，并通过只读 HTTP 接口下载 ZIP。
 它不启动第二个应用进程、不向本机发送 HTTP 请求，也不在 Maven 生命周期中抓取或生成文件。
 
-当前开发版本为 `1.2.0-SNAPSHOT`。在仓库根目录执行 `mvn -B install` 后，在目标应用加入：
+当前正式版本为 `1.2.0`。在目标应用加入：
 
 ```xml
 <dependency>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 

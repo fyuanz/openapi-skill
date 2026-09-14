@@ -22,15 +22,15 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Release and requirements
 
-The runtime starter is currently `1.2.0-SNAPSHOT`; install it from this repository with `mvn -B install`. Published
-`1.1.0` retains Maven build-time single-service and aggregate compatibility, but is no longer the recommended integration.
+The current release is `1.2.0`. It adds the runtime Starter and retains Maven build-time single-service and aggregate
+compatibility; SpringDoc applications should prefer the runtime Starter.
 
 | Artifact | Purpose |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.1.0` | Parent POM |
-| `io.github.fyuanz:smartdoc-agent-core:1.1.0` | Offline conversion and safe output publication |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.1.0` | Maven `generate-skill` goal |
-| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0-SNAPSHOT` | Runtime discovery and ZIP download (not yet released) |
+| `io.github.fyuanz:smart-doc-agent:1.2.0` | Parent POM |
+| `io.github.fyuanz:smartdoc-agent-core:1.2.0` | Offline conversion and safe output publication |
+| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.2.0` | Maven `generate-skill` goal |
+| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0` | Runtime discovery and ZIP download |
 
 Use JDK 17 and Maven. The verified environment is Maven 3.9.16 / JDK 17.0.19. Repository integration scripts require PowerShell. The sample uses Spring Boot 3.5.9 and springdoc 2.8.15.
 
@@ -65,7 +65,7 @@ For a Spring Boot WebMVC service whose SpringDoc output is exact OpenAPI 3.1.0, 
 <dependency>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -96,7 +96,7 @@ sensitive. See the [starter guide](smartdoc-agent-spring-boot-starter/README.md)
 
 ## Microservices: individual and complete aggregate Skills
 
-The following is the published `1.1.0` Maven plugin compatibility path for projects that still need offline static JSON
+The following is the `1.2.0` Maven plugin compatibility path for projects that still need offline static JSON
 or build-time cross-service aggregation. Prefer the runtime starter for a current application's Skill ZIP.
 
 | `outputMode` | Output |
@@ -111,7 +111,7 @@ Configure this plugin under `build/plugins` in one coordinator module. It must r
 <plugin>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>
@@ -231,7 +231,7 @@ powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-in
 The SpringDoc script proves that an ordinary build performs no application start/stop, HTTP capture, or SmartDoc Maven
 goal, then downloads and checks the ZIP on a real random port. The Maven-plugin script retains compatibility coverage.
 
-`1.2.0-SNAPSHOT` adds single-document/multi-group runtime starter tests and six testbed checks. See
+`1.2.0` adds single-document/multi-group runtime starter tests and six testbed checks. See
 [task records](docs/codex/TASKS.md) for current results. The user will continue to review Skill usability manually.
 
 ## Repository and documentation

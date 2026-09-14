@@ -20,7 +20,7 @@ cross-project installation, WebFlux, package repositories, and release schedulin
 | P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
-| Release | Maven Central releases | 1.0.0 published 2026-09-11; 1.1.0 (aggregate outputs) published 2026-09-14 |
+| Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
 
 ## Current Implementation
@@ -34,7 +34,7 @@ cross-project installation, WebFlux, package repositories, and release schedulin
   The hidden endpoint does not enter generated OpenAPI.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or SmartDoc Maven goal.
 - `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
-- Source is `1.2.0-SNAPSHOT`. Published `1.1.0` is unchanged; the runtime Starter has not been published.
+- Source and latest immutable Central release are `1.2.0`, including the runtime Starter.
 
 ## Verification
 
@@ -70,6 +70,21 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 ## Last Updated
 
 2026-09-14.
+
+## 2026-09-14 - Maven Central 1.2.0 Release Completed
+
+- The user confirmed the updated READMEs and explicitly authorized publication. Root, core, Maven plugin, and the new
+  Spring Boot Starter were changed from `1.2.0-SNAPSHOT` to immutable `1.2.0`; standalone testbeds remain unpublished.
+- Formal-coordinate `mvn -B install` passed 76 tests. A clean `central-release` install attached sources and Javadocs;
+  all 13 POM/JAR signatures independently verified as Good signatures from `fyuan <624728873@qq.com>` with fingerprint
+  `B8EDC9D7B1AEBDCA56A1DA28FD9316D8966A3116`.
+- The runtime verifier passed six tests on a real random HTTP port and confirmed no build-time application start,
+  OpenAPI capture, SmartDoc Maven goal, or generated OpenAPI/Skill directory. The Maven aggregate matrix also passed
+  parallel ordering, all output modes, repeat generation, failure isolation, and recovery.
+- Central deployment `5e3eba4c-1cc5-4feb-b720-93694413d290` reached `PUBLISHED`. Representative parent, core, Maven
+  plugin, and runtime Starter artifacts each returned HTTP 200 from `repo1.maven.org`.
+- Chinese, English, Starter, testbed, design, module/context, and Central documentation use `1.2.0`. Tag `v1.2.0`
+  identifies the release source; later changes require a new version and tag.
 
 ## 2026-09-14 - Runtime Skill ZIP Replaces Build-Time SpringDoc Capture
 

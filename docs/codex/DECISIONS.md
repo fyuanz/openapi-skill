@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-09-14 - Publish Runtime Skill ZIP As Maven Central 1.2.0
+
+Status: Accepted and executed
+
+After confirming the Chinese, English, and Starter READMEs are updated, the user explicitly authorized publication.
+Release the four-module reactor as immutable `io.github.fyuanz:1.2.0` using the existing `central-release` profile,
+BC GPG signer, Central Portal auto-publish flow, and signing identity already documented for 1.1.0. The release adds
+`smartdoc-agent-spring-boot-starter`; parent, core, and Maven plugin remain part of the same versioned reactor.
+
+Bump the two non-published testbeds to consume the final `1.2.0` coordinates, rerun all unit and real runtime checks,
+verify signed artifacts before upload, wait for Central `PUBLISHED`, and tag the exact release source as `v1.2.0`.
+Central versions and tags are immutable; do not overwrite or force-push existing history.
+This decision supersedes the earlier runtime-migration statement that 1.2.0 publication was not authorized.
+
+Execution completed with deployment ID `5e3eba4c-1cc5-4feb-b720-93694413d290` in `PUBLISHED` state. The clean signed
+reactor generated 13 independently verified signatures with fingerprint
+`B8EDC9D7B1AEBDCA56A1DA28FD9316D8966A3116`; representative parent/core/plugin/Starter artifacts returned HTTP 200
+from Maven Central. Verification and the exact tag/commit are recorded in TASKS.md.
+
 ## 2026-09-14 - Replace Build-Time SpringDoc Capture With A Runtime Starter
 
 Status: Accepted and implemented
