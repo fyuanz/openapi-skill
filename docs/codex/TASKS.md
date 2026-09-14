@@ -42,9 +42,36 @@ outside scope.
 - `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
 - `smartdoc-agent-node` provides `@fyuanz/smartdoc-agent`: a TypeScript library/CLI that downloads explicit grouped
   OpenAPI URLs, generates one core-compatible Skill, and safely replaces `.agents/skills/<skillName>` by default.
-- Source and latest immutable Central release are `1.2.0`, including the runtime Starter.
+- Source is `1.3.0-SNAPSHOT` (default-semantics explanations at the point of use and a bilingual action-triggered
+  description); the latest immutable Central release is `1.2.0`, including the runtime Starter. The Node package source
+  is `1.3.0`, published from a packed tarball pending registry publication.
 
 ## Verified
+
+## 2026-09-14 - Default-Semantics Readability Fixes And Bilingual Action-Triggered Description
+
+- Trigger: the consumer-loop audit recorded three readability gaps (null `security`, absent `required`, cross-document
+  same-named schemas), and the user asked to fix them, then to widen Skill discovery by upgrading the description from a
+  keyword list to a bilingual action-triggered sentence (查找/解释/实现/调试 plus finding/explaining/implementing/debugging,
+  catalog navigation, a verification checklist, and generate-or-modify frontend request code).
+- Gap fixes, test-first: `DocumentReferences.semantics(contract)` renders a "How to read the defaults above" section at
+  the end of every operation file stating that null `security`/`servers` is an unstated fact (not a no-auth claim), an
+  absent `required` list is an undeclared constraint, same-named schemas stay document-local, and only an explicit empty
+  value is a declared override. `SKILL.md` carries the same guidance up front. The TypeScript port mirrors both.
+- Description redesign: the frontmatter description is now one bilingual action sentence built only from validated
+  identities (serviceId, document IDs). Untrusted API source text (titles, tags, summaries, domain synonyms) still never
+  enters the template. The aggregate Skill mirrors it with cross-service wording and a bounded member list.
+- Bounds: `boundedList()` sorts IDs, joins them with `/`, and truncates past 200 characters with an explicit `…(+N)`
+  marker, so the 32-document worst case keeps the description a single YAML-safe line under 1024 characters (no ASCII
+  `: `, no newline).
+- Version: all POMs moved to `1.3.0-SNAPSHOT` and the Node package to `1.3.0`, because generated output changed.
+- Verification: red-first Java assertions (verbs, keywords, groups, YAML safety, a 32-group bound test, aggregate
+  wording) then full reactor `install` — 80 tests (63 core + 15 plugin + 2 starter), zero failures. Node `npm test`
+  passes 7 tests. The Vue consumer reinstalled the packed `1.3.0` tarball and regenerated its Skill: 19 files, all four
+  operation files carry the semantics section, the new description is 587 characters, and the account/business SHA-256
+  digests are unchanged.
+- Deferred: npm publication of `@fyuanz/smartdoc-agent@1.3.0` (needs credentials) and a user-configurable description
+  override for domain synonyms remain future work; a `1.3.0` Central release needs a new tag.
 
 ## 2026-09-14 - Real Vue 3 + TypeScript Consumer Loop Complete
 

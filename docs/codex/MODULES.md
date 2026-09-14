@@ -4,26 +4,31 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `1.2.0`; four-module reactor |
-| `smartdoc-agent-core` | Per-service conversion, aggregate assembly, validation and safe filesystem publication | 59 tests pass |
+| Parent project | Java 17/Maven dependency management and module aggregation | `1.3.0-SNAPSHOT` source (Central release `1.2.0`); four-module reactor |
+| `smartdoc-agent-core` | Per-service conversion, aggregate assembly, validation and safe filesystem publication | 63 tests pass |
 | `smartdoc-agent-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
 | `smartdoc-agent-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
-| `smartdoc-agent-node` | TypeScript npm library/CLI for multiple OpenAPI URL download and one safe local Skill publication | 5 Node tests pass; npm package ready |
+| `smartdoc-agent-node` | TypeScript npm library/CLI for multiple OpenAPI URL download and one safe local Skill publication | 7 Node tests pass; npm package ready |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no SmartDoc build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 | `testbeds/maven-plugin-integration` | Legacy static multi-service Maven lifecycle verification | Retained and passing at the prior milestone |
 
 ## Parent Project
 
-Release coordinates are `io.github.fyuanz:1.2.0`. Central `1.2.0` contains the parent, core, Maven plugin, and runtime
-Starter. Java packages remain `com.smartdoc.agent`; the opt-in Central release profile and signing process remain
-unchanged.
+Release coordinates are `io.github.fyuanz` at `1.3.0-SNAPSHOT` source. Central `1.2.0` contains the parent, core, Maven
+plugin, and runtime Starter. Java packages remain `com.smartdoc.agent`; the opt-in Central release profile and signing
+process remain unchanged.
 
 ## Core
 
 `SkillGenerator.generate(serviceId, skillName, documents)` converts a complete map of document IDs to exact OpenAPI 3.1.0
 JSON bytes into an immutable map of relative paths to UTF-8 content. It preserves operation/schema JSON plus effective
-parameters, servers, and security, and creates catalogs and document-local reference navigation.
+parameters, servers, and security, and creates catalogs and document-local reference navigation. Each operation file
+ends with a generated "How to read the defaults above" section stating the OpenAPI default semantics (null
+security/servers is unstated, absent `required` is undeclared, same-named schemas are document-local, and only an
+explicit empty value is a declared override). The `SKILL.md` frontmatter carries a bilingual action-triggered
+description built only from validated identities; `boundedList()` truncates the interpolated group list so the
+32-document worst case stays a single YAML-safe line under 1024 characters.
 
 `AggregateSkillGenerator` assembles validated service trees without semantic OpenAPI merging. `GeneratedSkillValidator`
 and `ServiceSkillUpdater` retain safe filesystem publication for Maven compatibility. Core performs no Spring, Maven,

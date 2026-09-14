@@ -1,5 +1,48 @@
 # Decisions
 
+## 2026-09-14 - Make The Skill Description A Bilingual Action-Triggered Trigger
+
+Status: Accepted
+
+Replace the keyword-list `description` with a single bilingual action sentence. An LLM selects a Skill by matching the
+task it is doing, so the description names the tasks first — 查找、解释、实现或调试 / finding, explaining, implementing,
+debugging frontend HTTP API calls — then the navigation path (locate endpoints via the catalog), the verification work
+(parameters, request bodies, responses, status codes, schemas, authentication, errors), and the deliverable (generate or
+modify frontend request code). A bilingual keyword tail keeps low-cost lexical matches in both languages. The aggregate
+Skill uses the same shape with cross-service wording.
+
+Only validated identities (serviceId, document IDs) are interpolated. Untrusted API source text such as info titles,
+tags, and summaries still never enters the template, so domain synonyms (账单/计费/发票 style) cannot be sourced from the
+contract; a user-configurable description override is deferred future work.
+
+The description must remain one YAML plain scalar under 1024 characters. ASCII `: ` is forbidden inside the value, so
+the sentence uses full-width punctuation and em-dashes. `boundedList()` bounds the interpolated group/member list —
+sorted, `/`-joined, truncated past 200 characters with an explicit `…(+N)` marker — which keeps the worst case of 32
+maximum-length identities inside the limit.
+
+Evidence: the rewritten Java metadata test failed first on every new assertion, and the new 32-group bound test failed
+before `boundedList` existed; the full reactor then passed 80 tests. The Node port mirrors both tests (7 passing). The
+regenerated Vue-consumer Skill shows the final 587-character single-line description.
+
+## 2026-09-14 - State OpenAPI Default Semantics At The Point Of Use
+
+Status: Accepted
+
+The consumer audit found that operation files faithfully export `security: null`, absent `required` lists, and
+document-local same-named schemas, but a reader cannot tell an unstated fact from a declared one. Fix at the point of
+use rather than in a distant convention note: every operation file ends with a "How to read the defaults above" section
+generated from the contract, stating that null `security`/`servers` means the document does not state the fact (not
+that authentication is unnecessary), an absent `required` list is an undeclared constraint, same-named definitions stay
+within their source document, and only an explicit empty value is a declared override. `SKILL.md` repeats the guidance
+so both levels agree.
+
+The generated files remain faithful exports — no value is invented or merged. This changes generated output, so it
+ships as `1.3.0-SNAPSHOT` source with a future release and tag, following the test-first core process.
+
+Evidence: the Java semantics test and its Node equivalent failed before `DocumentReferences.semantics` existed, then
+passed with all four operation files carrying the section; the explicit-empty-security case is asserted as a declared
+override. Full reactor 80 tests, Node 7 tests, and the regenerated consumer Skill verified end to end.
+
 ## 2026-09-14 - Verify The Consumer Side With A Real Vue 3 Project
 
 Status: Accepted

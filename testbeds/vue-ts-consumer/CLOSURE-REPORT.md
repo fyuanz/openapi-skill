@@ -103,3 +103,20 @@ Vue 3 + TS 前端  src/api/client.ts  (5 个接口的真实调用)
 建议作为**独立后续任务**评估（未在本轮实施）：在 `SKILL.md` 或 per-operation 文件中，
 用一句话把上述缺省语义显式化。任何改动都会改变生成产物，需要新的版本号与标签，
 且必须走 core 的测试优先流程。
+
+## 更新（2026-09-14，后续修复）
+
+上述 3 处缺口已在 `1.3.0-SNAPSHOT` 源码中修复并通过全量验证（Java reactor 80 tests + Node 7 tests，零失败）：
+
+- **缺口 1/2/3 的共同修复**：生成器在每个 operation 文件末尾产出「How to read the defaults above」小节，
+  逐条说明 `security`/`servers` 为 `null` 是「文档未声明」而非「无需鉴权」、缺失 `required` 是「未声明约束」、
+  同名 schema 保持 document-local、仅显式空值才是声明式覆盖；`SKILL.md` 正文同步携带该指引。
+- **description 重构**（顺带增强）：`SKILL.md` description 升级为双语动作触发式——查找/解释/实现/调试 +
+  finding/explaining/implementing/debugging，按 catalog 定位接口，核对参数、请求体、响应、状态码、Schema、
+  鉴权与错误，生成或修改前端请求代码；分组列表经 `boundedList` 截断，32 文档最坏情况下仍是单行 YAML 安全值
+  且 ≤1024 字符。不可信 API 源文本（标题、tag、summary）依旧不进入模板。
+- **本 testbed 已重新验证**：用重打包的 `@fyuanz/smartdoc-agent@1.3.0` tarball 重装并重新生成 Skill（19 文件），
+  新 description 为 587 字符单行，4 个 operation 文件全部带语义小节，account/business SHA-256 摘要与
+  历史记录一致。
+- 领域同义词（如 billing 的 账单/计费/发票）属不可信源文本，不能进 description；用户可配置的 description
+  override 作为延后项记录在 DECISIONS.md。

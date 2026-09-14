@@ -136,6 +136,101 @@ class SkillGeneratorTest {
         }
     }
 
+    @Test void explainsOpenApiDefaultSemanticsAtThePointOfUse() throws Exception {
+        var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", snapshots());
+        String entry = files.get("SKILL.md");
+        // The three default-semantics facts a reader must not have to guess.
+        assertTrue(entry.contains("security"), "entrypoint must name security defaults");
+        assertTrue(entry.contains("is not a claim") || entry.contains("does not mean"),
+                "entrypoint must state that a null/empty security is not a claim about authentication");
+        assertTrue(entry.contains("required"), "entrypoint must name the required-list default");
+        assertTrue(entry.contains("independent"), 
+                "entrypoint must state that same-named schemas across documents are independent");
+
+        // Evidence: each operation file must expose the effective security value and must not
+        // leave a null value unexplained.
+        var operations = files.entrySet().stream().filter(f -> f.getKey().contains("/operations/")).toList();
+        assertEquals(4, operations.size());
+        for (var operation : operations) {
+            String content = operation.getValue();
+            assertTrue(content.contains("\"security\""), operation.getKey() + " must expose effective security");
+            assertTrue(content.contains("How to read the defaults above"),
+                    operation.getKey() + " must carry the default-semantics section");
+            assertTrue(content.contains("not a claim"), 
+                    operation.getKey() + " must not leave an unstated fact unexplained");
+        }
+        // The source document declares no security for GET /users, so the value stays null.
+        var op = operations.stream().map(Map.Entry::getValue).map(this::contract)
+                .filter(n -> n.path("path").asText().equals("/users")).findFirst().orElseThrow();
+        assertTrue(op.path("security").isNull(),
+                "source document declares no security for GET /users, so the value stays null");
+    }
+
+    @Test void skillMetadataCarriesBilingualTaskTriggers() throws Exception {
+        var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", snapshots());
+        String entry = files.get("SKILL.md");
+        int close = entry.indexOf("\n---\n");
+        assertTrue(close > 0, "frontmatter must be closed");
+        String description = entry.substring(entry.indexOf("description: ") + "description: ".length(), close);
+
+        // Task verbs in both languages so an LLM can match on intent, not just keywords.
+        for (String verb : List.of("查找", "解释", "实现", "调试"))
+            assertTrue(description.contains(verb), "description must include the task verb " + verb);
+        for (String verb : List.of("finding", "explaining", "implementing", "debugging"))
+            assertTrue(description.contains(verb), "description must include the English task verb " + verb);
+        // Broad Chinese and English keyword surface.
+        for (String keyword : List.of("接口", "前端", "文档", "调用", "参数校验", "接口联调", "字段缺失",
+                "鉴权", "报错排查", "状态码", "前端请求代码", "catalog", "HTTP", "REST", "OpenAPI"))
+            assertTrue(description.contains(keyword), "description must include the keyword " + keyword);
+        // Identities stay discoverable so the trigger is anchored to one service.
+        assertTrue(description.contains("springdoc-multi-package"), "description must name the service");
+        assertTrue(description.contains("account") && description.contains("business"),
+                "description must name the document groups");
+        // The value must remain one YAML plain scalar and fit the validator bound.
+        assertFalse(description.contains(": "), "description must not contain an ASCII colon-space");
+        assertFalse(description.contains("\n"), "description must be a single line");
+        assertTrue(description.length() <= 1024, "description must stay within 1024 characters");
+        // Untrusted API source text must not leak into the trusted template.
+        assertFalse(entry.contains("仅用于文档契约验证"));
+    }
+
+    @Test void descriptionStaysASingleYamlScalarWithinBoundsForManyGroups() {
+        var docs = new TreeMap<String, byte[]>();
+        for (int i = 0; i < 32; i++) docs.put("g" + "x".repeat(52) + i, json("{\"openapi\":\"3.1.0\",\"paths\":{}}"));
+        var files = generator.generate("s", "api", docs);
+        String entry = files.get("SKILL.md");
+        int start = entry.indexOf("description: ") + "description: ".length();
+        String description = entry.substring(start, entry.indexOf("\n---\n", start));
+        assertTrue(description.length() <= 1024,
+                "description must stay within 1024 characters, got " + description.length());
+        assertFalse(description.contains(": "), "description must stay a single YAML plain scalar");
+        assertFalse(description.contains("\n"), "description must be one line");
+        assertTrue(description.contains("…(+"), "a truncated group list must be marked explicitly");
+    }
+
+    @Test void aggregateSkillMetadataCarriesBilingualTaskTriggers() throws Exception {
+        var files = new AggregateSkillGenerator().generate("platform", "platform-api",
+                Map.of("orders", generator.generate("orders", "orders-api", snapshots()),
+                       "billing", generator.generate("billing", "billing-api", snapshots())));
+        String entry = files.get("SKILL.md");
+        int close = entry.indexOf("\n---\n");
+        assertTrue(close > 0, "frontmatter must be closed");
+        String description = entry.substring(entry.indexOf("description: ") + "description: ".length(), close);
+        for (String verb : List.of("查找", "解释", "实现", "调试", "跨服务"))
+            assertTrue(description.contains(verb), "aggregate description must include " + verb);
+        for (String verb : List.of("finding", "explaining", "implementing", "debugging", "cross-service"))
+            assertTrue(description.contains(verb), "aggregate description must include " + verb);
+        assertTrue(description.contains("platform"), "aggregate description must name the aggregate");
+        assertTrue(description.contains("orders") && description.contains("billing"),
+                "aggregate description must name the member services");
+        assertFalse(description.contains(": "), "aggregate description must stay a single YAML plain scalar");
+        assertTrue(description.length() <= 1024, "aggregate description must stay within 1024 characters");
+        assertTrue(entry.contains("security"),
+                "aggregate entrypoint must also explain security defaults");
+        assertTrue(entry.contains("required"),
+                "aggregate entrypoint must also explain the required-list default");
+    }
+
     private byte[] json(String s) { return s.getBytes(StandardCharsets.UTF_8); }
     private JsonNode contract(String markdown) {
         try {

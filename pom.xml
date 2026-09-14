@@ -7,7 +7,7 @@
 
     <groupId>io.github.fyuanz</groupId>
     <artifactId>smart-doc-agent</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>smart-doc-agent</name>

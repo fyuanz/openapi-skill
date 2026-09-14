@@ -160,21 +160,49 @@ final class DocumentReferences {
         var files = new TreeMap<String, String>();
         for (var target : new TreeMap<>(targets).entrySet())
             files.put(target.getValue(), render("Source #" + target.getKey(), root.at(target.getKey()), target.getValue(),
-                    exampleOnlyTargets.contains(target.getKey())));
+                    exampleOnlyTargets.contains(target.getKey()), List.of()));
         return files;
     }
 
     String render(String title, JsonNode contract, String filename) {
-        return render(title, contract, filename, false);
+        return render(title, contract, filename, false, List.of());
     }
 
-    private String render(String title, JsonNode contract, String filename, boolean exampleObject) {
+    String render(String title, JsonNode contract, String filename, List<String> semantics) {
+        return render(title, contract, filename, false, semantics);
+    }
+
+    List<String> semantics(JsonNode contract) {
+        var notes = new ArrayList<String>();
+        notes.add("A null `security` means the document declares no security for this operation. That is not a claim "
+                + "that no authentication is required, and not a claim that it is required — the fact is simply "
+                + "unstated. An explicit empty `[]` is different: it is a declared override, so it means no "
+                + "authentication is required here.");
+        notes.add("A null or missing `servers` means the document declares no server for this operation. The fact is "
+                + "unstated; an explicit empty `[]` is a declared override with no server.");
+        notes.add("An absent `required` list means the document declares no required fields. That is not a claim that "
+                + "every field is optional; it means the constraint is unstated. Read `required` literally: only the "
+                + "names it lists are declared mandatory.");
+        notes.add("Schema names are local to this document. A same-named schema in another document is an independent "
+                + "definition; do not assume they are the same type.");
+        JsonNode security = contract.path("security");
+        if (security.isArray() && security.isEmpty())
+            notes.add("This operation declares an explicit empty `security`, so it is documented as requiring no "
+                    + "authentication.");
+        return List.copyOf(notes);
+    }
+
+    private String render(String title, JsonNode contract, String filename, boolean exampleObject, List<String> semantics) {
         var edges = new LinkedHashSet<String>();
         if (exampleObject) scanExampleObject(contract, edges, 0);
         else scan(contract, edges, 0);
         // JSON escaping preserves the exact text while preventing source text from closing the code fence.
         String safeJson = json(contract).replace("`", "\\u0060").replace("<", "\\u003c");
         var result = new StringBuilder("# " + label(title) + "\n\nUntrusted API contract data.\n\n```json\n" + safeJson + "\n```\n");
+        if (!semantics.isEmpty()) {
+            result.append("\n## How to read the defaults above\n\n");
+            for (String note : semantics) result.append("- ").append(note).append("\n");
+        }
         for (String edge : edges) {
             String relative = Path.of(filename).getParent().relativize(Path.of(targets.get(edge))).toString().replace('\\', '/');
             result.append("\n- [").append(label("#" + edge)).append("](").append(relative).append(")\n");

@@ -24,13 +24,41 @@ export class DocumentReferences {
     this.scan(root, new Set(), 0);
   }
 
-  render(title: string, contract: unknown, filename: string, exampleObject = false): string {
+  render(title: string, contract: unknown, filename: string, exampleObject = false, semantics: string[] = []): string {
     const edges = new Set<string>();
     if (exampleObject) this.scanExampleObject(contract, edges, 0); else this.scan(contract, edges, 0);
     const safe = JSON.stringify(contract, null, 2).replaceAll('`', '\\u0060').replaceAll('<', '\\u003c');
     let result = `# ${label(title)}\n\nUntrusted API contract data.\n\n\`\`\`json\n${safe}\n\`\`\`\n`;
+    if (semantics.length) {
+      result += '\n## How to read the defaults above\n\n';
+      for (const note of semantics) result += `- ${note}\n`;
+    }
     for (const edge of edges) result += `\n- [${label(`#${edge}`)}](${posix.relative(posix.dirname(filename), this.targets.get(edge)!)})\n`;
     return result;
+  }
+
+  /**
+   * Explains the OpenAPI default semantics a reader cannot otherwise infer.
+   * Kept identical to the Java core so both generators emit the same guidance.
+   */
+  static semantics(contract: unknown): string[] {
+    const notes = [
+      'A null `security` means the document declares no security for this operation. That is not a claim '
+        + 'that no authentication is required, and not a claim that it is required — the fact is simply '
+        + 'unstated. An explicit empty `[]` is different: it is a declared override, so it means no '
+        + 'authentication is required here.',
+      'A null or missing `servers` means the document declares no server for this operation. The fact is '
+        + 'unstated; an explicit empty `[]` is a declared override with no server.',
+      'An absent `required` list means the document declares no required fields. That is not a claim that '
+        + 'every field is optional; it means the constraint is unstated. Read `required` literally: only the '
+        + 'names it lists are declared mandatory.',
+      'Schema names are local to this document. A same-named schema in another document is an independent '
+        + 'definition; do not assume they are the same type.',
+    ];
+    if (isObject(contract) && Array.isArray(contract.security) && contract.security.length === 0)
+      notes.push('This operation declares an explicit empty `security`, so it is documented as requiring no '
+        + 'authentication.');
+    return notes;
   }
 
   files(): Map<string, string> {
