@@ -38,6 +38,10 @@
 |   |-- pom.xml
 |   |-- README.md
 |   `-- src/                # runtime auto-configuration, SpringDoc collection, ZIP endpoint and tests
+|-- smartdoc-agent-node/
+|   |-- package.json        # publishable @fyuanz/smartdoc-agent package and CLI
+|   |-- src/                # TypeScript core-compatible generator, downloader and safe publisher
+|   `-- test/               # Node unit and loopback HTTP integration tests
 `-- pom.xml
 ```
 
@@ -69,6 +73,9 @@ Core, runtime entry point, and Maven compatibility entry point now exist:
   optional runtime properties, safe identity derivation, direct SpringDoc final-resource collection, deterministic in-memory
   ZIP creation, and the hidden `/smartdoc/skill.zip` controller.
 - `smartdoc-agent-spring-boot-starter/src/test/`: default-document and multi-group auto-configuration/ZIP tests.
+- `smartdoc-agent-node/`: Node.js 20+ TypeScript package. Its CLI loads explicit document ID/URL pairs, downloads all
+  inputs, invokes the core-compatible generator, and atomically publishes one Skill. Default output is the consuming
+  project's `.agents/skills/`; an explicit output parent is supported.
 - `testbeds/maven-plugin-integration/`: two valid service-owner modules, an opt-in broken Java module, static OpenAPI inputs, POM examples, and `verify.ps1` for real lifecycle assertions.
 
 Do not add CLI, package repository, generic URL ingestion, or cross-service runtime aggregation. The standalone fixture at

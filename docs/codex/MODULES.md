@@ -8,6 +8,7 @@
 | `smartdoc-agent-core` | Per-service conversion, aggregate assembly, validation and safe filesystem publication | 59 tests pass |
 | `smartdoc-agent-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
 | `smartdoc-agent-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
+| `smartdoc-agent-node` | TypeScript npm library/CLI for multiple OpenAPI URL download and one safe local Skill publication | 5 Node tests pass; npm package ready |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no SmartDoc build executions |
 | `testbeds/maven-plugin-integration` | Legacy static multi-service Maven lifecycle verification | Retained and passing at the prior milestone |
 
@@ -60,6 +61,13 @@ just to consume its own SpringDoc document.
 
 The Maven integration testbed remains for backward compatibility. It is distinct from the SpringDoc runtime testbed and
 must not be used to justify reintroducing build-time startup/capture into the recommended flow.
+
+## Node.js Package
+
+`@fyuanz/smartdoc-agent` targets Node.js 20+ and exports both a `smartdoc-agent` CLI and typed library functions. It uses
+explicit document IDs and HTTP(S) URLs, rejects redirects and external references, preserves the Java core's
+`smartdoc-agent-core/1` Skill layout and bounds, and publishes only after every download and output validation succeeds.
+The default output parent is `<consumer>/.agents/skills`; `output` supports a relative or absolute override.
 
 ## Testbed
 

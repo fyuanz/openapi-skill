@@ -2,6 +2,11 @@
 target/
 **/target/
 
+# Node.js build output and dependencies
+**/node_modules/
+smartdoc-agent-node/dist/
+smartdoc-agent-node/*.tgz
+
 # Java compiler and crash output
 *.class
 hs_err_pid*

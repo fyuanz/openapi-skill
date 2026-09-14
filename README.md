@@ -17,7 +17,33 @@
 - **明确输入**：当前仅接受 `openapi: 3.1.0` 的 JSON；生产文档来源限定为 SpringDoc / NextDoc4j。Java 包扫描和文档导出由文档生产工具负责。
 
 当前不支持 YAML、Swagger 2.0、其他 OpenAPI 版本、外部引用、全量 OpenAPI 规范校验、自动跨项目安装/同步、
-WebFlux、跨服务运行时汇总、包仓库或 CLI。仓库中的运行时集成证据来自 SpringDoc WebMVC 测试服务。
+WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 SpringDoc WebMVC 测试服务。
+
+## Vue 3 / Node.js 项目生成 Skill
+
+`smartdoc-agent-node` 提供 TypeScript npm 包 `@fyuanz/smartdoc-agent`。在本地后端启动后，它会下载配置的多个
+OpenAPI JSON，并生成一份完整 Skill；默认写入 Vue 项目根目录的 `.agents/skills/<skillName>/`。
+
+```shell
+npm install --save-dev @fyuanz/smartdoc-agent
+```
+
+在项目根目录创建 `smartdoc-agent.config.json`：
+
+```json
+{
+  "serviceId": "my-service",
+  "skillName": "my-service-api",
+  "documents": [
+    { "id": "account", "url": "http://127.0.0.1:18080/v3/api-docs/account" },
+    { "id": "business", "url": "http://127.0.0.1:18080/v3/api-docs/business" }
+  ]
+}
+```
+
+将 `"skill:generate": "smartdoc-agent"` 加入 `package.json#scripts`，执行 `npm run skill:generate`。
+配置项 `output` 可覆盖输出父目录，`timeoutMs` 可覆盖默认 30 秒超时。完整说明见
+[Node 包 README](smartdoc-agent-node/README.md)。
 
 ## 版本与环境
 

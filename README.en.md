@@ -20,6 +20,13 @@ YAML, Swagger 2.0, other OpenAPI versions, external references, full OpenAPI val
 installation/synchronization, WebFlux, cross-service runtime aggregation, package repositories, and a CLI are outside
 the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
+## Generate a Skill in Vue 3 / Node.js projects
+
+The TypeScript package `@fyuanz/smartdoc-agent` downloads multiple configured OpenAPI JSON endpoints and generates one
+complete Skill under `.agents/skills/<skillName>/` by default. Install it as a development dependency, create
+`smartdoc-agent.config.json`, and run `smartdoc-agent` after the local backend starts. See the
+[Node package guide](smartdoc-agent-node/README.md) for the account/business configuration and custom output option.
+
 ## Release and requirements
 
 The current release is `1.2.0`. It adds the runtime Starter and retains Maven build-time single-service and aggregate

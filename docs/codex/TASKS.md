@@ -6,8 +6,9 @@ Product design v3.7.0 makes an embedded Spring Boot runtime endpoint the primary
 generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no SmartDoc build
 executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-The v3.6 Maven aggregate and safe publication features remain compatible. Cross-service runtime aggregation,
-cross-project installation, WebFlux, package repositories, and release scheduling remain outside scope.
+The v3.6 Maven aggregate and safe publication features remain compatible. The Node consumer adds explicit URL download
+and local project installation; cross-service runtime aggregation, WebFlux and centralized artifact coordination remain
+outside scope.
 
 ## Work Plan
 
@@ -20,6 +21,7 @@ cross-project installation, WebFlux, package repositories, and release schedulin
 | P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
+| P8 | TypeScript npm package for configured multi-URL Skill generation | Complete locally; package publication requires npm credentials |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
 
@@ -34,6 +36,8 @@ cross-project installation, WebFlux, package repositories, and release schedulin
   The hidden endpoint does not enter generated OpenAPI.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or SmartDoc Maven goal.
 - `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
+- `smartdoc-agent-node` provides `@fyuanz/smartdoc-agent`: a TypeScript library/CLI that downloads explicit grouped
+  OpenAPI URLs, generates one core-compatible Skill, and safely replaces `.agents/skills/<skillName>` by default.
 - Source and latest immutable Central release are `1.2.0`, including the runtime Starter.
 
 ## Verification
@@ -47,16 +51,17 @@ cross-project installation, WebFlux, package repositories, and release schedulin
 - The first sandbox testbed attempt hit the previously recorded Windows `javac` resource-close failure before tests;
   the same command passed outside that sandbox without source changes.
 - Prior Maven aggregate/static verification remains valid for the unchanged compatibility behavior.
+- Node package tests: 5 pass; `npm pack --dry-run` includes the executable CLI, declarations, README and license.
 - `git diff --check` passes after documentation cleanup; bilingual onboarding and v3.7 project records describe the same
   runtime-first boundary.
 
 ## Deferred Work
 
-- Package repositories, immutable package identity, long-lived artifact caching, independent CLI or YAML platform.
-- Automatic cross-project installation/synchronization, locks/drift management, global version coordination and cross-repository scheduling.
+- Long-lived artifact caching, YAML configuration, automatic cross-project synchronization, drift management, global
+  version coordination and cross-repository scheduling.
 - Cross-service runtime aggregation, WebFlux, databases, service discovery, gateways, or custom UI.
-- Other OpenAPI versions, Swagger 2.0, YAML, external references, generic URL ingestion, full specification validation.
-- Search, RAG, AI enrichment, chat, TypeScript generation, additional knowledge sources, Agent plugins or MCP.
+- Other OpenAPI versions, Swagger 2.0, YAML, external references, unconfigured URL discovery, full specification validation.
+- Search, RAG, AI enrichment, chat, generated API clients, additional knowledge sources, Agent plugins or MCP.
 
 ## Blockers
 

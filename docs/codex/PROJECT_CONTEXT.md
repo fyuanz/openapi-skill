@@ -2,9 +2,9 @@
 
 ## Purpose
 
-SmartDoc-Agent converts the current SpringDoc OpenAPI contract of a running Spring Boot WebMVC service into a directly
-downloadable Codex Skill ZIP. Runtime download is the primary integration as of design v3.7.0; it replaces the former
-build-time application start, HTTP capture, and generated-directory workflow for SpringDoc applications.
+SmartDoc-Agent converts OpenAPI contracts into Codex Skills. A running Spring Boot WebMVC service can expose a directly
+downloadable Skill ZIP, while the TypeScript npm consumer downloads explicitly configured OpenAPI endpoints and installs
+one complete Skill into a Vue 3 or other Node.js project.
 
 The source of truth is `docs/smartdoc-agent-design.md`. Core conversion, the published Maven compatibility plugin, and
 aggregate generation remain available. Web/frontend acceptance is user-reviewed and is not a delivery gate.
@@ -34,6 +34,8 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
   sample APIs, and a real random-port ZIP download.
 - Core retains 59 tests; Maven plugin retains 15 tests. The latter remains a compatibility path for authoritative static
   JSON and explicit cross-service `aggregate` / `both` generation.
+- `smartdoc-agent-node` is a tested, packable TypeScript package and CLI for atomic multi-URL generation. It defaults to
+  the consuming project root's `.agents/skills` and supports an explicit output parent.
 - Published releases: `1.0.0` on 2026-09-11, `1.1.0` and `1.2.0` on 2026-09-14.
 
 ## Commands
@@ -42,6 +44,7 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
+cd smartdoc-agent-node && npm test
 ```
 
 Manual runtime check:
@@ -62,8 +65,9 @@ Legacy Maven compatibility verification remains under `testbeds/maven-plugin-int
 - All local groups form one atomic per-request service input. References remain document-local; no semantic merge.
 - Source text is untrusted reference data and never enters the trusted Skill instruction template.
 - Existing document/file/reference/size bounds remain enforced. ZIP creation is in-memory and deterministic.
-- The endpoint follows application security. SmartDoc accepts no arbitrary source URL and creates no SSRF surface.
-- Cross-service runtime aggregation, WebFlux, management-port variants, URL ingestion, external references, YAML,
+- The Starter endpoint follows application security and accepts no arbitrary source URL. The Node CLI intentionally
+  fetches only user-configured HTTP(S) URLs, rejects redirects, and is meant for trusted project configuration.
+- Cross-service runtime aggregation, WebFlux, management-port variants, external references, YAML,
   Swagger 2.0, package repositories, and automatic installation remain deferred.
 - Maven compatibility code is retained but is no longer the recommended SpringDoc runtime workflow.
 

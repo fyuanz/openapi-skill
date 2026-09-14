@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-09-14 - Add A TypeScript npm Consumer For Multi-URL Skill Generation
+
+Status: Accepted
+
+Add `smartdoc-agent-node` as the publishable `@fyuanz/smartdoc-agent` package for Vue 3 and other Node.js 20+ projects.
+The consuming project explicitly maps each document ID to an HTTP(S) OpenAPI URL; all documents form one atomic service
+input and retain document-local references rather than being semantically merged. The default output parent is the
+consumer root's `.agents/skills`, with relative and absolute overrides supported.
+
+Keep the Java core's exact OpenAPI 3.1.0 boundary, identities, size/count limits, contract rendering, effective
+parameter/server/security behavior, reference restrictions, metadata version, and complete-tree validation. URL
+acquisition belongs only to this explicit Node CLI boundary: redirects and external `$ref` values remain rejected, and a
+failed download or validation cannot replace a previous valid Skill. npm publication itself is a separate credentialed
+release action; the repository delivers a tested, packable package without claiming it has been published.
+
+Evidence: five Node tests cover deterministic two-document fixture generation, inherited overrides, local/external
+reference boundaries, loopback HTTP download, default/custom output, and retention after download failure.
+
 ## 2026-09-14 - Publish Runtime Skill ZIP As Maven Central 1.2.0
 
 Status: Accepted and executed
