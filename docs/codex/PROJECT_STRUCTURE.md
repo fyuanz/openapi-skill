@@ -5,6 +5,8 @@
 ```text
 .
 |-- AGENTS.md
+|-- README.md              # default Chinese project guide
+|-- README.en.md           # equivalent English guide with reciprocal language link
 |-- .gitignore
 |-- LICENSE                # MIT
 |-- docs/
@@ -39,6 +41,7 @@
 | Path | Purpose |
 | --- | --- |
 | `AGENTS.md` | First-read, test-first development, and documentation rules |
+| `README.md` / `README.en.md` | Chinese-default and English onboarding, Maven configuration, Skill usage, troubleshooting, and verification |
 | `docs/smartdoc-agent-design.md` | v3.5 scope, service/document boundaries, Maven updates, and acceptance |
 | `pom.xml` | Java 17 Maven parent; aggregates core and Maven plugin modules |
 | `LICENSE` | User-selected MIT license |

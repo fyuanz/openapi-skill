@@ -182,7 +182,14 @@ P0, P2, and P3 are complete. P4's Maven entry point, JSON directory discovery, a
 
 ## Last Updated
 
-2026-09-11.
+2026-09-14.
+
+## 2026-09-14 - Bilingual Repository README Complete
+
+- Added the default Chinese `README.md` and equivalent English `README.en.md`, with reciprocal language-switch links.
+- Documented released coordinates, requirements, quick start, producer-before-plugin ordering, all user-facing plugin parameters, explicit required documents, manual frontend handoff, status diagnostics, development checks, and project links.
+- Checked examples against the current POMs and Mojo. Both guides distinguish runtime `verify` from ordinary `compile`/`package`, Maven success from Skill success, and fixture evidence from deferred target/frontend acceptance.
+- Documentation verification: relative links resolve, fenced XML examples parse, code/configuration examples match across languages, and `git diff --check` passes. No Java behavior changed; Maven tests were not rerun for this documentation-only task. Product stage statuses remain unchanged.
 
 ## 2026-09-09 - Swagger UI Follow-up Completed
 

@@ -21,6 +21,7 @@ The current source of truth is `docs/smartdoc-agent-design.md`, version 3.5.0. M
 
 ## Current Status
 
+- Public onboarding is documented in the Chinese-default `README.md` and equivalent `README.en.md`, with reciprocal language links, Maven examples, manual frontend handoff, and explicit verification limits.
 - Maven Central publication is complete: `io.github.fyuanz:1.0.0` (parent POM, core, Maven plugin) is signed, uploaded, and `PUBLISHED` on the Central Portal; all twelve pom/jar/sources/javadoc/asc artifacts are publicly reachable on `repo1.maven.org` (checked 2026-09-11). Java packages remain `com.smartdoc.agent`. The opt-in `central-release` profile creates source/Javadoc JARs, signs with the BC signer, and publishes through Central Portal. See `docs/maven-central.md`; publication status is tracked in TASKS.md.
 - Product scope v3.5 is the implementation baseline. Production providers are restricted to SpringDoc / NextDoc4j, builds use Maven, and each target POM explicitly owns its service/module/phase mapping.
 - P0, P2, and P3 are complete. P4 has two verified input models; remaining target-specific gates are deferred by the user. The current delivery is a freshly built testbed Skill for manual frontend use; actual P5 discovery and multi-service consumption remain unverified.
