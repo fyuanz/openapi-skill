@@ -21,7 +21,7 @@ outside scope.
 | P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
-| P8 | TypeScript npm package for configured multi-URL Skill generation | Complete locally; package publication requires npm credentials |
+| P8 | TypeScript npm package for configured multi-URL Skill generation | Complete and committed; npm publication requires npm credentials |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
 
@@ -74,7 +74,22 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-14.
+2026-09-14 (Node consumer committed and pushed).
+
+## 2026-09-14 - Node Consumer Committed And Pushed
+
+- The `@fyuanz/smartdoc-agent` source, tests, and the accompanying documentation updates had been completed in the
+  working tree but were never tracked: `smartdoc-agent-node/` was entirely untracked and eight files were modified.
+  This delivery checkpoint records repository inclusion only; no product behavior changed.
+- Verification before commit: `npm test` passes 5 tests and `npm pack --dry-run` lists 19 files including `dist`,
+  README, and LICENSE. `.gitignore` gained `**/node_modules/`, `smartdoc-agent-node/dist/`, and
+  `smartdoc-agent-node/*.tgz`, so no dependency or build output was committed.
+- `git add -A --dry-run` was checked first: 23 files, all source/documentation, no generated artifacts. `git diff
+  --cached --check` passed before commit `49f09d7` (23 files, 873 insertions, 12 deletions), pushed as
+  `0c662dc..49f09d7` on `main`.
+- Tags `v1.1.0` and `v1.2.0` still identify their release sources and were not moved; the Node consumer is later
+  source than `1.2.0`.
+- npm publication of `1.3.0` remains a separate credentialed action and is still outstanding.
 
 ## 2026-09-14 - Maven Central 1.2.0 Release Completed
 
