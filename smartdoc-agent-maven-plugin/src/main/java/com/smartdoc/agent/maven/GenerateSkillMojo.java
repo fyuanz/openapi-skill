@@ -21,6 +21,18 @@ import java.util.TreeMap;
 /** Generates and safely publishes one service Skill from configured local documents. */
 @Mojo(name = "generate-skill", threadSafe = true)
 public final class GenerateSkillMojo extends AbstractMojo {
+    @Parameter(defaultValue = "service")
+    String outputMode = "service";
+
+    @Parameter
+    String aggregateId;
+
+    @Parameter
+    String aggregateSkillName;
+
+    @Parameter
+    List<ServiceSource> services;
+
     @Parameter
     String serviceId;
 
@@ -49,6 +61,14 @@ public final class GenerateSkillMojo extends AbstractMojo {
     public void execute() {
         String service = serviceId == null || serviceId.isBlank() ? "<unconfigured>" : serviceId;
         try {
+            if (!List.of("service", "aggregate", "both").contains(outputMode))
+                throw new IllegalArgumentException("CONFIG: outputMode must be service, aggregate or both");
+            if (services != null) {
+                new MultiServiceGeneration(this).execute();
+                return;
+            }
+            if (!"service".equals(outputMode) || aggregateId != null || aggregateSkillName != null)
+                throw new IllegalArgumentException("CONFIG: aggregate output requires an explicit services list");
             validateConfiguration();
             List<DocumentSource> configuredDocuments = resolveDocuments();
             if (configuredDocuments.isEmpty()) {
@@ -87,8 +107,15 @@ public final class GenerateSkillMojo extends AbstractMojo {
     }
 
     private List<DocumentSource> resolveDocuments() throws Exception {
-        if (documents != null && !documents.isEmpty()) return List.copyOf(documents);
-        var directory = documentsDirectory.toPath().toAbsolutePath().normalize();
+        return resolveDocuments(documents, documentsDirectory);
+    }
+
+    private List<DocumentSource> resolveDocuments(List<DocumentSource> sources, File directoryFile) throws Exception {
+        boolean explicit = sources != null && !sources.isEmpty();
+        if (explicit == (directoryFile != null))
+            throw new IllegalArgumentException("CONFIG: configure documents or documentsDirectory, not both");
+        if (explicit) return List.copyOf(sources);
+        var directory = directoryFile.toPath().toAbsolutePath().normalize();
         if (!Files.exists(directory)) return List.of();
         if (!Files.isDirectory(directory))
             throw new IllegalArgumentException("CONFIG: documentsDirectory is not a directory: " + directory);
@@ -113,11 +140,17 @@ public final class GenerateSkillMojo extends AbstractMojo {
         return source;
     }
 
-    private Instant currentBuildStartedAt() {
+    Instant currentBuildStartedAt() {
         if (!requireCurrentBuildDocuments) return null;
         if (session == null || session.getRequest() == null || session.getRequest().getStartTime() == null)
             throw new IllegalArgumentException("CONFIG: current Maven session start time is unavailable");
         return session.getRequest().getStartTime().toInstant();
+    }
+
+    Map<String, String> generateMember(ServiceSource source, Instant startedAt) throws Exception {
+        var inputs = resolveDocuments(source.getDocuments(), source.getDocumentsDirectory());
+        if (inputs.isEmpty()) throw new IllegalArgumentException("INPUT: required service has no OpenAPI JSON documents");
+        return new SkillGenerator().generate(source.getServiceId(), source.getSkillName(), readDocuments(inputs, startedAt));
     }
 
     private Map<String, byte[]> readDocuments(List<DocumentSource> configuredDocuments,

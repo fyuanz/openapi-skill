@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-09-14 - Accept Testbed Delivery And Add Configurable Aggregate Skills
+
+Status: Accepted
+
+The user removes web/frontend and real-environment acceptance from the plan and will review Skills manually, providing feedback later. Existing generation testbeds are sufficient for the agreed scope. Manual feedback is not an outstanding gate; do not request a frontend or real deployment project to close this work.
+
+Add `outputMode=service|aggregate|both` to the existing Maven goal. Preserve the default single-service configuration. Multi-service mode takes an explicit `services` list, with `aggregateId` and `aggregateSkillName` required for aggregate outputs. Names and status owners must be unique before any publication. Every listed service is required; missing/empty member input is a failure, unlike a legacy single-service empty directory's SKIPPED behavior.
+
+Switching a configured list to `service` ignores retained aggregate identity settings, so changing outputMode alone selects the desired outputs. Disabled output directories are retained unchanged.
+
+Build a self-contained aggregate by relocating complete service references beneath `references/services/<serviceId>/references/`, with one trusted entrypoint and service catalog. Local links and original service/document identities remain intact; the aggregate does not merge OpenAPI documents or depend on installed service Skills. Source metadata has `kind=aggregate`, member metadata and documents keyed by service/document. Its `serviceId` field is the configured aggregate owner for reuse of the existing safe publisher/status contract.
+
+In `both`, publish independent service outputs first and assemble only their successful current-invocation generated maps. Failed service generation/publication prevents aggregate replacement but does not block healthy peers. Aggregate publication failure leaves the individual results alone. No old files are read as a substitute for missing member inputs. Aggregate-only generation is one bounded read/convert/assemble task and publishes no standalone Skills. In both mode the timeout applies separately to each service task and aggregate assembly.
+
+One coordinator explicitly runs after all required producers. Use reactor dependencies to establish order, including parallel builds; a parent POM running first cannot assume children are ready. Existing per-service owners may coexist with an aggregate-only coordinator. When the coordinator uses both, it owns the individual outputs too, so do not configure duplicate service writers. Services in separate repositories must provide local JSON to the configured coordinator; automatic collection/scheduling remains deferred.
+
+Retain 32-member, 10000-file and 64-MiB aggregate bounds, per-document input limits, ownership validation, complete replacement and failure recovery. Switching modes or removing a member never deletes an independent output implicitly. Successfully replacing the aggregate removes obsolete member references. This supersedes the earlier decision to defer a combined microservice Skill, without adding global release/distribution coordination.
+
+Use development version `1.1.0-SNAPSHOT` for this additive feature; published `1.0.0` remains immutable. Update both README languages and the design baseline to v3.6.0. No Central publication is requested here.
+
 ## 2026-09-11 - Publish The Maven Reactor Under io.github.fyuanz
 
 Status: Accepted
@@ -12,7 +32,7 @@ Verification before upload: 62 tests, binary/source/Javadoc content checks, nine
 
 Execution (2026-09-11): `invoke-release.ps1 -Phase deploy -Clean` uploaded the signed bundle; Central Portal deploymentId `a73c8db4-c37d-43e8-b288-05de5ea74500` reached `PUBLISHED` with empty errors/warnings, and all twelve published pom/jar/sources/javadoc/asc artifacts return HTTP 200 on `repo1.maven.org`. Central releases are immutable; later changes require a new version and a matching Git tag.
 
-Current scope: product design v3.5.0 and the generated-input Maven decisions below govern the product. The 2026-09-11 testbed delivery decision narrows current acceptance. Earlier decisions describe history; ZIP/download, CLI and package identity are deferred. The user-selected standalone Spring Boot fixture is implemented; it is not a production dependency.
+Scope at this release: product design v3.5.0 and the 2026-09-11 testbed decision applied. The 2026-09-14 decision above supersedes that scope with v3.6 aggregate outputs and removes web/real-environment acceptance. Earlier decisions remain historical; ZIP/download, CLI and package identity stay deferred.
 
 ## 2026-09-11 - Deliver The Existing Testbed Skill For Manual Frontend Use
 

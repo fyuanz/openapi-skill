@@ -8,7 +8,7 @@ SmartDoc-Agent integrates with Maven and updates the Skill at an explicitly conf
 
 ## Features and scope
 
-- **One Skill per service**: document groups within a service update together. Services update independently; identical operation and Schema names remain isolated by document.
+- **Configurable output**: one Skill per service by default; the development version also supports a complete aggregate and coexistence. Identical operations and Schema names remain isolated by service/document.
 - **Contract preservation**: parameters, request bodies, responses, media types, authentication definitions, and Schema data, with operation, tag, and local-reference navigation.
 - **Safe updates**: complete validation, staging, replacement, timeouts, locking, and recovery. Successful updates remove stale files for deleted operations or groups.
 - **Local conversion**: the core does not call LLMs, business APIs, or external reference URLs. Source free text stays separate from trusted Skill instructions.
@@ -108,6 +108,85 @@ Discovered files define the complete input set for this update. A missing or emp
 
 Each target project explicitly selects its producer, owner module, groups, and Maven phase. Enable current-build checking for generated files. The repository's authoritative static-JSON test path can disable it and bind to `compile`, but that does not prove runtime documents match current application source.
 
+## Microservices: individual and complete aggregate Skills
+
+This feature is in development version **`1.1.0-SNAPSHOT`**, not yet published to Maven Central. Run `mvn -B install` from this repository first. Published `1.0.0` continues to use the single-service configuration above.
+
+| `outputMode` | Output |
+| --- | --- |
+| `service` (default) | An individual Skill for the single service or each member in `services` |
+| `aggregate` | Only one complete Skill containing every configured service |
+| `both` | All individual service Skills plus one complete aggregate Skill |
+
+Configure this plugin under `build/plugins` in one coordinator module. It must run after both services export their documents. Establish order with explicit Maven module dependencies; a parent POM that executes first is insufficient. Do not combine `services` with top-level single-service `serviceId`, `skillName`, `documentsDirectory`, or `documents`.
+
+```xml
+<plugin>
+    <groupId>io.github.fyuanz</groupId>
+    <artifactId>smartdoc-agent-maven-plugin</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+    <inherited>false</inherited>
+    <executions>
+        <execution>
+            <id>update-service-skills</id>
+            <phase>verify</phase>
+            <goals><goal>generate-skill</goal></goals>
+        </execution>
+    </executions>
+    <configuration>
+        <outputMode>both</outputMode>
+        <aggregateId>platform</aggregateId>
+        <aggregateSkillName>platform-api</aggregateSkillName>
+        <requireCurrentBuildDocuments>true</requireCurrentBuildDocuments>
+        <services>
+            <service>
+                <serviceId>orders</serviceId>
+                <skillName>orders-api</skillName>
+                <documentsDirectory>${project.basedir}/../orders-service/target/generated-openapi</documentsDirectory>
+            </service>
+            <service>
+                <serviceId>billing</serviceId>
+                <skillName>billing-api</skillName>
+                <documentsDirectory>${project.basedir}/../billing-service/target/generated-openapi</documentsDirectory>
+            </service>
+        </services>
+    </configuration>
+</plugin>
+```
+
+Each service can use the explicit `documents` list shown earlier instead of a directory. Configure 1–32 services. `aggregateId` owns aggregate publication/status; `aggregateSkillName` names its output directory. Keep aggregate ownership/output names distinct from member identities/output names. Change only `outputMode` to switch modes; `service` ignores retained aggregate identity settings.
+
+Default output:
+
+```text
+target/generated-resources/smartdoc/
+├── orders-api/             # Individual orders Skill
+├── billing-api/            # Individual billing Skill
+└── platform-api/           # One complete aggregate Skill
+    ├── SKILL.md
+    └── references/
+        ├── catalog.md
+        ├── source.json
+        └── services/
+            ├── orders/references/
+            └── billing/references/
+```
+
+The aggregate can be copied and used on its own, with all operations and references included. Navigate by service, then document group/operation. Identical Schema names, paths, and authentication definitions remain isolated; documents are not merged into one OpenAPI contract and gateway addresses are never guessed.
+
+- **Every listed service is required**: empty, missing, invalid, or stale member input fails the aggregate update and retains its previous complete result. No subset is published as a complete aggregate.
+- **Independent failures**: healthy services can still update in `both`. Only all successful member updates from this invocation enter the aggregate. Aggregate publication failure does not undo individual results; outputs are not one cross-service transaction.
+- **Timeouts and size**: `aggregate` shares one `timeoutSeconds` budget for all reading/conversion/assembly. In `both`, each service task and final aggregate assembly has its own timeout. Prepared aggregate inputs and final output are each bounded to 10000 files and 64 MiB.
+- **Mode changes and removal**: disabling an output does not delete its existing directory. Removing a member cleans its references on the next successful aggregate replacement, without deleting its individual Skill.
+- **Build coordination**: in `both`, the coordinator owns individual outputs; avoid duplicate writers. Existing independent service owners can instead coexist with one `aggregate` owner. A service-only build that does not execute the coordinator leaves the aggregate unchanged. Cross-repository inputs must be supplied as local JSON; collection and scheduling are not automatic.
+- **Current-build checks**: this example requires all JSON files to be rewritten in the same Maven session. Static test inputs can disable this check; the caller still owns input readiness.
+
+See the runnable [skill-set POM](testbeds/maven-plugin-integration/skill-set/pom.xml) for explicit module dependencies. From the repository root, run this verifier for parallel build order, all three modes, coexistence, repeated generation, and failure retention:
+
+```powershell
+powershell -NoProfile -File testbeds/maven-plugin-integration/verify-aggregate.ps1
+```
+
 ## Use the Skill in a frontend project
 
 Copy the **entire generated Skill directory** into the frontend project's `.agents/skills/`, preserving every reference file:
@@ -165,7 +244,7 @@ powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-in
 
 The scripts install the current plugin and execute real builds. The SpringDoc script injects capture failures and intentionally finishes with a `FAILED` status and a retained old Skill. Run a normal `clean verify` again when you need a fresh successful artifact for delivery.
 
-Latest release verification (2026-09-11): 62 core/plugin tests and 5 testbed tests passed; static multi-service builds and the runtime SpringDoc chain were verified. Target-specific partial-module builds, startup failure policy, and actual frontend discovery and multi-service usage remain pending acceptance.
+Release baseline verification (2026-09-11): 62 core/plugin tests and 5 testbed tests passed. The development version adds aggregate/output-mode tests and real Maven coexistence verification; see [task records](docs/codex/TASKS.md) for current results. Existing testbeds are the accepted generation evidence. Web/frontend and real-environment validation have been removed from the plan; the user will review Skill usability manually and provide feedback.
 
 ## Repository and documentation
 
@@ -175,7 +254,7 @@ Latest release verification (2026-09-11): 62 core/plugin tests and 5 testbed tes
 | [smartdoc-agent-maven-plugin](smartdoc-agent-maven-plugin/) | Maven configuration, directory discovery, update entry point |
 | [SpringDoc testbed](testbeds/springdoc-multi-package/) | Multi-package, multi-group sample and runtime verification |
 | [Maven integration testbed](testbeds/maven-plugin-integration/) | Multiple services, repeated/parallel builds, failure isolation |
-| [Design (Chinese)](docs/smartdoc-agent-design.md) | v3.5 scope and acceptance boundaries |
+| [Design (Chinese)](docs/smartdoc-agent-design.md) | v3.6 scope, aggregate modes, and testbed acceptance boundaries |
 | [Release and usage (Chinese)](docs/maven-central.md) | Maven Central setup and maintainer publishing workflow |
 | [Task status](docs/codex/TASKS.md) | Completed work, verification evidence, and next steps |
 

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.smartdoc.integration</groupId>
+        <artifactId>maven-plugin-integration</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>skill-set</artifactId>
+    <packaging>pom</packaging>
+    <!-- Explicit dependencies order this owner after both services, also under -T. -->
+    <dependencies>
+        <dependency>
+            <groupId>com.smartdoc.integration</groupId>
+            <artifactId>orders-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.smartdoc.integration</groupId>
+            <artifactId>billing-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+    <properties>
+        <smartdoc.output.mode>aggregate</smartdoc.output.mode>
+        <aggregate.orders.directory>${project.basedir}/../orders-service/src/main/openapi</aggregate.orders.directory>
+        <aggregate.billing.directory>${project.basedir}/../billing-service/src/main/openapi</aggregate.billing.directory>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.github.fyuanz</groupId>
+                <artifactId>smartdoc-agent-maven-plugin</artifactId>
+                <version>${smartdoc.plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>update-complete-skill-set</id>
+                        <phase>compile</phase>
+                        <goals><goal>generate-skill</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputMode>${smartdoc.output.mode}</outputMode>
+                    <aggregateId>platform</aggregateId>
+                    <aggregateSkillName>platform-api</aggregateSkillName>
+                    <outputDirectory>${smartdoc.output}</outputDirectory>
+                    <services>
+                        <service>
+                            <serviceId>orders</serviceId>
+                            <skillName>orders-api</skillName>
+                            <documentsDirectory>${aggregate.orders.directory}</documentsDirectory>
+                        </service>
+                        <service>
+                            <serviceId>billing</serviceId>
+                            <skillName>billing-api</skillName>
+                            <documentsDirectory>${aggregate.billing.directory}</documentsDirectory>
+                        </service>
+                    </services>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

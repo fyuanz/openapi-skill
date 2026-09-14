@@ -5,15 +5,15 @@
 | Module | Responsibility | Status |
 | --- | --- | --- |
 | Parent project | Java 17/Maven dependency management and module aggregation | Buildable; core and plugin tests execute |
-| `smartdoc-agent-core` | OpenAPI-to-Skill conversion, complete-tree validation, and safe service publication | P0, P2, and P3 complete; 54 total tests |
-| `smartdoc-agent-maven-plugin` | Maven trigger, JSON directory discovery/local loading/current-build checks, and non-blocking result reporting | Implemented; 8 goal tests plus static and runtime-generated integration verification |
-| AI project docs | Persistent scope, context, and implementation guidance | Exists; refreshed for v3.5 |
+| `smartdoc-agent-core` | Per-service conversion, aggregate assembly, validation and safe publication | 59 tests pass, including aggregate isolation, completeness and limits |
+| `smartdoc-agent-maven-plugin` | Maven trigger, input checks, output-mode coordination and warning reporting | 15 tests pass; legacy and service/aggregate/both Maven fixtures pass |
+| AI project docs | Persistent scope, context, and implementation guidance | Refreshed for v3.6 and manual Skill review |
 | `testbeds/springdoc-multi-package` | Standalone annotated sample, frozen fixtures, and runtime springdoc-to-Skill verification | Implemented; five service tests and generated-document verification pass |
 | `testbeds/maven-plugin-integration` | Standalone static-document multi-service Maven lifecycle verification | Implemented; scripted matrix passes |
 
 ## Parent Project
 
-Coordinates: `io.github.fyuanz:smart-doc-agent:1.0.0`. Core and Maven plugin inherit this group/version; their Java package names remain unchanged.
+Development coordinates: `io.github.fyuanz:smart-doc-agent:1.1.0-SNAPSHOT`. Core and plugin inherit the group/version; Java packages remain unchanged. Published `1.0.0` is immutable and contains only the original per-service output configuration.
 
 The opt-in `central-release` profile attaches sources/Javadoc, signs all release files using Maven GPG's BC signer and publishes the three-module reactor through Central Publishing Plugin 0.11.0. Root MIT license, developer and SCM metadata are inherited; the license is also included in both binary/source JARs. Authentication and signing secrets remain outside the repository. `docs/maven-central.md` documents the publisher and consumer workflows.
 
@@ -48,6 +48,8 @@ Dependency boundary:
 
 ## Compilation Integration (Fixture-Verified Maven Plugin)
 
+`outputMode` defaults to `service`; original top-level single-service parameters remain supported. An explicit `services` list configures 1-32 members with serviceId, skillName and directory or explicit documents. `aggregate` and `both` also require distinct aggregateId/aggregateSkillName. `MultiServiceGeneration` rejects identity/output collisions before writing, reuses bounded safe updates, and never substitutes previous Skill files for missing inputs. Both mode assembles successful current member maps; aggregate-only mode bounds all member reading/conversion/assembly in one task. `AggregateSkillGenerator` preserves service/document namespaces and links in a self-contained tree with one entrypoint. Each output retains independent status and failure recovery.
+
 `GenerateSkillMojo` exposes the thread-safe `generate-skill` goal without a default lifecycle phase, so every target POM must place it after its producer. Configuration supplies one `serviceId`, one `skillName`, an output parent, a positive timeout, and normally one `documentsDirectory`; explicit `{id, path}` entries remain an alternative. Directory mode discovers regular top-level JSON files in stable filename order, derives IDs from safe lowercase filename stems, ignores other files, and logs SKIPPED when the directory is absent or empty. The Mojo snapshots all discovered files inside the P3 generation boundary, invokes `SkillGenerator`, and logs SUCCESS as info or every update failure as a service-specific warning. With `requireCurrentBuildDocuments`, each file must have been rewritten no earlier than the Maven session start and must not change while being read. It deliberately does not throw for configuration, document, freshness, conversion, timeout, locking, or publication failures.
 
 The standalone `testbeds/maven-plugin-integration/` reactor configures the goal explicitly in each service-owner module with `<inherited>false>`. Its verifier proves first/repeated compile, changed/deleted API content, package traversal, targeted service compilation, two-thread reactor execution, exactly one update per participating service, invalid and absent documents, first-run failure, blocked output, invalid configuration, whole-tree retention, unaffected peer-service updates, and a normal nonzero build result for invalid Java.
@@ -60,7 +62,7 @@ Remaining target responsibilities:
 - Decide how the production build handles application-start failure. The springdoc HTTP capture is non-blocking in the fixture, while Spring Boot's `start` goal still fails Maven before SmartDoc can isolate it.
 - Treat every JSON discovered for one execution as the service's current atomic set. “Document” means an OpenAPI JSON file/group rather than an additional checklist of API facts; absent groups/content are not invented. Use explicit entries only when the target needs a fixed required group set.
 - Scope output, staging, mutual exclusion, and status by service. Reject colliding service outputs without overwriting or clearing their shared parent.
-- Establish a service generation owner and verify full/partial/parallel build entry points. Partial builds with incomplete required input must diagnose the missed update; do not assume parent aggregator execution proves child readiness.
+- Establish a generation owner after all required local input producers. The aggregate fixture uses explicit dependencies for parallel reactor ordering. Missing member input fails the complete aggregate; a parent aggregator cannot assume child readiness. Real-target/web acceptance is removed from the task plan.
 
 Core errors remain observable; only the integration layer decides the non-blocking build behavior. Existing business build failures must remain failures. Host process failure or inability to load the plugin is not an exception a running generator can intercept.
 
@@ -72,7 +74,7 @@ The earlier `smartdoc-agent-cli`, `smartdoc-agent-server`, deterministic package
 
 The minimal Spring Boot testbed is implemented under `testbeds/springdoc-multi-package/` with an independent Spring Boot 3.5.9 parent, springdoc WebMVC UI 2.8.15, and springdoc Maven Plugin 1.5. It owns sample controllers/DTO annotations, explicit groups, real HTTP export and Swagger UI/group-discovery assertions, three MockMvc behavior tests, and frozen sanitized inputs with source digests. `refresh-fixtures.ps1` refreshes snapshots only after clean tests. `verify-generated-integration.ps1` uses dynamic loopback HTTP/JMX ports and verifies the later runtime export/Skill chain plus stale capture failure. This remains a testbed rather than a production dependency.
 
-Also defer automatic cross-project install/update, lock/drift management, search, RAG, AI enrichment, TypeScript, alternate knowledge-source types/formats, Agent plugins/MCP, and multi-tenant operations. Multiple OpenAPI documents within one service are required, not an alternate knowledge-source feature. Global cross-service Skill merging/release orchestration is deferred.
+Also defer automatic cross-project install/update, lock/drift management, search, RAG, AI enrichment, TypeScript, alternate knowledge-source types/formats, Agent plugins/MCP, and multi-tenant operations. Aggregate Skills are supported without semantic contract merging. Global release orchestration and cross-repository scheduling remain deferred. User Skill review is manual, not a web/frontend acceptance task.
 
 Generation-side automatic updates are required; cross-project installation management is a separate deferred capability.
 

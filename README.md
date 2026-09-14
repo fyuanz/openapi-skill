@@ -8,7 +8,7 @@ SmartDoc-Agent 通过 Maven 接入构建，在配置的阶段读取文档并更�
 
 ## 功能与边界
 
-- **一服务一 Skill**：同一服务的多个文档分组一起生成；不同服务独立更新，同名接口和 Schema 按文档隔离。
+- **可配置输出**：默认一服务一 Skill；开发版还支持全部服务的完整汇总及两者共存，同名接口和 Schema 按服务/文档隔离。
 - **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供接口、标签和本地引用导航。
 - **安全更新**：完整校验、暂存、替换，以及超时、锁和失败恢复；成功更新会移除已删除接口或分组的旧文件。
 - **本地转换**：核心不调用 LLM、业务接口或外部引用地址；源文档自由文本与可信 Skill 指令分离。
@@ -108,6 +108,85 @@ testbeds/springdoc-multi-package/target/generated-resources/smartdoc/springdoc-m
 
 文档生成工具、责任模块、分组和 Maven 阶段均由目标项目明确配置。生成文件建议开启当前构建检查；仓库中的静态权威 JSON 测试路径可关闭该检查并绑定 `compile`，但不能据此证明运行时文档与当前源码同步。
 
+## 微服务：独立 Skill 与完整汇总共存
+
+此功能位于开发版本 **`1.1.0-SNAPSHOT`**，尚未发布到 Maven Central；先在仓库根目录运行 `mvn -B install`。已发布的 `1.0.0` 仍使用上面的单服务配置。
+
+| `outputMode` | 输出 |
+| --- | --- |
+| `service`（默认） | 单个服务或 `services` 清单中的独立 Skill |
+| `aggregate` | 仅一份包含全部配置服务的完整 Skill |
+| `both` | 全部独立服务 Skill，加一份完整汇总 Skill |
+
+在唯一协调模块的 `build/plugins` 中配置下面的插件。它必须在两个服务的文档都导出之后运行；通过显式 Maven 模块依赖保证顺序，不能仅把配置放到先执行的父 POM。服务清单不能与顶层单服务 `serviceId`、`skillName`、`documentsDirectory`、`documents` 混用。
+
+```xml
+<plugin>
+    <groupId>io.github.fyuanz</groupId>
+    <artifactId>smartdoc-agent-maven-plugin</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+    <inherited>false</inherited>
+    <executions>
+        <execution>
+            <id>update-service-skills</id>
+            <phase>verify</phase>
+            <goals><goal>generate-skill</goal></goals>
+        </execution>
+    </executions>
+    <configuration>
+        <outputMode>both</outputMode>
+        <aggregateId>platform</aggregateId>
+        <aggregateSkillName>platform-api</aggregateSkillName>
+        <requireCurrentBuildDocuments>true</requireCurrentBuildDocuments>
+        <services>
+            <service>
+                <serviceId>orders</serviceId>
+                <skillName>orders-api</skillName>
+                <documentsDirectory>${project.basedir}/../orders-service/target/generated-openapi</documentsDirectory>
+            </service>
+            <service>
+                <serviceId>billing</serviceId>
+                <skillName>billing-api</skillName>
+                <documentsDirectory>${project.basedir}/../billing-service/target/generated-openapi</documentsDirectory>
+            </service>
+        </services>
+    </configuration>
+</plugin>
+```
+
+每项服务也可用前述 `documents` 显式列表替代目录。清单支持 1–32 个服务；`aggregateId` 用于汇总所有权/状态，`aggregateSkillName` 用于汇总目录名，均须与成员身份/输出名称分离。只修改 `outputMode` 即可切换；`service` 模式忽略保留的汇总身份配置。
+
+默认生成：
+
+```text
+target/generated-resources/smartdoc/
+├── orders-api/             # 独立订单服务 Skill
+├── billing-api/            # 独立账单服务 Skill
+└── platform-api/           # 唯一完整汇总 Skill
+    ├── SKILL.md
+    └── references/
+        ├── catalog.md
+        ├── source.json
+        └── services/
+            ├── orders/references/
+            └── billing/references/
+```
+
+汇总目录可以单独复制使用，包含全部接口和引用文件。索引先按服务导航，再选择分组/接口；同名 Schema、路径和认证定义保持隔离，不拼接为一份 OpenAPI，也不猜测网关地址。
+
+- **清单内服务全部必需**：任一成员输入为空、缺失、无效或过期时，汇总失败并保留旧完整结果，不发布缺服务的汇总。
+- **独立失败边界**：`both` 中正常服务仍可更新；只有本次成功更新的全部成员才进入汇总。汇总发布失败不撤销单服务结果，多个输出不是一个跨服务事务。
+- **超时和规模**：`aggregate` 的全部读取/转换/组装共用一次 `timeoutSeconds`；`both` 对每个服务任务和最后汇总组装分别计时。汇总准备结果和最终产物均受 10000 文件、64 MiB 总量限制。
+- **模式切换和删除**：关闭某种输出不会删除已有目录；移除服务后，下一次成功汇总清理其内部引用，但不删除该服务独立 Skill。
+- **构建协调**：`both` 由协调模块统一生成独立输出，避免另设重复写入者。已有各服务独立入口时，可另设一个 `aggregate` 入口。只构建单个服务、未执行协调模块时，汇总不会更新。跨仓库输入须先准备为本地 JSON，本工具不自动采集或调度。
+- **当前构建检查**：此示例要求所有 JSON 在同次 Maven 会话内重写。静态测试输入可关闭该检查；目录/服务就绪责任仍由调用者承担。
+
+可运行的配置与显式模块依赖见 [skill-set POM](testbeds/maven-plugin-integration/skill-set/pom.xml)。在仓库根目录执行下列脚本，可验证并行构建顺序、三种模式、共存、重复生成及失败保留：
+
+```powershell
+powershell -NoProfile -File testbeds/maven-plugin-integration/verify-aggregate.ps1
+```
+
 ## 在前端项目中使用
 
 将生成的**整个 Skill 目录**复制到前端项目的 `.agents/skills/`，保留所有引用文件：
@@ -164,7 +243,7 @@ powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-in
 
 集成脚本会安装当前插件并执行真实构建。SpringDoc 脚本包含抓取失败注入，最终故意留下 `FAILED` 状态和保留的旧 Skill；需要交付最新成功产物时，重新执行正常 `clean verify`。
 
-最近发布验证（2026-09-11）：62 个核心/插件测试、5 个测试服务测试通过；静态多服务构建与运行时 SpringDoc 链路已验证。真实目标项目的部分模块构建、启动失败策略，以及前端实际发现与多服务使用仍待验收。
+发布版基线验证（2026-09-11）：62 个核心/插件测试、5 个测试服务测试通过。开发版增加汇总与输出模式测试，以及真实 Maven 共存验证，最新结果见[任务记录](docs/codex/TASKS.md)。现有测试案例作为生成验收依据；web/前端及真实环境验证已从计划移除，Skill 使用效果由用户人工校验后反馈。
 
 ## 项目结构与文档
 
@@ -174,7 +253,7 @@ powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-in
 | [smartdoc-agent-maven-plugin](smartdoc-agent-maven-plugin/) | Maven 配置、目录发现、更新入口 |
 | [SpringDoc 测试服务](testbeds/springdoc-multi-package/) | 多包、多分组示例与运行时验证 |
 | [Maven 集成测试](testbeds/maven-plugin-integration/) | 多服务、重复/并行构建和失败隔离 |
-| [设计文档](docs/smartdoc-agent-design.md) | v3.5 产品范围与验收边界 |
+| [设计文档](docs/smartdoc-agent-design.md) | v3.6 产品范围、汇总模式与测试案例验收边界 |
 | [发布与使用](docs/maven-central.md) | Maven Central 配置与维护者发布流程 |
 | [任务状态](docs/codex/TASKS.md) | 已完成工作、验证证据与后续计划 |
 

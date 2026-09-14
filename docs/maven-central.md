@@ -3,6 +3,8 @@
 发布坐标为 `io.github.fyuanz`，首个正式版本为 `1.0.0`，许可证为 MIT。
 Java 包名继续使用 `com.smartdoc.agent`；Maven 坐标迁移不改变 Java API。
 
+当前源码开发版本为 `1.1.0-SNAPSHOT`，新增 `outputMode` 和多服务汇总配置，尚未发布到 Central。使用新功能需先在仓库根目录执行 `mvn -B install`，再引用该开发版本；配置见[中文 README](../README.md)。下文 `1.0.0` 是已发布版本的单服务用法，不能用它启用新参数。本次功能变动不包含新版本发布。
+
 | 构件 | 用途 |
 | --- | --- |
 | `io.github.fyuanz:smart-doc-agent:1.0.0` | 父 POM，提供公共版本和发布元数据 |

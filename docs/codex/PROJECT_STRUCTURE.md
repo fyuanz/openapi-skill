@@ -26,7 +26,8 @@
 |   |   |-- verify-generated-integration.ps1
 |   |   |-- fixtures/         # account/business JSON and metadata
 |   |   `-- src/              # sample application and contract/runtime tests
-|   `-- maven-plugin-integration/ # standalone static-document multi-service reactor and verifier
+|   `-- maven-plugin-integration/ # static reactor; verify.ps1 and verify-aggregate.ps1
+|       `-- skill-set/          # opt-in aggregate owner depending on both service modules
 |-- smartdoc-agent-core/
 |   |-- pom.xml
 |   `-- src/                # input validation, Skill generation, safe publication and focused tests
@@ -42,7 +43,7 @@
 | --- | --- |
 | `AGENTS.md` | First-read, test-first development, and documentation rules |
 | `README.md` / `README.en.md` | Chinese-default and English onboarding, Maven configuration, Skill usage, troubleshooting, and verification |
-| `docs/smartdoc-agent-design.md` | v3.5 scope, service/document boundaries, Maven updates, and acceptance |
+| `docs/smartdoc-agent-design.md` | v3.6 scope, individual/aggregate outputs and testbed acceptance |
 | `pom.xml` | Java 17 Maven parent; aggregates core and Maven plugin modules |
 | `LICENSE` | User-selected MIT license |
 | `docs/maven-central.md` | Maven Central release and plugin-consumption instructions |
@@ -55,7 +56,8 @@ P0 rebuilt the core POM and exact-version input boundary. P2 adds `SkillGenerato
 Core and the thin Maven entry point now exist:
 
 - `smartdoc-agent-core/src/main/java/com/smartdoc/agent/core/`: OpenApiInput.java (version/JSON boundary), SkillGenerator.java (service assembly), DocumentReferences.java (local graph, contract rendering and links), GeneratedSkillValidator.java (complete-tree checks), and ServiceSkillUpdater.java (bounded generation, locking, staged replacement, recovery, and external status).
-- Trusted Skill template currently resides in SkillGenerator.java; no resources directory is needed.
+- `AggregateSkillGenerator.java` assembles validated service reference trees with a single trusted entrypoint, service catalog and provenance. Trusted templates reside in `SkillGenerator.java` and `AggregateSkillGenerator.java`.
+- Plugin `MultiServiceGeneration.java` coordinates modes, required membership and independent/aggregate publication. `ServiceSource.java` holds member identities and input sources.
 - `smartdoc-agent-core/src/test/`: sanitized OpenAPI fixture, small boundary inputs, and meaningful semantic tests.
 - `smartdoc-agent-maven-plugin/src/main/java/com/smartdoc/agent/maven/`: `GenerateSkillMojo` and its explicit-path `DocumentSource` configuration bean. The Mojo normally discovers top-level JSON files in one configured producer directory, retains explicit file configuration as a fallback, can reject files older than the Maven session, and translates P3 results into Maven info/warning output.
 - `testbeds/maven-plugin-integration/`: two valid service-owner modules, an opt-in broken Java module, static OpenAPI inputs, POM examples, and `verify.ps1` for real lifecycle assertions.
@@ -69,7 +71,7 @@ Do not add CLI, server, package repository, generic ingestion, or distribution m
 - `testbeds/maven-plugin-integration/target/generated-resources/smartdoc/` is ignored verification output for the Maven goal; it is recreated by the verifier.
 - `testbeds/springdoc-multi-package/target/generated-openapi/` and `target/generated-resources/smartdoc/` are ignored runtime-integration outputs recreated by the generated-document verifier.
 - For an output parent, the final Skill is `<skillName>/`; updater state is outside it under `.smartdoc/locks/<skillName>.lock`, `.smartdoc/staging/`, `.smartdoc/backups/`, and `.smartdoc/status/<serviceId>.json`.
-- Each service owns a unique Skill output, staging attempt, lock, and status location. Generated references use `references/documents/<documentId>/operations/`, `schemas/`, and optional `tags/`; single-document services also use a document namespace.
+- Each service and aggregate owns separate output, staging, lock and status paths. Individual references use `references/documents/<documentId>/`; aggregate members use `references/services/<serviceId>/references/documents/<documentId>/`. The aggregate has one root `SKILL.md` and remains independently installable.
 - Preserve safe local ignore rules for IDE files, secrets, logs, and temporary files.
 - Generated restricted API documentation must not be committed as a substitute for sanitized fixtures.
 

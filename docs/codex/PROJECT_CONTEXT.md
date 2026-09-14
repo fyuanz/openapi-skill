@@ -2,9 +2,9 @@
 
 ## Purpose
 
-SmartDoc-Agent converts API documentation into a Skill for frontend development. Every configured compilation must trigger a Skill update, and Skill generation failure must not interrupt the business build. All other product work is deferred.
+SmartDoc-Agent converts API documentation into individual service Skills, a self-contained aggregate Skill, or both. Every configured compilation triggers an update; Skill failures must not interrupt the business build. Other product work is deferred.
 
-The current source of truth is `docs/smartdoc-agent-design.md`, version 3.5.0. Microservices, multiple Java packages/modules, and multiple OpenAPI documents per service remain product scenarios. For the 2026-09-11 delivery, the user selects the existing SpringDoc testbed, defers target-specific integration, and will try the generated Skill in their own frontend projects. The previous compiler-plus-download-service scope remains superseded.
+The source of truth is `docs/smartdoc-agent-design.md`, version 3.6.0. On 2026-09-14 the user accepts testbed generation evidence and removes web/frontend and real-environment acceptance from the plan. Skill review is manual, with feedback later; it is not an outstanding gate. Microservices, multiple packages/modules and multiple documents remain in scope. The earlier compiler-plus-download-service scope remains superseded.
 
 ## Target Users
 
@@ -16,18 +16,18 @@ The current source of truth is `docs/smartdoc-agent-design.md`, version 3.5.0. M
 1. During each configured Maven build, let SpringDoc / NextDoc4j prepare OpenAPI JSON, discover the files in the configured directory, and freeze the complete input set for this update.
 2. Parse each OpenAPI 3.1.0 JSON document independently and resolve its local references within that document.
 3. Render trusted Skill instructions, a compact catalog, operations, shared schemas, and optional tag navigation.
-4. Validate a complete staged service Skill and replace only that service's generator-owned output directory.
+4. Validate and publish the outputs selected by `outputMode=service|aggregate|both`; each output has separate ownership and safe replacement. Aggregates require the complete explicit service set and contain all references locally.
 5. On failure or timeout, warn, retain the previous complete Skill if available, and let the business compilation continue with its own normal success/failure semantics.
 
 ## Current Status
 
 - Public onboarding is documented in the Chinese-default `README.md` and equivalent `README.en.md`, with reciprocal language links, Maven examples, manual frontend handoff, and explicit verification limits.
 - Maven Central publication is complete: `io.github.fyuanz:1.0.0` (parent POM, core, Maven plugin) is signed, uploaded, and `PUBLISHED` on the Central Portal; all twelve pom/jar/sources/javadoc/asc artifacts are publicly reachable on `repo1.maven.org` (checked 2026-09-11). Java packages remain `com.smartdoc.agent`. The opt-in `central-release` profile creates source/Javadoc JARs, signs with the BC signer, and publishes through Central Portal. See `docs/maven-central.md`; publication status is tracked in TASKS.md.
-- Product scope v3.5 is the implementation baseline. Production providers are restricted to SpringDoc / NextDoc4j, builds use Maven, and each target POM explicitly owns its service/module/phase mapping.
-- P0, P2, and P3 are complete. P4 has two verified input models; remaining target-specific gates are deferred by the user. The current delivery is a freshly built testbed Skill for manual frontend use; actual P5 discovery and multi-service consumption remain unverified.
+- Product scope v3.6 is the baseline. Development version is `1.1.0-SNAPSHOT` (not published); released `1.0.0` does not include aggregation. Providers remain SpringDoc / NextDoc4j with explicit Maven service/module/phase mappings.
+- P0-P4 are complete within accepted testbed scope. P5 web/frontend and real-target acceptance is removed. P6 adds configurable individual/aggregate/both outputs; user Skill review is manual.
 - The Java 17 Maven parent exists and references `smartdoc-agent-core` plus `smartdoc-agent-maven-plugin`.
 - A new core POM and OpenApiInput validator pass 19 tests. Deleted legacy IR remains removed.
-- Root Maven project loading and test discovery work; 62 tests pass (19 input, 20 content-generation, 15 safe-publication, and 8 Maven-goal tests).
+- Root `mvn -B install` passes 74 tests (59 core, 15 plugin). Aggregate/coexistence Maven verification and original static/runtime testbed regressions pass. Details and environment notes are in TASKS.md.
 - `smartdoc-agent-maven-plugin` implements the `generate-skill` goal without a default phase, forcing each target POM to place it after its producer. It can discover top-level JSON files from one explicitly configured directory or use explicit document entries, optionally requires every document to have been rewritten during the current Maven session, calls the P2/P3 core boundary, and reports service-specific warnings without throwing a build failure for Skill update errors.
 - A standalone two-service reactor verifies ordinary, repeated, targeted, parallel, and package-through-compile execution for authoritative static JSON, including input/configuration/write failures and preservation of Java compilation failures.
 - The target contract is fixed: SpringDoc / NextDoc4j produces JSON, SmartDoc runs afterward in the configured Maven module/phase, and output defaults to `target/generated-resources/smartdoc/` with no retention across `clean`.
@@ -64,7 +64,7 @@ Maven plugin lifecycle integration testbed:
 powershell -NoProfile -File testbeds/maven-plugin-integration/verify.ps1
 ```
 
-The verifier installs the current plugin snapshot and exercises real Maven processes. It is intentionally separate from root unit tests.
+The verifier installs the current plugin snapshot and exercises real Maven processes, separately from root unit tests. `verify-aggregate.ps1` in the same directory checks coexistence and the opt-in `aggregate-skills` reactor profile, whose coordinator depends on both services.
 
 The former `smartdoc skill build`, `smartdoc skill verify`, and `smartdoc serve` commands are deferred; they do not exist.
 
@@ -82,12 +82,12 @@ The former `smartdoc skill build`, `smartdoc skill verify`, and `smartdoc serve`
 - Minimal source metadata and update status are needed; package IDs, payload digest inventories, deterministic ZIPs, downloads, CLI, and installation management are deferred.
 - Default output is `target/generated-resources/smartdoc/<skillName>/`; `clean` removes prior build artifacts by design.
 - Automatic generation-side updates do not imply cross-project installation or distribution.
-- One service produces one Skill; each service accepts one or more explicitly identified OpenAPI documents. Multiple services update independently, including in separate repositories.
+- The default single-service configuration is unchanged. An explicit `services` list supports `service`, `aggregate` or `both`. Aggregates require a distinct owner/name and every listed member; no previous generated Skill substitutes for failed input. In both mode, healthy services update independently while a failed member prevents aggregate replacement.
 - Java packages, Maven modules, document groups, and services are distinct concepts. Existing document producers own package scanning; a service has one designated generation entry point with verified document readiness.
 - Namespace operations, schemas, security schemes, links, and metadata by service/document identity. Do not overwrite or semantically merge same-named items across documents.
 - Directory mode discovers regular top-level `*.json` files in stable filename order; a missing/empty directory is logged as SKIPPED. The discovered files define the current service set and are validated together; absent JSON groups/content are not generated. Explicit document entries remain available when a fixed set must be required. Invalid, stale, or changing discovered files fail that update.
 - Isolate output, staging, locking, and status by service. Partial compilation must report unavailable service documents rather than silently skipping or publishing mixed old/new inputs.
-- Full, single-service, repeated no-change, package-through-compile, and parallel Maven entry points are verified for independent services. Runtime SpringDoc export is verified at `verify`, including directory discovery and stale-file rejection after capture failure. A service spanning partially built modules and the chosen producer/startup failure policy remain target-specific. Global cross-service Skill aggregation and release coordination are deferred.
+- Full, single-service, repeated, package and parallel Maven entry points are verified for independent services. Runtime SpringDoc export is verified at `verify`, including stale-file rejection. Aggregation is supported through one coordinator after all required local documents are ready. Target-specific mappings/startup policies are configuration responsibilities, not real-environment acceptance tasks. Remote collection and global release/build scheduling remain deferred.
 
 The testbed also provides Swagger UI at `http://127.0.0.1:18080/swagger-ui.html`, with account/business group selection for manual API inspection.
 
