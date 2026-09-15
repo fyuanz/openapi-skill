@@ -48,7 +48,7 @@ class MultiServiceMojoTest {
         assertDoesNotThrow(mojo::execute);
         assertEquals(aggregate, tree(output("out", "platform-api")));
         assertEquals(billing, tree(output("out", "billing-api")));
-        assertTrue(Files.readString(output("out", "orders-api/references/catalog.md")).contains("/new-orders"));
+        assertTrue(Files.readString(output("out", "orders-api/references/operations.jsonl")).contains("/new-orders"));
         assertEquals("FAILED", status("out", "platform"));
         assertEquals("FAILED", status("out", "billing"));
         assertEquals("SUCCESS", status("out", "orders"));

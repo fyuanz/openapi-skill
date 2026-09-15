@@ -30,12 +30,13 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
    document aborts the whole project update.
 4. The generator creates one self-contained Skill, named `api-docs` by default, with service trees physically included
    under `references/services/<serviceId>/references/` and connected through relative Markdown links.
+   Each tree exposes compact JSONL operation/schema indexes and readable short paths for targeted retrieval.
 5. The publisher validates and stages the complete tree before replacing `.agents/skills/<skillName>` atomically. It
    does not create filesystem symbolic links or publish a partial mix of old and new services.
 
 ## Current Status
 
-- Java source is `1.3.0-SNAPSHOT` (default-semantics explanations and a bilingual action-triggered description); the
+- Java source is `1.3.0-SNAPSHOT` (core/3 semantic indexes, centralized conventions and a bilingual description); the
   latest Central release is `1.2.0`, containing the parent, core, Maven plugin, and runtime Spring Boot Starter.
 - Node package `smartdoc-agent@1.4.0` is published to npm and is the current `latest`. Its project mode is verified end
   to end in the real Vue consumer, and the registry artifact is byte-identical to the locally packed tarball.
@@ -47,20 +48,21 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 - The SpringDoc testbed now has no Boot start/stop Maven executions, SpringDoc Maven capture, SmartDoc Maven goal,
   generated OpenAPI directory, or generated Skill directory. Its six tests validate Swagger UI, two OpenAPI groups,
   sample APIs, and a real random-port ZIP download.
-- Core retains 63 tests; Maven plugin retains 15 tests; the Starter retains 2 (80 across the reactor). The latter
+- Core retains 67 tests; Maven plugin retains 15 tests; the Starter retains 2 (84 across the reactor). The latter
   remains a compatibility path for authoritative static JSON and explicit cross-service `aggregate` / `both` generation.
-- `smartdoc-agent-node` is the unscoped `smartdoc-agent` TypeScript package and CLI. Preferred `services` configuration
+- `smartdoc-agent-node` source is unreleased `1.5.0`; npm `latest` remains the published `1.4.0`. Preferred `services` configuration
   generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
   services plus project/service/document keywords, and publishes the complete service set atomically. The legacy
-  `serviceId` + `documents` configuration and `smartdoc-agent-core/1` service layout remain compatible.
-- Node verification currently passes 23 tests across configuration, generation, provenance, downloading, project-tree
+  `serviceId` + `documents` configuration remains compatible, while new output uses core/3 and publishers recognize
+  owned core/1/core/2 trees during replacement.
+- Node verification currently passes 28 tests across configuration, generation, semantic indexes, provenance, downloading, project-tree
   validation, project-wide document/byte budgets, atomic legacy/project migration, stale service removal, package
-  metadata, and compatibility behavior. The packed `1.4.0` tarball was installed into `testbeds/vue-ts-consumer` and
-  generated the 21-file `api-docs` project Skill from the running testbed, byte-identical on repeated runs.
+  metadata, and compatibility behavior. The locally packed `1.5.0` source tarball was installed into
+  `testbeds/vue-ts-consumer`; it builds and generated a 21-file core/3 `api-docs` project Skill from the running testbed.
 - `testbeds/vue-ts-consumer` closes the consumer loop: a real Vue 3 + TypeScript project generates the Skill from the
   running SpringDoc testbed and calls all five documented operations through a dev-server proxy. An independent read-only
   audit of that Skill found it sufficient to write a correct typed client, plus three readability gaps recorded in its
-  `CLOSURE-REPORT.md` and since fixed in `1.3.0-SNAPSHOT` by stating OpenAPI default semantics at the point of use.
+  `CLOSURE-REPORT.md` and since addressed by core/3 targeted lookup and centralized OpenAPI conventions.
 - Generated Skills describe themselves with a bilingual action-triggered sentence (task verbs, catalog navigation, a
   verification checklist, and generate-or-modify frontend request code) so LLM consumers can discover them by task.
 - Published releases: `1.0.0` on 2026-09-11, `1.1.0` and `1.2.0` on 2026-09-14.

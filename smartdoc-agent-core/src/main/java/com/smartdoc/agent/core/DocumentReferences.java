@@ -3,6 +3,7 @@ package com.smartdoc.agent.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -16,6 +17,7 @@ final class DocumentReferences {
     private final JsonNode root;
     private final String base;
     private final Map<String, String> targets = new TreeMap<>();
+    private final Map<String, String> schemaNames = new TreeMap<>();
     private final Set<String> exampleOnlyTargets = new HashSet<>();
     private final Set<String> regularTargets = new HashSet<>();
 
@@ -23,22 +25,19 @@ final class DocumentReferences {
         this.root = root;
         base = "references/documents/" + id + "/";
         validateContainers();
-        root.path("components").path("schemas").fieldNames().forEachRemaining(name -> {
+        var names = new TreeSet<String>();
+        root.path("components").path("schemas").fieldNames().forEachRemaining(names::add);
+        names.forEach(name -> {
             String pointer = "/components/schemas/" + name.replace("~", "~0").replace("/", "~1");
-            targets.put(pointer, base + "schemas/" + digest(pointer.getBytes(StandardCharsets.UTF_8)) + ".md");
+            Set<String> used = new HashSet<>();
+            targets.values().stream().filter(path -> path.startsWith(base + "schemas/"))
+                    .map(path -> Path.of(path).getFileName().toString().toLowerCase(Locale.ROOT)).forEach(used::add);
+            targets.put(pointer, base + "schemas/" + SemanticNames.file(name, pointer, used));
+            schemaNames.put(pointer, name);
             regularTargets.add(pointer);
         });
         if (targets.size() > 5000) throw new IllegalArgumentException("LIMIT: schema files exceeded");
         scan(root, new LinkedHashSet<>(), 0);
-    }
-
-    String schemaCatalog() {
-        var catalog = new StringBuilder("\nSchemas:\n\n");
-        targets.forEach((pointer, file) -> {
-            if (file.contains("/schemas/")) catalog.append("- [").append(label(pointer.substring("/components/schemas/".length())))
-                    .append("](").append(file.substring("references/".length())).append(")\n");
-        });
-        return catalog.append('\n').toString();
     }
 
     private void scan(JsonNode node, Set<String> edges, int depth) {
@@ -81,7 +80,12 @@ final class DocumentReferences {
         if (!ref.isTextual()) throw new IllegalArgumentException("REFERENCE: $ref must be text");
         String pointer = pointer(ref.asText());
         edges.add(pointer);
-        targets.putIfAbsent(pointer, base + "refs/" + digest(pointer.getBytes(StandardCharsets.UTF_8)) + ".md");
+        if (!targets.containsKey(pointer)) {
+            Set<String> used = new HashSet<>();
+            targets.values().stream().filter(path -> path.startsWith(base + "refs/"))
+                    .map(path -> Path.of(path).getFileName().toString().toLowerCase(Locale.ROOT)).forEach(used::add);
+            targets.put(pointer, base + "refs/" + SemanticNames.pointerFile(pointer, used));
+        }
         if (exampleOnly && !regularTargets.contains(pointer)) exampleOnlyTargets.add(pointer);
         else {
             regularTargets.add(pointer);
@@ -158,33 +162,39 @@ final class DocumentReferences {
 
     Map<String, String> files() {
         var files = new TreeMap<String, String>();
-        for (var target : new TreeMap<>(targets).entrySet())
+        for (var target : new TreeMap<>(targets).entrySet()) {
+            boolean conventions = target.getValue().contains("/schemas/");
             files.put(target.getValue(), render("Source #" + target.getKey(), root.at(target.getKey()), target.getValue(),
-                    exampleOnlyTargets.contains(target.getKey()), List.of()));
+                    exampleOnlyTargets.contains(target.getKey()), conventions, List.of()));
+        }
         return files;
     }
 
+    List<ObjectNode> schemaIndex(String serviceId, String documentId) {
+        var rows = new ArrayList<ObjectNode>();
+        schemaNames.forEach((pointer, name) -> {
+            ObjectNode row = JSON.createObjectNode();
+            row.put("id", "schema:" + serviceId + ":" + documentId + ":#" + pointer);
+            row.put("serviceId", serviceId);
+            row.put("documentId", documentId);
+            row.put("name", name);
+            row.put("pointer", "#" + pointer);
+            row.put("file", targets.get(pointer).substring("references/".length()));
+            rows.add(row);
+        });
+        return List.copyOf(rows);
+    }
+
     String render(String title, JsonNode contract, String filename) {
-        return render(title, contract, filename, false, List.of());
+        return render(title, contract, filename, false, false, List.of());
     }
 
     String render(String title, JsonNode contract, String filename, List<String> semantics) {
-        return render(title, contract, filename, false, semantics);
+        return render(title, contract, filename, false, true, semantics);
     }
 
     List<String> semantics(JsonNode contract) {
         var notes = new ArrayList<String>();
-        notes.add("A null `security` means the document declares no security for this operation. That is not a claim "
-                + "that no authentication is required, and not a claim that it is required — the fact is simply "
-                + "unstated. An explicit empty `[]` is different: it is a declared override, so it means no "
-                + "authentication is required here.");
-        notes.add("A null or missing `servers` means the document declares no server for this operation. The fact is "
-                + "unstated; an explicit empty `[]` is a declared override with no server.");
-        notes.add("An absent `required` list means the document declares no required fields. That is not a claim that "
-                + "every field is optional; it means the constraint is unstated. Read `required` literally: only the "
-                + "names it lists are declared mandatory.");
-        notes.add("Schema names are local to this document. A same-named schema in another document is an independent "
-                + "definition; do not assume they are the same type.");
         JsonNode security = contract.path("security");
         if (security.isArray() && security.isEmpty())
             notes.add("This operation declares an explicit empty `security`, so it is documented as requiring no "
@@ -192,15 +202,22 @@ final class DocumentReferences {
         return List.copyOf(notes);
     }
 
-    private String render(String title, JsonNode contract, String filename, boolean exampleObject, List<String> semantics) {
+    private String render(String title, JsonNode contract, String filename, boolean exampleObject,
+                          boolean conventions, List<String> semantics) {
         var edges = new LinkedHashSet<String>();
         if (exampleObject) scanExampleObject(contract, edges, 0);
         else scan(contract, edges, 0);
         // JSON escaping preserves the exact text while preventing source text from closing the code fence.
         String safeJson = json(contract).replace("`", "\\u0060").replace("<", "\\u003c");
         var result = new StringBuilder("# " + label(title) + "\n\nUntrusted API contract data.\n\n```json\n" + safeJson + "\n```\n");
+        if (conventions) {
+            String relative = Path.of(filename).getParent().relativize(Path.of("references/conventions.md"))
+                    .toString().replace('\\', '/');
+            result.append("\nInterpret absent, null and empty values using the [OpenAPI conventions](")
+                    .append(relative).append(").\n");
+        }
         if (!semantics.isEmpty()) {
-            result.append("\n## How to read the defaults above\n\n");
+            result.append("\nOperation-specific interpretation:\n\n");
             for (String note : semantics) result.append("- ").append(note).append("\n");
         }
         for (String edge : edges) {

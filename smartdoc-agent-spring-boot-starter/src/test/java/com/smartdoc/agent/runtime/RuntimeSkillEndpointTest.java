@@ -55,14 +55,18 @@ class RuntimeSkillEndpointTest {
         assertThat(files).containsKeys(
                 "orders-service-api/SKILL.md",
                 "orders-service-api/references/source.json",
-                "orders-service-api/references/catalog.md");
+                "orders-service-api/references/catalog.md",
+                "orders-service-api/references/operations.jsonl",
+                "orders-service-api/references/schemas.jsonl",
+                "orders-service-api/references/conventions.md");
         JsonNode source = mapper.readTree(files.get("orders-service-api/references/source.json"));
         assertThat(source.path("serviceId").asText()).isEqualTo("orders-service");
         assertThat(source.path("skillName").asText()).isEqualTo("orders-service-api");
         assertThat(source.path("documents").findValuesAsText("documentId"))
                 .containsExactly("account", "business");
-        assertThat(files.get("orders-service-api/references/catalog.md"))
-                .contains("GET /users", "POST /orders")
+        assertThat(files.get("orders-service-api/references/operations.jsonl"))
+                .contains("\"method\":\"GET\"", "\"path\":\"/users/{id}\"",
+                        "\"method\":\"POST\"", "\"path\":\"/orders\"")
                 .doesNotContain("/smartdoc/skill.zip");
     }
 

@@ -70,15 +70,20 @@ function validateTree(files: ReadonlyMap<string, string>, skillName: string): Re
   let source: unknown; try { source = JSON.parse(files.get('references/source.json') ?? ''); } catch { throw new Error('OUTPUT: references/source.json is invalid JSON'); }
   if (!source || typeof source !== 'object' || Array.isArray(source)) throw new Error('OUTPUT: source metadata must be an object');
   const metadata = source as Record<string, unknown>;
-  if (metadata.skillName !== skillName || !['smartdoc-agent-core/1', 'smartdoc-agent-core/2'].includes(metadata.generatorVersion as string)) {
+  if (metadata.skillName !== skillName || !['smartdoc-agent-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'].includes(metadata.generatorVersion as string)) {
     throw new Error('OUTPUT: source metadata owner or generator does not match');
+  }
+  if (metadata.generatorVersion === 'smartdoc-agent-core/3' && metadata.kind === undefined) {
+    validateIndexes(files, '', metadata);
   }
   for (const [path, content] of files) if (path.endsWith('.md')) validateLinks(path, content, files);
   return metadata;
 }
 
 function validateProjectSource(source: Record<string, unknown>, files: ReadonlyMap<string, string>): void {
-  if (source.generatorVersion !== 'smartdoc-agent-core/2') throw new Error('OUTPUT: project source version is invalid');
+  if (source.generatorVersion !== 'smartdoc-agent-core/2' && source.generatorVersion !== 'smartdoc-agent-core/3') {
+    throw new Error('OUTPUT: project source version is invalid');
+  }
   if (source.serviceId !== undefined) throw new Error('OUTPUT: project source must not impersonate a service owner');
   if (!Array.isArray(source.services) || source.services.length === 0 || source.services.length > 32 || !Array.isArray(source.documents)) {
     throw new Error('OUTPUT: project source metadata is incomplete');
@@ -101,6 +106,9 @@ function validateProjectSource(source: Record<string, unknown>, files: ReadonlyM
     try { nestedSource = JSON.parse(nested) as Record<string, unknown>; } catch { throw new Error(`OUTPUT: project service source is invalid for ${service.serviceId}`); }
     if (nestedSource.serviceId !== service.serviceId) throw new Error(`OUTPUT: project service owner mismatch for ${service.serviceId}`);
     if (JSON.stringify(nestedSource) !== JSON.stringify(service)) throw new Error(`OUTPUT: project service provenance mismatch for ${service.serviceId}`);
+    if (nestedSource.generatorVersion === 'smartdoc-agent-core/3') {
+      validateIndexes(files, `references/services/${service.serviceId}/`, nestedSource);
+    }
     for (const document of service.documents) {
       if (!document || typeof document !== 'object' || Array.isArray(document)) throw new Error('OUTPUT: project document metadata is invalid');
       const documentId = (document as Record<string, unknown>).documentId;
@@ -120,6 +128,48 @@ function validateProjectSource(source: Record<string, unknown>, files: ReadonlyM
     throw new Error('OUTPUT: flattened project documents do not match services');
   }
   if ([...files.keys()].some((path) => path !== 'SKILL.md' && path.endsWith('/SKILL.md'))) throw new Error('OUTPUT: nested Skill entrypoints are not allowed');
+}
+
+function validateIndexes(files: ReadonlyMap<string, string>, prefix: string, source: Record<string, unknown>): void {
+  const references = `${prefix}references/`;
+  if (!files.has(`${references}conventions.md`)) throw new Error('OUTPUT: references/conventions.md is missing');
+  const documents = source.documents;
+  if (!Array.isArray(documents)) throw new Error('OUTPUT: source metadata documents are missing');
+  const operationCount = documents.reduce((sum, value) => sum + metadataCount(value, 'operations'), 0);
+  const schemaCount = documents.reduce((sum, value) => sum + metadataCount(value, 'schemas'), 0);
+  validateIndex(files, `${references}operations.jsonl`, references, 'operation:', operationCount);
+  validateIndex(files, `${references}schemas.jsonl`, references, 'schema:', schemaCount);
+}
+
+function metadataCount(value: unknown, field: string): number {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return 0;
+  const count = (value as Record<string, unknown>)[field];
+  return typeof count === 'number' && Number.isInteger(count) && count >= 0 ? count : 0;
+}
+
+function validateIndex(files: ReadonlyMap<string, string>, path: string, references: string,
+  idPrefix: string, expectedCount: number): void {
+  const content = files.get(path);
+  if (content === undefined) throw new Error(`OUTPUT: ${path} is missing`);
+  const ids = new Set<string>();
+  let previous = '';
+  let count = 0;
+  for (const line of content.split(/\r?\n/)) {
+    if (!line) continue;
+    let value: unknown;
+    try { value = JSON.parse(line); } catch { throw new Error(`OUTPUT: ${path} contains invalid JSONL`); }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`OUTPUT: ${path} row must be an object`);
+    const row = value as Record<string, unknown>;
+    if (typeof row.id !== 'string' || !row.id.startsWith(idPrefix) || ids.has(row.id)) {
+      throw new Error(`OUTPUT: ${path} contains an invalid or duplicate id`);
+    }
+    if (previous && previous >= row.id) throw new Error(`OUTPUT: ${path} is not sorted by id`);
+    if (typeof row.file !== 'string' || !files.has(`${references}${row.file}`)) {
+      throw new Error(`OUTPUT: ${path} points to a missing contract file`);
+    }
+    ids.add(row.id); previous = row.id; count++;
+  }
+  if (count !== expectedCount) throw new Error(`OUTPUT: ${path} count does not match source metadata`);
 }
 
 function validateLinks(path: string, content: string, files: ReadonlyMap<string, string>): void {

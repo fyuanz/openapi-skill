@@ -48,3 +48,14 @@ test('rejects inconsistent project provenance before writing output', async () =
   project.set('references/source.json', JSON.stringify(source, null, 2));
   await assert.rejects(publishSkill(output, 'api-docs', 'api-docs', project), /flattened project documents/);
 });
+
+test('rejects a core/3 index that points to a missing contract', async () => {
+  const output = await mkdtemp(join(tmpdir(), 'smartdoc-publish-invalid-index-'));
+  const operation = new TextEncoder().encode('{"openapi":"3.1.0","paths":{"/x":{"get":{"responses":{}}}}}');
+  const files = new Map(generateSkill({
+    serviceId: 'orders', skillName: 'orders-api', documents: new Map([['public', operation]])
+  }));
+  files.set('references/operations.jsonl', files.get('references/operations.jsonl')
+    .replace('documents/public/operations/', 'documents/public/missing/'));
+  await assert.rejects(publishSkill(output, 'orders', 'orders-api', files), /missing contract file/);
+});

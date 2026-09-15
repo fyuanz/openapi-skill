@@ -11,7 +11,7 @@
 - **纯运行时下载**：加入 Starter 后自动提供 `GET /smartdoc/skill.zip`，每次请求基于当前运行实例生成。
 - **自动发现**：直接复用 SpringDoc 最终文档资源；自动枚举 `GroupedOpenApi`，无需重复配置 OpenAPI URL。
 - **可配置输出**：运行时默认一应用一 Skill；已发布的 Maven 插件仍支持全部服务的完整汇总及两者共存。
-- **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供接口、标签和本地引用导航。
+- **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供语义化接口 ID、机器索引和本地引用导航。
 - **无磁盘副作用**：生成结果先完整校验，再确定性地内存打包；相同契约得到相同 ZIP 字节。
 - **本地转换**：核心不调用 LLM、业务接口或外部引用地址；源文档自由文本与可信 Skill 指令分离。
 - **明确输入**：当前仅接受 `openapi: 3.1.0` 的 JSON；生产文档来源限定为 SpringDoc / NextDoc4j。Java 包扫描和文档导出由文档生产工具负责。
@@ -21,8 +21,9 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`smartdoc-agent-node` 提供 TypeScript npm 包 `smartdoc-agent`。`1.4.0` 推荐一个前端项目只生成一份接口文档
-Skill：多个微服务、每个服务的多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
+`smartdoc-agent-node` 提供 TypeScript npm 包 `smartdoc-agent`。`1.5.0` 源码推荐一个前端项目只生成一份接口文档
+Skill，并增加 `operations.jsonl` / `schemas.jsonl`、语义文件名和集中 conventions；npm 当前最新版本仍为
+`1.4.0`。多个微服务、每个服务的多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
 `api-docs`，输出到 Vue 项目根目录的 `.agents/skills/api-docs/`。
 
 ```shell

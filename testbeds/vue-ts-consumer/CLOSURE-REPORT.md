@@ -2,6 +2,15 @@
 
 本文件记录 2026-09-14 第一次「真实前端消费端」闭环测试的结果与发现。它是**测试证据**，不是产品文档。
 
+## 2026-09-15 core/3 补充验证
+
+- 安装本地 `smartdoc-agent@1.5.0` tarball（24 个条目，23.3 kB），`npm run build` 成功。
+- 从运行在 `127.0.0.1:18080` 的两个真实 SpringDoc 分组执行 `npm run skill:generate` 成功，输出 21 个文件。
+- 输出为 `smartdoc-agent-core/3` project Skill；每个服务包含排序的 `operations.jsonl` / `schemas.jsonl` 和
+  一份 `conventions.md`。
+- operation/schema 文件名使用可读 slug 和 6 位短摘要；生成树未发现 32 位以上摘要文件名或 `tags/` 文件。
+- 下文 1.3.0/1.4.0 内容保留为原始历史证据。
+
 ## 闭环链路
 
 ```

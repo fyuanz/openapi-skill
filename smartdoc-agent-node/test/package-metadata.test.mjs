@@ -10,7 +10,7 @@ const readmeEn = await readFile(new URL("../README.en.md", import.meta.url), "ut
 
 test("publishes under the unscoped smartdoc-agent name", () => {
   assert.equal(packageJson.name, "smartdoc-agent");
-  assert.equal(packageJson.version, "1.4.0");
+  assert.equal(packageJson.version, "1.5.0");
   assert.ok(packageJson.files.includes("README.md"));
   assert.ok(packageJson.files.includes("README.en.md"));
 });

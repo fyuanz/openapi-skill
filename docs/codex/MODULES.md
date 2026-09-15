@@ -5,10 +5,10 @@
 | Module | Responsibility | Status |
 | --- | --- | --- |
 | Parent project | Java 17/Maven dependency management and module aggregation | `1.3.0-SNAPSHOT` source (Central release `1.2.0`); four-module reactor |
-| `smartdoc-agent-core` | Per-service conversion, aggregate assembly, validation and safe filesystem publication | 63 tests pass |
+| `smartdoc-agent-core` | Per-service conversion, semantic indexes, aggregate assembly, validation and safe filesystem publication | 67 tests pass |
 | `smartdoc-agent-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
 | `smartdoc-agent-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
-| `smartdoc-agent-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | `1.4.0` published to npm; 23 Node tests pass; packed tarball verified in the real Vue consumer |
+| `smartdoc-agent-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | unreleased `1.5.0` source passes 28 tests; npm latest remains published `1.4.0` |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no SmartDoc build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 | `testbeds/maven-plugin-integration` | Legacy static multi-service Maven lifecycle verification | Retained and passing at the prior milestone |
@@ -23,10 +23,10 @@ process remain unchanged.
 
 `SkillGenerator.generate(serviceId, skillName, documents)` converts a complete map of document IDs to exact OpenAPI 3.1.0
 JSON bytes into an immutable map of relative paths to UTF-8 content. It preserves operation/schema JSON plus effective
-parameters, servers, and security, and creates catalogs and document-local reference navigation. Each operation file
-ends with a generated "How to read the defaults above" section stating the OpenAPI default semantics (null
-security/servers is unstated, absent `required` is undeclared, same-named schemas are document-local, and only an
-explicit empty value is a declared override). The `SKILL.md` frontmatter carries a bilingual action-triggered
+parameters, servers, and security, and creates compact catalogs, sorted JSONL lookup indexes, and document-local
+reference navigation. Semantic IDs do not depend on SpringDoc operationId; readable filenames use a six-hex suffix that
+extends only on collision. Shared absent/null/empty/default semantics live once in `conventions.md`, linked from contract
+files. The `SKILL.md` frontmatter carries a bilingual action-triggered
 description built only from validated identities; `boundedList()` truncates the interpolated group list so the
 32-document worst case stays a single YAML-safe line under 1024 characters.
 
@@ -71,14 +71,14 @@ must not be used to justify reintroducing build-time startup/capture into the re
 ## Node.js Package
 
 The unscoped `smartdoc-agent` package targets Node.js 20+ and exports both a `smartdoc-agent` CLI and typed library
-functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `1.4.0` source adds the
+functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `1.5.0` source retains the
 preferred top-level `services` configuration: one project may contain internal and third-party services, and each
 service may contain multiple explicit document ID/HTTP(S) URL pairs. One configuration produces one self-contained
 project Skill; `skillName` defaults to `api-docs` and no service has a separately installed Skill.
 
 Project generation physically embeds each complete service reference tree under
 `references/services/<serviceId>/references/`, omits member `SKILL.md` files, and connects the root catalog to service
-catalogs with relative Markdown links. Root provenance uses `smartdoc-agent-core/2` and `kind=project`; nested service
+catalogs with relative Markdown links. Root provenance uses `smartdoc-agent-core/3` and `kind=project`; nested service
 provenance and the flattened service/document list preserve origin without merging OpenAPI objects or resolving `$ref`
 across documents. `sourceType` is limited to `internal|third-party` and defaults to `internal`.
 
@@ -94,10 +94,10 @@ configured document must download and validate before staged replacement, so fai
 Skill. Redirects and external references remain rejected. The default output parent is
 `<consumer>/.agents/skills`; `output` supports a relative or absolute override.
 
-The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains supported and continues to emit
-the `smartdoc-agent-core/1` single-service layout. Project and legacy shapes cannot be mixed. The `1.4.0` package is
-published to npm as the current `latest`; the implementation slice passes 23 Node tests and its packed tarball
-generated a 21-file project Skill in the real Vue consumer against the running SpringDoc testbed.
+The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains supported. Project and legacy
+configuration shapes cannot be mixed; new output uses core/3, while the publisher can safely replace owned core/1 and
+core/2 trees. The unreleased `1.5.0` implementation passes 28 Node tests. npm `latest` remains `1.4.0`, whose packed
+tarball generated a 21-file project Skill in the real Vue consumer against the running SpringDoc testbed.
 
 ## Testbed
 
@@ -108,8 +108,9 @@ plugin invocations stay absent. Frozen `fixtures/` remain only as deterministic 
 
 `testbeds/vue-ts-consumer` is the consumer-side counterpart. It is a real Vue 3 + TypeScript + Vite project that installs
 the packed Node package, runs `npm run skill:generate` against the running SpringDoc testbed, and calls all five
-documented operations through a Vite dev-server proxy. Under `1.4.0` it declares one `springdoc-multi-package` service
-with project/service/document keywords and generates the 21-file `api-docs` project Skill. `src/api/client.ts` carries
+documented operations through a Vite dev-server proxy. It now installs the local `1.5.0` tarball, declares one
+`springdoc-multi-package` service with project/service/document keywords, and generates the 21-file core/3 `api-docs`
+project Skill. `src/api/client.ts` carries
 the typed client and the error shape. `README.md` documents the reproducible sequence; `CLOSURE-REPORT.md` records the
 verification evidence, the three readability gaps found by an independent read-only Skill audit, and the later
 project-mode run. Generated output (`node_modules/`, `dist/`, `.agents/`) is gitignored, so the Skill is regenerated

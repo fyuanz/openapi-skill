@@ -46,7 +46,7 @@
 |   |-- README.md
 |   `-- src/                # runtime auto-configuration, SpringDoc collection, ZIP endpoint and tests
 |-- smartdoc-agent-node/
-|   |-- package.json        # unscoped smartdoc-agent 1.4.0 source and CLI; not yet published
+|   |-- package.json        # unscoped smartdoc-agent 1.5.0 source and CLI; npm latest remains 1.4.0
 |   |-- README.md           # default Chinese Node package guide
 |   |-- README.en.md        # equivalent English Node package guide with reciprocal link
 |   |-- src/                # service/project generators, keyword/config rules, downloader and safe publisher
@@ -60,21 +60,21 @@
 | --- | --- |
 | `AGENTS.md` | First-read, test-first development, and documentation rules |
 | `README.md` / `README.en.md` | Runtime-first onboarding, legacy Maven compatibility, Skill usage and verification |
-| `docs/smartdoc-agent-design.md` | v3.8 runtime plus Node project-Skill architecture and compatibility boundaries |
+| `docs/smartdoc-agent-design.md` | v3.9 runtime, project-Skill and semantic-index architecture |
 | `pom.xml` | Java 17 Maven parent; aggregates core, Maven plugin and runtime Starter |
 | `LICENSE` | User-selected MIT license |
 | `docs/maven-central.md` | Maven Central release and plugin-consumption instructions |
 | `docs/codex/DECISIONS.md` | Historical and current scope decisions |
 
 P0-P6 produced the core, safe publisher, Maven compatibility plugin, and aggregate output. v3.7 added a runtime Starter
-and removed build-time startup/capture/generation from the SpringDoc testbed. v3.8 adds the Node 1.4.0 project mode:
-one self-contained Skill for explicitly configured internal and third-party services. Legacy IR remains deleted.
+and removed build-time startup/capture/generation from the SpringDoc testbed. v3.8 added Node project mode; v3.9 adds
+core/3 semantic indexes, compact catalogs and centralized reading conventions. Legacy IR remains deleted.
 
 ## Implementation Locations
 
 Core, runtime entry point, and Maven compatibility entry point now exist:
 
-- `smartdoc-agent-core/src/main/java/com/smartdoc/agent/core/`: OpenApiInput.java (version/JSON boundary), SkillGenerator.java (service assembly), DocumentReferences.java (local graph, contract rendering and links), GeneratedSkillValidator.java (complete-tree checks), and ServiceSkillUpdater.java (bounded generation, locking, staged replacement, recovery, and external status).
+- `smartdoc-agent-core/src/main/java/com/smartdoc/agent/core/`: OpenApiInput.java (version/JSON boundary), SkillGenerator.java (service assembly and indexes), SemanticNames.java (readable collision-safe paths), DocumentReferences.java (local graph, contract rendering and links), GeneratedSkillValidator.java (complete-tree/index checks), and ServiceSkillUpdater.java (bounded generation, locking, staged replacement, recovery, and external status).
 - `AggregateSkillGenerator.java` assembles validated service reference trees with a single trusted entrypoint, service catalog and provenance. Trusted templates reside in `SkillGenerator.java` and `AggregateSkillGenerator.java`.
 - Plugin `MultiServiceGeneration.java` coordinates modes, required membership and independent/aggregate publication. `ServiceSource.java` holds member identities and input sources.
 - `smartdoc-agent-core/src/test/`: sanitized OpenAPI fixture, small boundary inputs, and meaningful semantic tests.
@@ -86,15 +86,15 @@ Core, runtime entry point, and Maven compatibility entry point now exist:
 - `smartdoc-agent-node/src/config.ts` accepts the preferred top-level `services` model, defaults its `skillName` to
   `api-docs`, validates source types and project/service/document keywords, and normalizes the earlier single-service
   configuration without changing that legacy contract.
-- `smartdoc-agent-node/src/project-generator.ts` generates one `smartdoc-agent-core/2`, `kind=project` tree. It builds
+- `smartdoc-agent-node/src/project-generator.ts` generates one `smartdoc-agent-core/3`, `kind=project` tree. It builds
   each service through the core-compatible service generator, omits nested `SKILL.md` files, physically relocates the
   complete reference trees beneath `references/services/<serviceId>/references/`, and creates the root catalog,
   provenance, and trusted entrypoint.
 - `smartdoc-agent-node/src/keywords.ts` applies deterministic keyword trimming, NFC normalization, de-duplication,
   sorting, count/length/control-character checks, and bounded frontmatter discovery text.
 - `smartdoc-agent-node/src/index.ts` downloads the complete project input and routes legacy configuration to the
-  unchanged service generator or `services` configuration to the project generator. `publisher.ts` validates both
-  `smartdoc-agent-core/1` service and `smartdoc-agent-core/2` project ownership before staged replacement.
+  service generator or `services` configuration to the project generator. `publisher.ts` validates new core/3 indexes
+  and recognizes owned core/1/core/2 output before staged replacement.
 - The Node CLI defaults output to the consuming project's `.agents/skills/`; an explicit relative or absolute output
   parent remains supported.
 - `testbeds/maven-plugin-integration/`: two valid service-owner modules, an opt-in broken Java module, static OpenAPI inputs, POM examples, and `verify.ps1` for real lifecycle assertions.

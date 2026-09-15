@@ -1,5 +1,37 @@
 # Decisions
 
+## 2026-09-15 - Use Semantic Core/3 Indexes And Centralized Reading Conventions
+
+Status: Accepted; implemented test-first in Java and Node
+
+Generate new service trees as `smartdoc-agent-core/3`. Operation and schema primary keys describe their identity
+directly (`operation:<service>:<document>:<method>:<path>` and
+`schema:<service>:<document>:#/components/schemas/<name>`); SpringDoc `operationId` is retained only as nullable
+`sourceOperationId` metadata. Generated contract filenames use a bounded ASCII semantic slug and a six-hex SHA-256
+discriminator. Six characters are the normal form because collisions are rare; a detected case-insensitive filename
+collision extends only that suffix by four characters at a time. Full SHA-256 remains in `source.json` for source
+integrity, not navigation.
+
+Each service reference tree includes sorted, compact `operations.jsonl` and `schemas.jsonl`. These are deterministic
+machine lookup tables, not a search service or duplicated contract store: every row points to the authoritative Markdown
+file and the validator rejects duplicate/unsorted IDs, missing targets, and count drift. Project Skills retain these
+indexes inside each physical service subtree instead of building a second global copy. The trusted `SKILL.md` tells an
+LLM to start from the target source file, extract method/path, search the operation index, and open only the matching
+operation plus its linked schema/reference closure. This directly reduces broad catalog and repository scanning without
+introducing RAG, embeddings, a database, or network dependency.
+
+Keep `catalog.md` as a small human entry point with document context, counts, and links to the two indexes; remove its
+exhaustive operation/schema listings and generated tag files. Tags remain searchable in operation-index rows and
+document context. Move common OpenAPI absent/null/empty/default interpretation into one
+`references/conventions.md`, linked from generated operation and schema files. Only genuinely operation-specific notes,
+such as explicit empty security, remain inline. Publishers accept owned core/1 and core/2 trees for safe replacement,
+but all newly generated service and project trees use core/3. Node source advances to unreleased `1.5.0`; npm `latest`
+remains the immutable published `1.4.0` until a separate release is requested.
+
+Alternatives considered: retain full hashes (deterministic but costly to read), use SpringDoc operationId as identity
+(not stable or guaranteed unique), put every row in catalog (poor targeted retrieval), or add RAG immediately (extra
+operational complexity without evidence it is needed). All were rejected for this slice.
+
 ## 2026-09-15 - Generate One Self-Contained Node Project Skill For Multiple Services
 
 Status: Accepted; verified end to end and released as `smartdoc-agent@1.4.0` on npm on 2026-09-15

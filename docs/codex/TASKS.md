@@ -2,13 +2,14 @@
 
 ## Current Scope
 
-Product design v3.7.0 makes an embedded Spring Boot runtime endpoint the primary SpringDoc workflow. The application
+Product design v3.9.0 keeps the embedded Spring Boot runtime endpoint as the primary SpringDoc workflow. The application
 generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no SmartDoc build
 executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-The v3.6 Maven aggregate and safe publication features remain compatible. Node `1.4.0` adds a preferred project mode
+The v3.6 Maven aggregate and safe publication features remain compatible. Node `1.5.0` source builds on project mode
 that downloads explicitly configured documents for multiple internal or third-party services and installs one
-self-contained project Skill. Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
+self-contained core/3 project Skill with compact machine indexes and semantic paths. npm `latest` remains `1.4.0`.
+Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
 artifact coordination remain outside scope.
 
 ## Work Plan
@@ -25,11 +26,22 @@ artifact coordination remain outside scope.
 | P8 | TypeScript npm package for configured single-service multi-URL Skill generation | Complete for the `1.3.0` legacy configuration; renamed to unscoped `smartdoc-agent` with bilingual package docs |
 | P9 | Real Vue 3 + TypeScript consumer loop against the running SpringDoc service | Complete; build plus seven live call scenarios verified |
 | P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | Complete; 23 Node tests pass, the packed tarball is verified end to end in the real Vue consumer, and `smartdoc-agent@1.4.0` is published on npm |
+| P11 | core/3 compact catalog, semantic IDs/filenames, JSONL lookup indexes, and centralized conventions | Complete in Java and Node source; 84 reactor tests, 28 Node tests and 6 runtime testbed tests pass |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Release | npm release | `smartdoc-agent@1.4.0` published 2026-09-15 and now `latest`; the registry artifact is byte-identical to the packed tarball and installs and runs from the public registry |
-| Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
+| Documentation | Chinese-default README, English guide and v3.9 design | Updated for runtime and core/3 retrieval layout |
 
 ## Current Implementation
+
+- New output uses `smartdoc-agent-core/3`. `catalog.md` is a compact human entry point; sorted
+  `operations.jsonl`/`schemas.jsonl` provide direct machine lookup, and `conventions.md` holds shared OpenAPI reading
+  defaults once per service tree.
+- Operation/schema IDs are semantic and independent of SpringDoc `operationId`. Contract filenames use readable slugs
+  with a six-hex discriminator, extending only when a case-insensitive collision is detected. Full source SHA-256 stays
+  in provenance.
+- Trusted Skill guidance now directs an LLM to identify method/path from the target source file, search the operation
+  index, and open only the matched operation and linked reference closure. Tag files are removed; tags remain in context
+  and operation-index rows.
 
 - `testbeds/vue-ts-consumer` is a real Vue 3 + TypeScript + Vite consumer. It installs the packed
   `smartdoc-agent` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
@@ -44,18 +56,32 @@ artifact coordination remain outside scope.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or SmartDoc Maven goal.
 - `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
 - `smartdoc-agent-node` provides unscoped `smartdoc-agent`: preferred `services` configuration generates one
-  self-contained `smartdoc-agent-core/2`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
+  self-contained `smartdoc-agent-core/3`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
   configured internal or third-party services. It accepts project/service/document keywords, keeps service/document
   contracts separate beneath `references/services/<serviceId>/references/`, and safely replaces the whole project tree.
-- The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible and continues to emit
-  the `smartdoc-agent-core/1` single-service layout.
-- Java source is `1.3.0-SNAPSHOT` (default-semantics explanations at the point of use and a bilingual action-triggered
+- The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible as configuration;
+  newly generated service trees use `smartdoc-agent-core/3`. Publishers can replace owned core/1 and core/2 trees.
+- Java source is `1.3.0-SNAPSHOT` (core/3 semantic indexes, centralized conventions and a bilingual action-triggered
   description); the latest immutable Central release is `1.2.0`, including the runtime Starter. The Node package is
   published as `smartdoc-agent@1.4.0` and is the current `latest`. That artifact is installed in
-  `testbeds/vue-ts-consumer`, where it generated the 21-file `api-docs` project Skill from the running testbed
+  `testbeds/vue-ts-consumer`, where it previously generated the 21-file `api-docs` project Skill from the running testbed
   byte-identically on repeat runs.
 
 ## Verified
+
+## 2026-09-15 - Core/3 Semantic Index And Retrieval Layout
+
+- Red-to-green coverage was added for semantic identities, six-character filenames and collision extension, compact
+  catalogs, centralized conventions, sorted JSONL indexes, missing/index-drift validation, and nested project indexes.
+- Node source is `1.5.0` and passes 28 tests. Its 24-file, 23.3 kB packed artifact installs into the real Vue consumer;
+  the consumer build and live two-document generation both pass. This source version has not been published; npm
+  `latest` remains `1.4.0`.
+- The Java reactor passes 67 core, 15 Maven-plugin and 2 Starter tests (84 total). The standalone runtime testbed passes
+  6 tests and produces the same core/3 indexes through its real HTTP ZIP endpoint. On this Windows host, a clean testbed
+  compile intermittently reports javac's known resource-close error after writing classes; the immediate non-clean
+  `verify` passes without source changes.
+- The generated catalog fixture shrank from 2,039 bytes to 420 bytes (about 79%). Common operation-default prose is no
+  longer repeated per operation; it is stored once in `references/conventions.md`.
 
 ## 2026-09-15 - Node 1.4.0 Packaging And Real-Consumer End-To-End Generation
 
@@ -216,7 +242,8 @@ artifact coordination remain outside scope.
 - The first sandbox testbed attempt hit the previously recorded Windows `javac` resource-close failure before tests;
   the same command passed outside that sandbox without source changes.
 - Prior Maven aggregate/static verification remains valid for the unchanged compatibility behavior.
-- Current Node package suite: 23 tests pass for legacy and project configuration, generation, download and publication.
+- Current Node package suite: 28 tests pass for legacy and project configuration, semantic index generation, download
+  and publication.
 - `git diff --check` passes after documentation cleanup; bilingual onboarding and v3.7 project records describe the same
   runtime-first boundary.
 
@@ -239,8 +266,8 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-15 (Node `1.4.0` multi-service project Skill verified with 23 tests plus packaging and real-consumer
-end-to-end generation; release pending).
+2026-09-15 (core/3 semantic indexes and targeted retrieval verified across the 84-test Java reactor, 28-test Node suite,
+six-test SpringDoc testbed, and real Vue consumer; Node 1.5.0 release not requested).
 
 ## 2026-09-14 - Node Consumer Committed And Pushed
 

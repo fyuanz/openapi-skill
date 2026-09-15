@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.en.md)
 
-从一个或多个服务的 OpenAPI 3.1.0 JSON 地址生成一份自包含的 Codex Skill。`1.4.0` 默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
+从一个或多个服务的 OpenAPI 3.1.0 JSON 地址生成一份自包含的 Codex Skill。`1.5.0` 源码默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并生成面向 LLM 的紧凑机器索引；npm 当前已发布版本仍为 `1.4.0`。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
 
 ## 安装
 
@@ -63,6 +63,8 @@ npm install --save-dev smartdoc-agent
 
 每个服务及其文档保持独立边界，不会合并 OpenAPI 对象、跨文档解析 `$ref`，也不会猜测网关前缀。生成目录只包含一个根 `SKILL.md`，服务内容物理包含在 `references/services/<serviceId>/` 下，并通过相对 Markdown 链接导航；这里不使用文件系统符号链接，复制完整 `api-docs` 目录即可使用。
 
+生成的服务 reference 根包含紧凑的 `operations.jsonl`、`schemas.jsonl` 和 `conventions.md`。接口主键使用 service、document、HTTP method 和 path，不依赖可缺失或重复的 SpringDoc `operationId`；后者仅作为 `sourceOperationId` 检索别名。文件名采用可读语义和 6 位短摘要，例如 `get-users-by-id--e0e194.md`，检测到极少见的文件名冲突时才扩展摘要。`catalog.md` 只保留服务和文档概览。处理指定接口文件时，应先从源码提取 method/path，检索 `operations.jsonl`，然后只打开命中的 operation 及其 `$ref` Schema 闭包。
+
 ## 运行与原子更新
 
 添加 npm 脚本，并在所有需要读取的 API 服务启动后执行：
@@ -85,7 +87,7 @@ npm run skill:generate
 
 ## 旧单服务配置兼容
 
-已有配置无需立即迁移，`1.4.0` 仍接受原来的单服务结构并保留显式 Skill 名称：
+已有配置无需立即迁移，`1.5.0` 仍接受原来的单服务结构并保留显式 Skill 名称：
 
 ```json
 {

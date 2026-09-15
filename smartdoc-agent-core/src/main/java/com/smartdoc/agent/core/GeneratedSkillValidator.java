@@ -47,7 +47,9 @@ final class GeneratedSkillValidator {
             }
         }
         validateEntrypoint(files.get("SKILL.md"), skillName);
-        validateSource(files.get("references/source.json"), serviceId, skillName);
+        JsonNode source = validateSource(files.get("references/source.json"), serviceId, skillName);
+        if ("smartdoc-agent-core/3".equals(source.path("generatorVersion").asText()) && !source.has("kind"))
+            validateIndexes(files, source);
         validateLinks(files, normalized);
     }
 
@@ -76,7 +78,7 @@ final class GeneratedSkillValidator {
             throw invalid("SKILL.md description is missing or too long");
     }
 
-    private void validateSource(String content, String serviceId, String skillName) {
+    private JsonNode validateSource(String content, String serviceId, String skillName) {
         if (content == null) throw invalid("references/source.json is missing");
         final JsonNode source;
         try { source = mapper.readTree(content); }
@@ -91,6 +93,43 @@ final class GeneratedSkillValidator {
             throw invalid("source metadata generatorVersion is missing");
         if (!source.path("documents").isArray() || source.path("documents").isEmpty())
             throw invalid("source metadata documents are missing");
+        return source;
+    }
+
+    private void validateIndexes(Map<String, String> files, JsonNode source) {
+        if (!files.containsKey("references/conventions.md")) throw invalid("references/conventions.md is missing");
+        int operations = 0;
+        int schemas = 0;
+        for (JsonNode document : source.path("documents")) {
+            operations += document.path("operations").asInt();
+            schemas += document.path("schemas").asInt();
+        }
+        validateIndex(files, "references/operations.jsonl", "operation:", operations);
+        validateIndex(files, "references/schemas.jsonl", "schema:", schemas);
+    }
+
+    private void validateIndex(Map<String, String> files, String path, String prefix, int expectedCount) {
+        String content = files.get(path);
+        if (content == null) throw invalid(path + " is missing");
+        var ids = new HashSet<String>();
+        String previous = null;
+        int count = 0;
+        for (String line : content.split("\\R", -1)) {
+            if (line.isBlank()) continue;
+            final JsonNode row;
+            try { row = mapper.readTree(line); }
+            catch (Exception error) { throw invalid(path + " contains invalid JSONL"); }
+            if (!row.isObject()) throw invalid(path + " row must be an object");
+            String id = row.path("id").asText();
+            String file = row.path("file").asText();
+            if (!id.startsWith(prefix) || !ids.add(id)) throw invalid(path + " contains an invalid or duplicate id");
+            if (previous != null && previous.compareTo(id) >= 0) throw invalid(path + " is not sorted by id");
+            if (file.isBlank() || !files.containsKey("references/" + file))
+                throw invalid(path + " points to a missing contract file");
+            previous = id;
+            count++;
+        }
+        if (count != expectedCount) throw invalid(path + " count does not match source metadata");
     }
 
     private void validateLinks(Map<String, String> files, Set<String> paths) {

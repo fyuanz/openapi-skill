@@ -11,7 +11,7 @@ needs Maven phases, a second application process, HTTP capture of `/v3/api-docs`
 - **Runtime download**: adding the starter exposes `GET /smartdoc/skill.zip`, generated from the current instance on demand.
 - **Automatic discovery**: reuses SpringDoc's final resources and enumerates `GroupedOpenApi` without duplicate OpenAPI URL configuration.
 - **Configurable output**: runtime defaults to one Skill per application; the published Maven plugin retains complete aggregate/coexistence compatibility.
-- **Contract preservation**: parameters, request bodies, responses, media types, authentication definitions, and Schema data, with operation, tag, and local-reference navigation.
+- **Contract preservation**: parameters, request bodies, responses, media types, authentication definitions, and Schema data, with semantic operation IDs, machine indexes, and local-reference navigation.
 - **No filesystem side effects**: validates a complete result and creates a deterministic ZIP in memory; unchanged contracts produce identical bytes.
 - **Local conversion**: the core does not call LLMs, business APIs, or external reference URLs. Source free text stays separate from trusted Skill instructions.
 - **Explicit input**: only JSON declaring `openapi: 3.1.0` is accepted. Production documents come from SpringDoc / NextDoc4j; those producers own Java package scanning and document export.
@@ -22,9 +22,10 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-Version `1.4.0` of the TypeScript package `smartdoc-agent` defaults to one self-contained API Skill per frontend
-project. Multiple microservices, multiple documents within each service, and third-party providers are organized below
-one `.agents/skills/api-docs/` directory; `skillName` can override the `api-docs` default.
+The `1.5.0` source of the TypeScript package `smartdoc-agent` defaults to one self-contained API Skill per frontend
+project and adds `operations.jsonl` / `schemas.jsonl`, semantic filenames, and centralized conventions; the latest npm
+release remains `1.4.0`. Multiple microservices, multiple documents within each service, and third-party providers are
+organized below one `.agents/skills/api-docs/` directory; `skillName` can override the `api-docs` default.
 
 ```json
 {

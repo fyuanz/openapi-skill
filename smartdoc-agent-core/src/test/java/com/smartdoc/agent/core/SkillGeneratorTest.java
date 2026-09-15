@@ -48,7 +48,7 @@ class SkillGeneratorTest {
             }
         }
         JsonNode source = mapper.readTree(files.get("references/source.json"));
-        assertEquals("smartdoc-agent-core/1", source.path("generatorVersion").asText());
+        assertEquals("smartdoc-agent-core/3", source.path("generatorVersion").asText());
         assertEquals(2, source.path("documents").size());
         assertTrue(source.path("documents").findValuesAsText("apiVersion").stream().allMatch("1.0.0"::equals));
         checkLinks(files);
@@ -116,7 +116,7 @@ class SkillGeneratorTest {
         schemas.putObject("Unused").put("type", "string");
         var files = generator.generate("s", "api", Map.of("account", mapper.writeValueAsBytes(root)));
         String schemaPath = files.keySet().stream().filter(p -> p.contains("/schemas/")).findFirst().orElseThrow();
-        assertTrue(files.get("references/catalog.md").contains(schemaPath.substring("references/".length())));
+        assertTrue(files.get("references/schemas.jsonl").contains(schemaPath.substring("references/".length())));
         for (int i = 0; i < 5001; i++) schemas.putObject("S" + i);
         var error = assertThrows(IllegalArgumentException.class,
                 () -> generator.generate("s", "api", Map.of("account", mapper.writeValueAsBytes(root))));
@@ -141,23 +141,25 @@ class SkillGeneratorTest {
         String entry = files.get("SKILL.md");
         // The three default-semantics facts a reader must not have to guess.
         assertTrue(entry.contains("security"), "entrypoint must name security defaults");
-        assertTrue(entry.contains("is not a claim") || entry.contains("does not mean"),
+        assertTrue(entry.contains("not claims") || entry.contains("is not a claim") || entry.contains("does not mean"),
                 "entrypoint must state that a null/empty security is not a claim about authentication");
         assertTrue(entry.contains("required"), "entrypoint must name the required-list default");
         assertTrue(entry.contains("independent"), 
                 "entrypoint must state that same-named schemas across documents are independent");
 
-        // Evidence: each operation file must expose the effective security value and must not
-        // leave a null value unexplained.
+        String conventions = files.get("references/conventions.md");
+        assertTrue(conventions.contains("not a claim"));
+
+        // Evidence: each operation exposes effective security and links to the one shared explanation.
         var operations = files.entrySet().stream().filter(f -> f.getKey().contains("/operations/")).toList();
         assertEquals(4, operations.size());
         for (var operation : operations) {
             String content = operation.getValue();
             assertTrue(content.contains("\"security\""), operation.getKey() + " must expose effective security");
-            assertTrue(content.contains("How to read the defaults above"),
-                    operation.getKey() + " must carry the default-semantics section");
-            assertTrue(content.contains("not a claim"), 
-                    operation.getKey() + " must not leave an unstated fact unexplained");
+            assertFalse(content.contains("How to read the defaults above"),
+                    operation.getKey() + " must not repeat the default-semantics section");
+            assertTrue(content.contains("conventions.md"),
+                    operation.getKey() + " must link the shared conventions");
         }
         // The source document declares no security for GET /users, so the value stays null.
         var op = operations.stream().map(Map.Entry::getValue).map(this::contract)

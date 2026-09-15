@@ -58,7 +58,7 @@ public final class AggregateSkillGenerator {
                 throw new IllegalArgumentException(id + ": " + error.getMessage(), error);
             }
         }
-        var source = mapper.createObjectNode().put("generatorVersion", "smartdoc-agent-core/2")
+        var source = mapper.createObjectNode().put("generatorVersion", "smartdoc-agent-core/3")
                 .put("kind", "aggregate").put("serviceId", aggregateId).put("skillName", skillName);
         source.set("services", members);
         source.set("documents", documents);
@@ -70,15 +70,14 @@ public final class AggregateSkillGenerator {
                 description: 查找、解释、实现或调试 %s 聚合（services %s）中跨服务的前端 HTTP API 接口调用时使用；先按 catalog 选定服务与分组，核对参数、请求体、响应、状态码、Schema、鉴权与错误，并生成或修改前端请求代码。Use when finding, explaining, implementing, or debugging cross-service frontend HTTP API calls within the %s aggregate (services %s) — select the service via the catalog, verify parameters, request bodies, responses, status codes, schemas, authentication and errors, then generate or modify frontend request code. 关键词 Keywords — 跨服务, 多服务, API 文档, 接口, 接口联调, 前后端对接, 参数校验, 字段缺失, 鉴权, 认证, 报错排查, 状态码, 请求, 响应, HTTP, REST, OpenAPI, frontend, cross-service, API integration.
                 ---
 
-                Start with the [service catalog](references/catalog.md), select the service, then its
-                document group and method/path. Read the operation and follow local schema/reference links.
+                When a user names an interface source file, read it first and extract its HTTP method/path.
+                Search only `references/services/*/references/operations.jsonl`, then open the matched operation
+                and only its referenced Schema closure. Do not enumerate all catalogs, operations or Schemas.
+                Use the [service catalog](references/catalog.md) only when the service or document is unknown.
                 Each service's context describes its documented servers and authentication schemes.
                 Operations include effective parameters, servers and security after overrides.
-                Each operation file ends with a "How to read the defaults above" section that states what
-                an absent value means. Read it: a null `security` is not a claim that authentication is
-                unnecessary, and an absent `required` list is not a claim that every field is optional.
-                Both simply mean the contract does not state the fact. Only an explicit empty value is a
-                declared override. Never turn an unstated fact into a definite one.
+                Read the selected service's `references/conventions.md` when absent, null or empty values matter.
+                A null `security` and an absent `required` list are unstated facts, not definite claims.
                 Always identify the service and document group; same-named interfaces and schemas are distinct.
                 A same-named schema in another service or document is an independent definition, not a shared type.
                 Do not merge contracts, infer gateway prefixes, or invent missing API behavior or routes.

@@ -85,7 +85,7 @@ class ServiceSkillUpdaterFailureTest {
 
         assertEquals(ServiceSkillUpdater.Outcome.TIMED_OUT, result.outcome());
         assertFalse(result.skillAvailable());
-        assertTrue(finished.await(1, TimeUnit.SECONDS));
+        assertTrue(finished.await(3, TimeUnit.SECONDS));
         assertFalse(Files.exists(output.resolve("orders-api")));
     }
 

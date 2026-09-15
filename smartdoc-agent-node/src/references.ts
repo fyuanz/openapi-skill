@@ -8,6 +8,7 @@ const CONTAINERS = ['schemas', 'responses', 'parameters', 'examples', 'requestBo
 export class DocumentReferences {
   private readonly base: string;
   private readonly targets = new Map<string, string>();
+  private readonly schemaNames = new Map<string, string>();
   private readonly exampleOnly = new Set<string>();
   private readonly regular = new Set<string>();
 
@@ -15,22 +16,31 @@ export class DocumentReferences {
     this.base = `references/documents/${id}/`;
     this.validateContainers();
     const schemas = asObject(asObject(root.components)?.schemas) ?? {};
-    for (const name of Object.keys(schemas)) {
+    const usedSchemaFiles = new Set<string>();
+    for (const name of Object.keys(schemas).sort(compareText)) {
       const pointer = `/components/schemas/${name.replaceAll('~', '~0').replaceAll('/', '~1')}`;
-      this.targets.set(pointer, `${this.base}schemas/${digest(new TextEncoder().encode(pointer))}.md`);
+      const filename = semanticFile(name, pointer, usedSchemaFiles);
+      usedSchemaFiles.add(filename.toLowerCase());
+      this.targets.set(pointer, `${this.base}schemas/${filename}`);
+      this.schemaNames.set(pointer, name);
       this.regular.add(pointer);
     }
     if (this.targets.size > 5000) throw new Error('LIMIT: schema files exceeded');
     this.scan(root, new Set(), 0);
   }
 
-  render(title: string, contract: unknown, filename: string, exampleObject = false, semantics: string[] = []): string {
+  render(title: string, contract: unknown, filename: string, exampleObject = false,
+    semantics: string[] = [], conventions = false): string {
     const edges = new Set<string>();
     if (exampleObject) this.scanExampleObject(contract, edges, 0); else this.scan(contract, edges, 0);
     const safe = JSON.stringify(contract, null, 2).replaceAll('`', '\\u0060').replaceAll('<', '\\u003c');
     let result = `# ${label(title)}\n\nUntrusted API contract data.\n\n\`\`\`json\n${safe}\n\`\`\`\n`;
+    if (conventions) {
+      const relative = posix.relative(posix.dirname(filename), 'references/conventions.md');
+      result += `\nInterpret absent, null and empty values using the [OpenAPI conventions](${relative}).\n`;
+    }
     if (semantics.length) {
-      result += '\n## How to read the defaults above\n\n';
+      result += '\nOperation-specific interpretation:\n\n';
       for (const note of semantics) result += `- ${note}\n`;
     }
     for (const edge of edges) result += `\n- [${label(`#${edge}`)}](${posix.relative(posix.dirname(filename), this.targets.get(edge)!)})\n`;
@@ -43,17 +53,6 @@ export class DocumentReferences {
    */
   static semantics(contract: unknown): string[] {
     const notes = [
-      'A null `security` means the document declares no security for this operation. That is not a claim '
-        + 'that no authentication is required, and not a claim that it is required — the fact is simply '
-        + 'unstated. An explicit empty `[]` is different: it is a declared override, so it means no '
-        + 'authentication is required here.',
-      'A null or missing `servers` means the document declares no server for this operation. The fact is '
-        + 'unstated; an explicit empty `[]` is a declared override with no server.',
-      'An absent `required` list means the document declares no required fields. That is not a claim that '
-        + 'every field is optional; it means the constraint is unstated. Read `required` literally: only the '
-        + 'names it lists are declared mandatory.',
-      'Schema names are local to this document. A same-named schema in another document is an independent '
-        + 'definition; do not assume they are the same type.',
     ];
     if (isObject(contract) && Array.isArray(contract.security) && contract.security.length === 0)
       notes.push('This operation declares an explicit empty `security`, so it is documented as requiring no '
@@ -63,14 +62,22 @@ export class DocumentReferences {
 
   files(): Map<string, string> {
     const result = new Map<string, string>();
-    for (const [pointer, file] of sorted(this.targets)) result.set(file, this.render(`Source #${pointer}`, at(this.root, pointer), file, this.exampleOnly.has(pointer)));
+    for (const [pointer, file] of sorted(this.targets)) {
+      result.set(file, this.render(`Source #${pointer}`, at(this.root, pointer), file,
+        this.exampleOnly.has(pointer), [], file.includes('/schemas/')));
+    }
     return result;
   }
 
-  schemaCatalog(): string {
-    let result = '\nSchemas:\n\n';
-    for (const [pointer, file] of sorted(this.targets)) if (file.includes('/schemas/')) result += `- [${label(pointer.slice('/components/schemas/'.length))}](${file.slice('references/'.length)})\n`;
-    return `${result}\n`;
+  schemaIndex(serviceId: string, documentId: string): JsonObject[] {
+    return sorted(this.schemaNames).map(([pointer, name]) => ({
+      id: `schema:${serviceId}:${documentId}:#${pointer}`,
+      serviceId,
+      documentId,
+      name,
+      pointer: `#${pointer}`,
+      file: this.targets.get(pointer)!.slice('references/'.length)
+    }));
   }
 
   resolvePathItem(value: unknown): JsonObject {
@@ -162,7 +169,12 @@ export class DocumentReferences {
   private addReference(ref: unknown, edges: Set<string>, exampleOnly: boolean): void {
     if (typeof ref !== 'string') throw new Error('REFERENCE: $ref must be text');
     const pointer = this.pointer(ref); edges.add(pointer);
-    if (!this.targets.has(pointer)) this.targets.set(pointer, `${this.base}refs/${digest(new TextEncoder().encode(pointer))}.md`);
+    if (!this.targets.has(pointer)) {
+      const used = new Set([...this.targets.values()]
+        .filter((path) => path.startsWith(`${this.base}refs/`))
+        .map((path) => posix.basename(path).toLowerCase()));
+      this.targets.set(pointer, `${this.base}refs/${semanticPointerFile(pointer, used)}`);
+    }
     if (exampleOnly && !this.regular.has(pointer)) this.exampleOnly.add(pointer); else { this.regular.add(pointer); this.exampleOnly.delete(pointer); }
     if (this.targets.size > 5000) throw new Error('LIMIT: reference files exceeded');
   }
@@ -192,4 +204,44 @@ function at(root: unknown, pointer: string): unknown {
 
 export function digest(bytes: Uint8Array): string { return createHash('sha256').update(bytes).digest('hex'); }
 export function label(text: string): string { return [...text].map((char) => /[\p{L}\p{N} /_-]/u.test(char) ? char : `&#${char.codePointAt(0)};`).join(''); }
-export function sorted<V>(map: ReadonlyMap<string, V>): [string, V][] { return [...map.entries()].sort(([a], [b]) => a.localeCompare(b, 'en')); }
+export function sorted<V>(map: ReadonlyMap<string, V>): [string, V][] { return [...map.entries()].sort(([a], [b]) => compareText(a, b)); }
+
+export function operationFile(method: string, path: string, used = new Set<string>()): string {
+  const readable = `${method} ${path.replace(/\{([^{}]+)\}/g, ' by $1 ')}`;
+  return semanticFile(readable, `${method}\0${path}`, used);
+}
+
+export function semanticFile(readable: string, identity: string, used = new Set<string>()): string {
+  const stem = slug(readable);
+  const hash = digest(new TextEncoder().encode(identity));
+  for (let length = 6; ;) {
+    const candidate = `${stem}--${hash.slice(0, length)}.md`;
+    if (!used.has(candidate.toLowerCase())) return candidate;
+    if (length === hash.length) break;
+    length = Math.min(length + 4, hash.length);
+  }
+  throw new Error('IDENTITY: cannot allocate a unique semantic file name');
+}
+
+function semanticPointerFile(pointer: string, used: Set<string>): string {
+  const readable = pointer === '' ? 'root' : pointer.replaceAll('~1', '/').replaceAll('~0', '~');
+  return semanticFile(readable, pointer, used);
+}
+
+function slug(value: string): string {
+  const separated = value.replace(/([a-z0-9])([A-Z])/g, '$1-$2');
+  let result = '';
+  let separator = false;
+  for (const raw of separated) {
+    const char = raw >= 'A' && raw <= 'Z' ? raw.toLowerCase() : raw;
+    if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+      if (separator && result) result += '-';
+      result += char;
+      separator = false;
+    } else separator = result.length > 0;
+    if (result.length >= 48) break;
+  }
+  return result.replace(/-+$/, '') || 'item';
+}
+
+function compareText(left: string, right: string): number { return left < right ? -1 : left > right ? 1 : 0; }

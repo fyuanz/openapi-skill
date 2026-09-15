@@ -44,8 +44,8 @@ class RuntimeSkillSingleDocumentTest {
         JsonNode source = new ObjectMapper().readTree(files.get("custom-skill/references/source.json"));
         assertThat(source.path("serviceId").asText()).isEqualTo("custom-service");
         assertThat(source.path("documents").path(0).path("documentId").asText()).isEqualTo("openapi");
-        assertThat(files.get("custom-skill/references/catalog.md"))
-                .contains("GET /status")
+        assertThat(files.get("custom-skill/references/operations.jsonl"))
+                .contains("\"method\":\"GET\"", "\"path\":\"/status\"")
                 .doesNotContain("/internal/api-skill.zip");
     }
 

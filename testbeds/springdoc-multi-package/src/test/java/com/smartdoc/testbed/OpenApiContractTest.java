@@ -69,12 +69,15 @@ class OpenApiContractTest {
 
         Map<String, String> files = unzip(response.body());
         String root = "springdoc-multi-package-api/";
-        assertThat(files).containsKeys(root + "SKILL.md", root + "references/source.json");
+        assertThat(files).containsKeys(root + "SKILL.md", root + "references/source.json",
+                root + "references/operations.jsonl", root + "references/schemas.jsonl",
+                root + "references/conventions.md");
         JsonNode source = mapper.readTree(files.get(root + "references/source.json"));
         assertThat(source.path("documents").findValuesAsText("documentId"))
                 .containsExactly("account", "business");
-        assertThat(files.get(root + "references/catalog.md"))
-                .contains("GET /users", "POST /orders", "POST /files")
+        assertThat(files.get(root + "references/operations.jsonl"))
+                .contains("\"method\":\"GET\"", "\"path\":\"/users\"",
+                        "\"method\":\"POST\"", "\"path\":\"/orders\"", "\"path\":\"/files\"")
                 .doesNotContain("/smartdoc/skill.zip");
     }
 

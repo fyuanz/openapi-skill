@@ -13,7 +13,7 @@ test('generates one deterministic navigable skill from multiple documents', asyn
   assert.equal([...first.keys()].filter((path) => path.includes('/operations/')).length, 4);
   assert.equal([...first.keys()].filter((path) => path.includes('/schemas/')).length, 7);
   const source = JSON.parse(first.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'smartdoc-agent-core/1');
+  assert.equal(source.generatorVersion, 'smartdoc-agent-core/3');
   assert.equal(source.sourceType, undefined, 'legacy generator metadata must remain byte-compatible in shape');
   assert.equal(source.keywords, undefined, 'legacy generator metadata must not gain empty keyword fields');
   assert.deepEqual(source.documents.map(({ documentId }) => documentId), ['account', 'business']);
@@ -43,13 +43,14 @@ test('explains OpenAPI default semantics and carries Chinese triggers', async ()
   assert.ok(description.length <= 1024, 'description must stay within 1024 characters');
   assert.ok(!entry.includes('仅用于文档契约验证'), 'untrusted source text must not enter the template');
 
-  // Every operation file must state what its defaults mean.
+  // Every operation links to one shared statement of what defaults mean.
   const operations = [...files.entries()].filter(([path]) => path.includes('/operations/'));
   assert.equal(operations.length, 4);
   for (const [path, content] of operations) {
-    assert.match(content, /## How to read the defaults above/, `${path} must carry the semantics section`);
-    assert.ok(content.includes('not a claim'), `${path} must not leave an unstated fact unexplained`);
+    assert.doesNotMatch(content, /## How to read the defaults above/, `${path} must not repeat the semantics section`);
+    assert.match(content, /conventions\.md/, `${path} must link the shared conventions`);
   }
+  assert.match(files.get('references/conventions.md'), /not a claim/);
 
   // An explicit empty security override must be called out as a declared override.
   const override = new TextEncoder().encode(JSON.stringify({
@@ -134,7 +135,7 @@ test('generates one self-contained project Skill with logical service navigation
   assert.match(files.get('SKILL.md'), /订单/);
   assert.doesNotMatch(files.get('SKILL.md'), /下单/);
   const source = JSON.parse(files.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'smartdoc-agent-core/2');
+  assert.equal(source.generatorVersion, 'smartdoc-agent-core/3');
   assert.equal(source.kind, 'project');
   assert.equal(source.skillName, 'api-docs');
   assert.deepEqual(source.services.map(({ serviceId }) => serviceId), ['orders', 'shipping']);
