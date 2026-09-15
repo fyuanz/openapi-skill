@@ -21,8 +21,9 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`smartdoc-agent-node` 提供 TypeScript npm 包 `smartdoc-agent`。在本地后端启动后，它会下载配置的多个
-OpenAPI JSON，并生成一份完整 Skill；默认写入 Vue 项目根目录的 `.agents/skills/<skillName>/`。
+`smartdoc-agent-node` 提供 TypeScript npm 包 `smartdoc-agent`。`1.4.0` 推荐一个前端项目只生成一份接口文档
+Skill：多个微服务、每个服务的多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
+`api-docs`，输出到 Vue 项目根目录的 `.agents/skills/api-docs/`。
 
 ```shell
 npm install --save-dev smartdoc-agent
@@ -32,17 +33,44 @@ npm install --save-dev smartdoc-agent
 
 ```json
 {
-  "serviceId": "my-service",
-  "skillName": "my-service-api",
-  "documents": [
-    { "id": "account", "url": "http://127.0.0.1:18080/v3/api-docs/account" },
-    { "id": "business", "url": "http://127.0.0.1:18080/v3/api-docs/business" }
+  "keywords": ["接口文档", "前后端联调"],
+  "services": [
+    {
+      "serviceId": "account-service",
+      "sourceType": "internal",
+      "keywords": ["用户", "账号"],
+      "documents": [
+        {
+          "id": "account",
+          "url": "http://127.0.0.1:18080/v3/api-docs/account",
+          "keywords": ["登录", "用户资料"]
+        }
+      ]
+    },
+    {
+      "serviceId": "logistics-provider",
+      "sourceType": "third-party",
+      "keywords": ["物流", "快递"],
+      "documents": [
+        {
+          "id": "shipping",
+          "url": "https://api.example.com/openapi.json",
+          "keywords": ["运单", "轨迹"]
+        }
+      ]
+    }
   ]
 }
 ```
 
 将 `"skill:generate": "smartdoc-agent"` 加入 `package.json#scripts`，执行 `npm run skill:generate`。
-配置项 `output` 可覆盖输出父目录，`timeoutMs` 可覆盖默认 30 秒超时。完整说明见
+根级、服务级和文档级 `keywords` 分别用于发现项目 Skill、选择服务和定位文档；`sourceType` 支持
+`internal`（默认）与 `third-party`。生成结果物理包含所有服务的引用文件，通过 Skill 内的相对 Markdown
+链接分层导航，不依赖文件系统符号链接或其他已安装 Skill。
+
+工具会先下载和校验全部服务的全部文档，再一次性替换完整 `api-docs` 目录。任一成员失败时保留上一份
+完整结果，不发布缺服务的部分 Skill。`skillName`、`output` 和 `timeoutMs` 均可在根级覆盖；旧版
+`serviceId + skillName + documents` 单服务配置继续兼容。完整配置和迁移示例见
 [Node 包中文 README](smartdoc-agent-node/README.md)；[English](smartdoc-agent-node/README.en.md)。
 
 ## 版本与环境

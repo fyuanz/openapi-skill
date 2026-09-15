@@ -3,8 +3,8 @@
 ## Purpose
 
 SmartDoc-Agent converts OpenAPI contracts into Codex Skills. A running Spring Boot WebMVC service can expose a directly
-downloadable Skill ZIP, while the TypeScript npm consumer downloads explicitly configured OpenAPI endpoints and installs
-one complete Skill into a Vue 3 or other Node.js project.
+downloadable Skill ZIP, while the TypeScript npm consumer downloads explicitly configured OpenAPI endpoints from one or
+more internal or third-party services and installs one complete project Skill into a Vue 3 or other Node.js project.
 
 The source of truth is `docs/smartdoc-agent-design.md`. Core conversion, the published Maven compatibility plugin, and
 aggregate generation remain available. Web/frontend acceptance is user-reviewed and is not a delivery gate.
@@ -20,10 +20,24 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
    and the Starter returns a deterministic ZIP with a `<skillName>/` root.
 6. Generation failure fails only that request. No build output or partial archive is written.
 
+## Node Project Workflow
+
+1. A consuming project configures one or more services, with one or more explicit document ID/HTTP(S) URL pairs per
+   service. `sourceType` distinguishes `internal` from `third-party` sources.
+2. Project-, service-, and document-level keywords provide trusted discovery/navigation aliases without importing
+   untrusted OpenAPI free text into `SKILL.md`.
+3. The CLI downloads every configured document under one timeout and shared input budget. A failed download or invalid
+   document aborts the whole project update.
+4. The generator creates one self-contained Skill, named `api-docs` by default, with service trees physically included
+   under `references/services/<serviceId>/references/` and connected through relative Markdown links.
+5. The publisher validates and stages the complete tree before replacing `.agents/skills/<skillName>` atomically. It
+   does not create filesystem symbolic links or publish a partial mix of old and new services.
+
 ## Current Status
 
-- Source is `1.3.0-SNAPSHOT` (default-semantics explanations and a bilingual action-triggered description); the latest
-  Central release is `1.2.0`, containing the parent, core, Maven plugin, and runtime Spring Boot Starter.
+- Java source is `1.3.0-SNAPSHOT` (default-semantics explanations and a bilingual action-triggered description); the
+  latest Central release is `1.2.0`, containing the parent, core, Maven plugin, and runtime Spring Boot Starter.
+- Node package source is `1.4.0`. Its new project mode is implemented and locally verified but has not been published.
 - `smartdoc-agent-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/smartdoc/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
@@ -34,9 +48,14 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
   sample APIs, and a real random-port ZIP download.
 - Core retains 63 tests; Maven plugin retains 15 tests; the Starter retains 2 (80 across the reactor). The latter
   remains a compatibility path for authoritative static JSON and explicit cross-service `aggregate` / `both` generation.
-- `smartdoc-agent-node` is the unscoped `smartdoc-agent` TypeScript package and CLI for atomic multi-URL generation. It
-  defaults to the consuming project root's `.agents/skills`, supports an explicit output parent, and ships a Chinese
-  default README plus a reciprocally linked English guide.
+- `smartdoc-agent-node` is the unscoped `smartdoc-agent` TypeScript package and CLI. Preferred `services` configuration
+  generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
+  services plus project/service/document keywords, and publishes the complete service set atomically. The legacy
+  `serviceId` + `documents` configuration and `smartdoc-agent-core/1` service layout remain compatible.
+- Node verification currently passes 23 tests across configuration, generation, provenance, downloading, project-tree
+  validation, project-wide document/byte budgets, atomic legacy/project migration, stale service removal, package
+  metadata, and compatibility behavior. The packed `1.4.0` tarball was installed into `testbeds/vue-ts-consumer` and
+  generated the 21-file `api-docs` project Skill from the running testbed, byte-identical on repeated runs.
 - `testbeds/vue-ts-consumer` closes the consumer loop: a real Vue 3 + TypeScript project generates the Skill from the
   running SpringDoc testbed and calls all five documented operations through a dev-server proxy. An independent read-only
   audit of that Skill found it sufficient to write a correct typed client, plus three readability gaps recorded in its
@@ -84,7 +103,10 @@ Legacy Maven compatibility verification remains under `testbeds/maven-plugin-int
 - Existing document/file/reference/size bounds remain enforced. ZIP creation is in-memory and deterministic.
 - The Starter endpoint follows application security and accepts no arbitrary source URL. The Node CLI intentionally
   fetches only user-configured HTTP(S) URLs, rejects redirects, and is meant for trusted project configuration.
-- Cross-service runtime aggregation, WebFlux, management-port variants, external references, YAML,
+- Node project mode permits at most 32 services and 32 documents across the project, 32 MiB aggregate input, 10,000
+  output files, and 64 MiB output. Each document retains the existing 8 MiB and document-local reference boundaries.
+- Cross-service aggregation inside the Node consumer is supported; cross-service aggregation by the embedded runtime
+  Starter, WebFlux, management-port variants, external references, YAML,
   Swagger 2.0, package repositories, and automatic installation remain deferred.
 - Maven compatibility code is retained but is no longer the recommended SpringDoc runtime workflow.
 

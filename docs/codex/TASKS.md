@@ -6,9 +6,10 @@ Product design v3.7.0 makes an embedded Spring Boot runtime endpoint the primary
 generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no SmartDoc build
 executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-The v3.6 Maven aggregate and safe publication features remain compatible. The Node consumer adds explicit URL download
-and local project installation; cross-service runtime aggregation, WebFlux and centralized artifact coordination remain
-outside scope.
+The v3.6 Maven aggregate and safe publication features remain compatible. Node `1.4.0` adds a preferred project mode
+that downloads explicitly configured documents for multiple internal or third-party services and installs one
+self-contained project Skill. Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
+artifact coordination remain outside scope.
 
 ## Work Plan
 
@@ -21,8 +22,9 @@ outside scope.
 | P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
-| P8 | TypeScript npm package for configured multi-URL Skill generation | Complete; renamed to unscoped `smartdoc-agent`, with bilingual package docs; registry publication remains separate |
+| P8 | TypeScript npm package for configured single-service multi-URL Skill generation | Complete for the `1.3.0` legacy configuration; renamed to unscoped `smartdoc-agent` with bilingual package docs |
 | P9 | Real Vue 3 + TypeScript consumer loop against the running SpringDoc service | Complete; build plus seven live call scenarios verified |
+| P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | In progress; 23 Node tests pass and the packed `1.4.0` tarball is verified end to end in the real Vue consumer, package release remains pending |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
 
@@ -40,13 +42,83 @@ outside scope.
   The hidden endpoint does not enter generated OpenAPI.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or SmartDoc Maven goal.
 - `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
-- `smartdoc-agent-node` provides unscoped `smartdoc-agent`: a TypeScript library/CLI that downloads explicit grouped
-  OpenAPI URLs, generates one core-compatible Skill, and safely replaces `.agents/skills/<skillName>` by default.
-- Source is `1.3.0-SNAPSHOT` (default-semantics explanations at the point of use and a bilingual action-triggered
-  description); the latest immutable Central release is `1.2.0`, including the runtime Starter. The Node package source
-  is `1.3.0`, published from a packed tarball pending registry publication.
+- `smartdoc-agent-node` provides unscoped `smartdoc-agent`: preferred `services` configuration generates one
+  self-contained `smartdoc-agent-core/2`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
+  configured internal or third-party services. It accepts project/service/document keywords, keeps service/document
+  contracts separate beneath `references/services/<serviceId>/references/`, and safely replaces the whole project tree.
+- The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible and continues to emit
+  the `smartdoc-agent-core/1` single-service layout.
+- Java source is `1.3.0-SNAPSHOT` (default-semantics explanations at the point of use and a bilingual action-triggered
+  description); the latest immutable Central release is `1.2.0`, including the runtime Starter. Node package source is
+  `1.4.0`; it has not been published. The packed `1.4.0` tarball is installed in `testbeds/vue-ts-consumer`, where it
+  generated the 21-file `api-docs` project Skill from the running testbed byte-identically on repeat runs.
 
 ## Verified
+
+## 2026-09-15 - Node 1.4.0 Packaging And Real-Consumer End-To-End Generation
+
+- Test suite: the Node suite passes 23 tests (`node --test test/*.test.mjs`) covering default `api-docs` naming, legacy
+  configuration compatibility, multi-service and repeated-document-ID isolation, three-level keyword handling, safe
+  escaping of special discovery keywords, the project-wide document and byte budgets across service boundaries,
+  loopback downloads, download/generation failure retention, legacy-to-project migration, and stale-directory removal
+  when a service leaves the configuration.
+- Packaging: `npm pack` produced `smartdoc-agent-1.4.0.tgz` (24 entries, 21,058 bytes packed / 74,238 bytes unpacked)
+  containing `LICENSE`, 12 `dist/*.js` and 12 `dist/*.d.ts` files, `package.json`, and both `README.md` and
+  `README.en.md`. No test, source, or generated artifact entered the tarball. `testbeds/vue-ts-consumer` reinstalled
+  that tarball and now resolves `smartdoc-agent@1.4.0`.
+- End-to-end generation: the SpringDoc testbed was started on a fixed `127.0.0.1:18080` and served
+  `/v3/api-docs/account` (2 paths), `/v3/api-docs/business` (2 paths) and `/smartdoc/skill.zip` (17,043 bytes) with
+  HTTP 200. `npm run skill:generate` in the consumer printed `Generated 1 service(s) and 2 OpenAPI document(s) ... (21
+  files)` and wrote `.agents/skills/api-docs/`.
+- Generated-tree validation: 21 files / 23,542 bytes using `smartdoc-agent-core/2` `kind=project`, one root `SKILL.md`,
+  `references/catalog.md`, `references/source.json`, and
+  `references/services/springdoc-multi-package/references/{catalog.md,source.json,documents/<id>/...}`. All 32 relative
+  Markdown links resolve, no nested `SKILL.md` exists, both service keywords and document keywords are sorted and
+  de-duplicated, and the root description stays a single line of 464 characters (708 bytes) with no `: ` sequence.
+- Determinism and atomicity: regenerating without a source change reproduced the identical whole-tree SHA-256
+  `b8940cff8d3673487dea91e1d48f866bcefbcd55bd0654bec85671d3c8b39dfc`; `.smartdoc/staging` and `.smartdoc/backups`
+  were left empty after every run.
+- Failure retention: pointing `business` at a closed port made the CLI exit 1 with
+  `springdoc-multi-package/business: DOWNLOAD: fetch failed`, and the previous project Skill remained byte-identical
+  with no partial or mixed tree published. The configuration was restored and the tree hash returned to the same value.
+- Stale-service removal: renaming the configured `serviceId` replaced the whole project tree, leaving only
+  `references/services/springdoc-renamed/` and no `springdoc-multi-package` subtree.
+- Live-data equivalence: the SHA-256 of both live endpoint responses re-fetched during this run
+  (`686c1b8b…6d87`, `ae7e7d84…290c`) equals the digests recorded in the generated `source.json`, so the Skill is a
+  faithful snapshot of the running service.
+- Consumer build: `npm run build` (`vue-tsc -b && vite build`) passed strict type checking and produced the same
+  71.74 kB JS / 1.43 kB CSS bundle as the prior closed loop.
+- Housekeeping note: because project mode defaults the Skill name, a consumer switching from the legacy
+  `springdoc-multi-package-api` Skill to `api-docs` keeps the old directory until it is deleted manually. The whole-tree
+  replacement guarantee applies within one Skill name; the stale legacy directory in this testbed was removed by hand.
+- Delivery remains in progress: the package is `1.4.0`, but npm publication and the corresponding tag have not been
+  performed.
+
+## 2026-09-15 - Node Multi-Service Project Skill Implementation Slice
+
+- Added a preferred `services` configuration while preserving the earlier single-service configuration. Project mode
+  defaults `skillName` to `api-docs`; legacy mode retains its required explicit `skillName`. Mixing the two shapes is
+  rejected.
+- One project Skill contains 1-32 explicitly identified services and no nested Skill entrypoints. Each service defaults
+  to `sourceType=internal` or may declare `third-party`; document IDs need only be unique within their service.
+- Project-, service-, and document-level keyword arrays are trimmed, NFC-normalized, de-duplicated and sorted. Each
+  level permits at most 16 keywords of 1-64 printable characters. Project/service keywords feed a bounded frontmatter
+  discovery fragment; complete legal keyword lists remain in catalogs and provenance.
+- Project output uses `smartdoc-agent-core/2`, `kind=project`, one root `SKILL.md`, root catalog/provenance, and physical
+  service trees under `references/services/<serviceId>/references/`. Relative Markdown navigation replaces filesystem
+  symlinks; OpenAPI documents remain semantically separate and references remain document-local.
+- The root project provenance retains sorted nested service metadata and a flattened service/document index. The
+  publisher validates project kind/version, source type, nested provenance equality, document membership, link targets,
+  and the absence of nested `SKILL.md` files before staged replacement.
+- Bounds are 32 services, 32 documents across the project, 32 MiB project input, 10,000 files and 64 MiB output, while
+  retaining the 8 MiB per-document limit. All downloads and generation form one atomic update; any failure leaves the
+  previous complete project Skill in place.
+- Test-first evidence: the new project configuration, generation, provenance and publication tests failed before the
+  implementation existed. The Node suite grew to 23 tests, including internal/third-party services, repeated document
+  IDs across services, the project-wide document and byte budgets across service boundaries, three-level keyword
+  normalization/bounds and safe escaping, deterministic output, core/1 compatibility, core/2 validation,
+  legacy/project migration, stale-service removal, loopback downloads and failure retention.
+- Delivery remains in progress: package version is `1.4.0`, but npm publication has not been performed.
 
 ## 2026-09-15 - Unscoped Node Package Name And Bilingual Package Documentation
 
@@ -129,7 +201,7 @@ outside scope.
 - The first sandbox testbed attempt hit the previously recorded Windows `javac` resource-close failure before tests;
   the same command passed outside that sandbox without source changes.
 - Prior Maven aggregate/static verification remains valid for the unchanged compatibility behavior.
-- Node package tests: 5 pass; `npm pack --dry-run` includes the executable CLI, declarations, README and license.
+- Current Node package suite: 23 tests pass for legacy and project configuration, generation, download and publication.
 - `git diff --check` passes after documentation cleanup; bilingual onboarding and v3.7 project records describe the same
   runtime-first boundary.
 
@@ -137,7 +209,7 @@ outside scope.
 
 - Long-lived artifact caching, YAML configuration, automatic cross-project synchronization, drift management, global
   version coordination and cross-repository scheduling.
-- Cross-service runtime aggregation, WebFlux, databases, service discovery, gateways, or custom UI.
+- Cross-service aggregation by the embedded runtime Starter, WebFlux, databases, service discovery, gateways, or custom UI.
 - Other OpenAPI versions, Swagger 2.0, YAML, external references, unconfigured URL discovery, full specification validation.
 - Search, RAG, AI enrichment, chat, generated API clients, additional knowledge sources, Agent plugins or MCP.
 
@@ -152,7 +224,8 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-15 (unscoped Node package identity and bilingual package documentation verified).
+2026-09-15 (Node `1.4.0` multi-service project Skill verified with 23 tests plus packaging and real-consumer
+end-to-end generation; release pending).
 
 ## 2026-09-14 - Node Consumer Committed And Pushed
 

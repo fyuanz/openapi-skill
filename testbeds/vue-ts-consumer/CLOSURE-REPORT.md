@@ -120,3 +120,27 @@ Vue 3 + TS 前端  src/api/client.ts  (5 个接口的真实调用)
   历史记录一致。
 - 领域同义词（如 billing 的 账单/计费/发票）属不可信源文本，不能进 description；用户可配置的 description
   override 作为延后项记录在 DECISIONS.md。
+
+## 更新（2026-09-15，Node 1.4.0 项目模式端到端生成）
+
+同一闭环改用 `1.4.0` 的项目模式重跑。链路前半段不变（SpringDoc testbed `:18080` → 本地 tgz 安装 → `npm run
+skill:generate`），变化在生成产物与配置形态。
+
+| 步骤 | 命令 | 结果 |
+| --- | --- | --- |
+| 打包 | `npm pack` | `smartdoc-agent-1.4.0.tgz`，24 个条目，21,058 B（解包 74,238 B） |
+| 安装 | `npm install`（`file:` 依赖） | `node_modules/smartdoc-agent` 解析为 `1.4.0` |
+| 后端 | `spring-boot:run --server.port=18080` | account 200（2 paths）、business 200（2 paths）、`/smartdoc/skill.zip` 200（17,043 B） |
+| 生成 | `npm run skill:generate` | 21 files → `.agents/skills/api-docs/`（`smartdoc-agent-core/2`、`kind=project`） |
+| 校验 | 自写校验脚本 | 32 条相对链接全部命中，无嵌套 `SKILL.md`，描述为 464 字符单行，三类关键词均有序去重 |
+| 确定性 | 重复生成 | 整树 SHA-256 恒为 `b8940cff…9dfc`，`.smartdoc/staging`、`backups` 均为空 |
+| 失败保留 | business 指向关闭端口 | CLI 退出码 1（`DOWNLOAD: fetch failed`），旧 Skill 整树字节不变 |
+| 陈旧清理 | serviceId 改名后重生成 | `references/services/` 仅剩新服务目录 |
+| 构建 | `npm run build` | `vue-tsc` 严格检查 + `vite build` 通过，71.74 kB JS / 1.43 kB CSS |
+| 实时一致性 | 重新拉取两个端点计算 SHA-256 | `686c1b8b…6d87` / `ae7e7d84…290c`，与 `source.json` 完全一致 |
+
+1.4.0 的产物形态与上一版不同：**唯一**入口 `SKILL.md` 位于根目录，服务内容物理内嵌在
+`references/services/<serviceId>/references/`，不使用符号链接，复制整个 `api-docs` 目录即可使用。
+
+一处需人工处理的残留：项目模式把 Skill 名默认成 `api-docs`，因此从旧的单服务 `springdoc-multi-package-api`
+切换过来时，旧目录不会被自动删除——整树替换保证只在同一 Skill 名内生效。本 testbed 已手工删除该旧目录。

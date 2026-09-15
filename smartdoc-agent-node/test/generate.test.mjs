@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { generateSkill } from '../dist/index.js';
+import { generateProjectSkill, generateSkill } from '../dist/index.js';
 
 const fixture = async (id) => new Uint8Array(await readFile(new URL(`../../testbeds/springdoc-multi-package/fixtures/${id}.json`, import.meta.url)));
 
@@ -14,6 +14,8 @@ test('generates one deterministic navigable skill from multiple documents', asyn
   assert.equal([...first.keys()].filter((path) => path.includes('/schemas/')).length, 7);
   const source = JSON.parse(first.get('references/source.json'));
   assert.equal(source.generatorVersion, 'smartdoc-agent-core/1');
+  assert.equal(source.sourceType, undefined, 'legacy generator metadata must remain byte-compatible in shape');
+  assert.equal(source.keywords, undefined, 'legacy generator metadata must not gain empty keyword fields');
   assert.deepEqual(source.documents.map(({ documentId }) => documentId), ['account', 'business']);
   assert.match(first.get('SKILL.md'), /references\/catalog\.md/);
 });
@@ -104,4 +106,103 @@ test('keeps local references navigable and rejects external references', () => {
   }
   const external = new TextEncoder().encode(new TextDecoder().decode(local).replace('#/components/schemas/B', 'https://example.com/B'));
   assert.throws(() => generateSkill({ serviceId: 'svc', skillName: 'api', documents: new Map([['public', external]]) }), /only document-local/);
+});
+
+test('generates one self-contained project Skill with logical service navigation and scoped keywords', async () => {
+  const common = await fixture('account');
+  const files = generateProjectSkill({
+    skillName: 'api-docs', keywords: ['接口文档', 'project-api'], services: [
+      {
+        serviceId: 'orders', sourceType: 'internal', keywords: ['订单', '交易'],
+        documents: new Map([['common', common]]),
+        documentKeywords: new Map([['common', ['下单', '订单']]])
+      },
+      {
+        serviceId: 'shipping', sourceType: 'third-party', keywords: ['物流'],
+        documents: new Map([['common', common]]),
+        documentKeywords: new Map([['common', ['轨迹']]])
+      }
+    ]
+  });
+  assert.equal([...files.keys()].filter((path) => path === 'SKILL.md').length, 1);
+  assert.ok(files.has('references/services/orders/references/catalog.md'));
+  assert.ok(files.has('references/services/shipping/references/catalog.md'));
+  assert.match(files.get('references/catalog.md'), /services\/orders\/references\/catalog\.md/);
+  assert.match(files.get('references/catalog.md'), /third-party/);
+  assert.match(files.get('references/services/orders/references/catalog.md'), /下单/);
+  assert.match(files.get('SKILL.md'), /接口文档/);
+  assert.match(files.get('SKILL.md'), /订单/);
+  assert.doesNotMatch(files.get('SKILL.md'), /下单/);
+  const source = JSON.parse(files.get('references/source.json'));
+  assert.equal(source.generatorVersion, 'smartdoc-agent-core/2');
+  assert.equal(source.kind, 'project');
+  assert.equal(source.skillName, 'api-docs');
+  assert.deepEqual(source.services.map(({ serviceId }) => serviceId), ['orders', 'shipping']);
+  assert.equal(source.documents.length, 2);
+  assert.equal(source.documents[0].serviceId, 'orders');
+  for (const [path, content] of files) {
+    assert.ok(!path.includes('\\'));
+    if (!path.endsWith('.md')) continue;
+    for (const match of content.matchAll(/\]\(([^)]+)\)/g)) {
+      const base = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : '';
+      const resolved = new URL(match[1], `file:///${base}`).pathname.slice(1);
+      assert.ok(files.has(resolved), `${path} -> ${resolved}`);
+    }
+  }
+});
+
+test('bounds project discovery text and rejects duplicate services', () => {
+  const bytes = new TextEncoder().encode('{"openapi":"3.1.0","paths":{}}');
+  const services = Array.from({ length: 32 }, (_, i) => ({
+    serviceId: `service-${i}`, keywords: [`keyword-${i}-${'x'.repeat(40)}`],
+    documents: new Map([['public', bytes]])
+  }));
+  const files = generateProjectSkill({ skillName: 'api-docs', keywords: ['project'], services });
+  const entry = files.get('SKILL.md');
+  const start = entry.indexOf('description: ') + 'description: '.length;
+  const description = entry.slice(start, entry.indexOf('\n---\n', start));
+  assert.ok(description.length <= 1024, `description must stay within 1024 characters, got ${description.length}`);
+  assert.ok(!description.includes(': '));
+  assert.throws(() => generateProjectSkill({ skillName: 'api-docs', services: [services[0], services[0]] }), /duplicate service/);
+});
+
+test('normalizes project ordering and safely renders special discovery keywords', () => {
+  const bytes = new TextEncoder().encode('{"openapi":"3.1.0","paths":{}}');
+  const first = generateProjectSkill({
+    keywords: ['#支付', '账单: 查询', 'quote"slash\\'], services: [
+      { serviceId: 'shipping', keywords: ['物流'], documents: new Map([['public', bytes]]) },
+      { serviceId: 'billing', keywords: ['账单', '支付'], documents: new Map([['public', bytes]]) }
+    ]
+  });
+  const second = generateProjectSkill({
+    keywords: ['quote"slash\\', '账单: 查询', '#支付'], services: [
+      { serviceId: 'billing', keywords: ['支付', '账单'], documents: new Map([['public', bytes]]) },
+      { serviceId: 'shipping', keywords: ['物流'], documents: new Map([['public', bytes]]) }
+    ]
+  });
+  assert.deepEqual(first, second);
+  const entry = first.get('SKILL.md');
+  const description = entry.slice(entry.indexOf('description: ') + 13, entry.indexOf('\n---\n'));
+  assert.ok(!description.includes(': '), description);
+  assert.ok(!description.includes('\n'));
+  assert.match(description, /&#35;支付/);
+  assert.match(description, /账单&#58; 查询/);
+  assert.deepEqual(JSON.parse(first.get('references/source.json')).keywords, ['#支付', 'quote"slash\\', '账单: 查询']);
+});
+
+test('keeps the project-wide document limit across service boundaries', () => {
+  const bytes = new TextEncoder().encode('{"openapi":"3.1.0","paths":{}}');
+  const documents = new Map(Array.from({ length: 32 }, (_, i) => [`doc-${i}`, bytes]));
+  assert.throws(() => generateProjectSkill({ services: [
+    { serviceId: 'first', documents },
+    { serviceId: 'second', documents: new Map([['extra', bytes]]) }
+  ] }), /at most 32 documents/);
+});
+
+test('keeps the project-wide byte limit across service boundaries', () => {
+  const sevenMiB = new Uint8Array(7 * 1024 * 1024);
+  assert.throws(() => generateProjectSkill({ services: [
+    { serviceId: 'first', documents: new Map([['a', sevenMiB], ['b', sevenMiB], ['c', sevenMiB], ['d', sevenMiB]]) },
+    { serviceId: 'second', documents: new Map([['e', sevenMiB]]) }
+  ] }), /project input bytes exceeded/);
 });

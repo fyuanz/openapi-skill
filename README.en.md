@@ -17,15 +17,55 @@ needs Maven phases, a second application process, HTTP capture of `/v3/api-docs`
 - **Explicit input**: only JSON declaring `openapi: 3.1.0` is accepted. Production documents come from SpringDoc / NextDoc4j; those producers own Java package scanning and document export.
 
 YAML, Swagger 2.0, other OpenAPI versions, external references, full OpenAPI validation, automatic cross-project
-installation/synchronization, WebFlux, cross-service runtime aggregation, package repositories, and a CLI are outside
+installation/synchronization, WebFlux, cross-service runtime aggregation, and package repositories are outside
 the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The TypeScript package `smartdoc-agent` downloads multiple configured OpenAPI JSON endpoints and generates one
-complete Skill under `.agents/skills/<skillName>/` by default. Install it as a development dependency, create
-`smartdoc-agent.config.json`, and run `smartdoc-agent` after the local backend starts. See the
-[Node package guide](smartdoc-agent-node/README.en.md) for the account/business configuration and custom output option.
+Version `1.4.0` of the TypeScript package `smartdoc-agent` defaults to one self-contained API Skill per frontend
+project. Multiple microservices, multiple documents within each service, and third-party providers are organized below
+one `.agents/skills/api-docs/` directory; `skillName` can override the `api-docs` default.
+
+```json
+{
+  "keywords": ["API documentation", "frontend integration"],
+  "services": [
+    {
+      "serviceId": "account-service",
+      "sourceType": "internal",
+      "keywords": ["users", "accounts"],
+      "documents": [
+        {
+          "id": "account",
+          "url": "http://127.0.0.1:18080/v3/api-docs/account",
+          "keywords": ["login", "profiles"]
+        }
+      ]
+    },
+    {
+      "serviceId": "logistics-provider",
+      "sourceType": "third-party",
+      "keywords": ["logistics", "shipping"],
+      "documents": [
+        {
+          "id": "shipping",
+          "url": "https://api.example.com/openapi.json",
+          "keywords": ["waybills", "tracking"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Root, service, and document `keywords` respectively support Skill discovery, service selection, and document lookup.
+`sourceType` is `internal` by default and also accepts `third-party`. Every service reference is physically included and
+reached through relative Markdown links; no filesystem symbolic link or separately installed service Skill is needed.
+
+SmartDoc downloads and validates every configured service and document before replacing the complete directory once.
+Any failure retains the previous complete Skill instead of publishing a subset. The original
+`serviceId + skillName + documents` single-service configuration remains supported. Install the package as a development
+dependency and see the [Node package guide](smartdoc-agent-node/README.en.md) for scripts, overrides, and migration details.
 
 ## Release and requirements
 

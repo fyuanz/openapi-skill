@@ -1,5 +1,64 @@
 # Decisions
 
+## 2026-09-15 - Generate One Self-Contained Node Project Skill For Multiple Services
+
+Status: Accepted; implementation slice verified, npm release pending
+
+Make one API-documentation Skill the normal unit for a consuming project. The preferred Node configuration has a
+top-level `services` array and one optional top-level `skillName`, defaulting to `api-docs`. A service has a stable
+`serviceId`, optional `sourceType=internal|third-party`, optional service keywords, and one or more explicitly configured
+document ID/HTTP(S) URL pairs with optional document keywords. A project may also define project keywords. Service IDs
+are unique within the project; document IDs are unique only within their service. Service-level `skillName` is rejected
+because one project produces one installable Skill.
+
+Keep the previous top-level `serviceId`, `skillName`, and `documents` configuration as a compatibility mode. It continues
+to generate the existing `smartdoc-agent-core/1` single-service layout and still requires an explicit `skillName`.
+Project and legacy shapes cannot be mixed, so configuration meaning remains unambiguous.
+
+Generate project output as `smartdoc-agent-core/2`, `kind=project`, with exactly one trusted root `SKILL.md`, one root
+service catalog, and one root provenance file. Build each service through the existing contract-preserving generator,
+discard its intermediate `SKILL.md`, and physically include its complete reference tree beneath
+`references/services/<serviceId>/references/`. Root and service catalogs use relative Markdown links. Do not create
+filesystem symbolic links, depend on separately installed service Skills, merge OpenAPI objects, resolve references
+across documents, infer gateway routes, or treat same-named schemas as shared types.
+
+Root provenance retains sorted full member metadata plus a flattened service/document index. Each service records its
+source type and service keywords; each document records its document keywords and existing input digest/version/count
+facts. The project publisher validates core/2 project shape, sorted unique services, allowed source types, exact nested
+provenance equality, flattened document membership, safe paths/links, and the absence of nested Skill entrypoints.
+
+Keywords are trusted explicit configuration, not OpenAPI free text. At every configured level, trim and NFC-normalize,
+reject controls and non-text values, de-duplicate and sort, allow at most 16 values, and bound each value to 1-64 printable
+characters. Keep complete legal lists in catalog/provenance. Only a bounded project/service subset enters the single-line
+root description; document keywords guide navigation after the Skill is selected. This preserves the 1024-character
+frontmatter limit without sacrificing document-level search terms.
+
+Treat all configured services/documents as one atomic project update. Download every source under the shared timeout and
+input budget, generate and validate the full tree in staging, then replace `<output>/<skillName>` only after success.
+Any download, parse, generation, provenance, link, or publication failure retains the previous complete Skill; never
+publish a mixed old/new or partial service set. Permit 1-32 services, at most 32 documents across the project, at most
+32 MiB total input, 10,000 generated files, and 64 MiB output while retaining the 8 MiB per-document and existing
+document-local reference bounds.
+
+This is client-side aggregation from URLs the project owner explicitly configured. It does not authorize the embedded
+Spring Boot Starter to discover or fetch other services, and it does not add service-registry, gateway, repository, or
+cross-project synchronization behavior. The Node source version is `1.4.0`; it is not published. Current test-first
+evidence is 23 passing Node tests across configuration, deterministic generation, keyword/source-type metadata, strict
+project validation, project-wide document/byte budgets, complete download/publication, failure retention,
+stale-member removal, default project naming, and legacy compatibility; the packed tarball was additionally verified
+end to end in the real Vue consumer against the running SpringDoc testbed.
+
+Alternatives considered:
+
+- Install one Skill per service and have a root Skill link to them. Rejected because discovery becomes fragmented and
+  copied packages, Windows hosts, and npm archives cannot guarantee those external targets exist.
+- Use operating-system symbolic links between service trees. Rejected because they are permission- and platform-sensitive,
+  may not survive packaging, can escape the Skill root, and weaken complete-tree validation.
+- Merge all service OpenAPI documents into one contract. Rejected because service/document identity, same-named schemas,
+  servers, security, and local references would become ambiguous.
+- Put every document keyword in root frontmatter. Rejected because it scales poorly and can exceed or dilute the trusted
+  Skill discovery description; document keywords belong in service navigation and provenance.
+
 ## 2026-09-15 - Publish The Node Consumer Under An Unscoped Name With Chinese-First Documentation
 
 Status: Accepted
@@ -84,7 +143,8 @@ readability gaps, each verified against source data in `testbeds/vue-ts-consumer
 
 ## 2026-09-14 - Add A TypeScript npm Consumer For Multi-URL Skill Generation
 
-Status: Superseded for package identity and package documentation by the 2026-09-15 decision; generation behavior remains accepted
+Status: Superseded for package identity/documentation and as the preferred configuration by the 2026-09-15 decisions;
+the single-service generation behavior remains accepted as compatibility mode
 
 Add `smartdoc-agent-node` as the publishable `@fyuanz/smartdoc-agent` package for Vue 3 and other Node.js 20+ projects.
 The consuming project explicitly maps each document ID to an HTTP(S) OpenAPI URL; all documents form one atomic service

@@ -14,10 +14,16 @@ to match the live OpenAPI contract.
 
 1. A real Node project can install the npm package and generate one Skill from
    two live grouped OpenAPI endpoints.
-2. The Skill lands in the consumer's own `.agents/skills/<skillName>/`.
+2. The project-mode Skill uses the default name and lands in the consumer's own
+   `.agents/skills/api-docs/`.
 3. The frontend's typed client and the documented contract agree: every
    operation, parameter, status code and schema the UI relies on was verified
    against the running service.
+4. The generated snapshot really is the live contract: the SHA-256 of both
+   endpoint responses equals the digest recorded in the Skill's `source.json`.
+5. Regenerating without a source change reproduces the identical tree, a failed
+   download leaves the previous Skill byte-identical, and removing a service
+   from the configuration deletes its subtree.
 
 ## Prerequisites
 
@@ -50,10 +56,20 @@ npm install
 npm run skill:generate
 ```
 
-`smartdoc-agent.config.json` maps two document IDs to the two live endpoints.
-The output is `.agents/skills/springdoc-multi-package-api/` (19 files). All
-documents are downloaded and validated before anything is published, so a failed
-download never damages a previously generated Skill.
+`smartdoc-agent.config.json` declares one `springdoc-multi-package` service and
+maps its account/business document IDs to the two live endpoints. It also
+demonstrates project-, service-, and document-level keywords. Because `skillName`
+is omitted, the output is `.agents/skills/api-docs/` (21 files:
+`smartdoc-agent-core/2`, `kind=project`, one root `SKILL.md` with the service
+tree physically embedded under `references/services/<serviceId>/`). All services
+and documents are downloaded and validated before the complete project Skill is
+replaced, so a failed download never damages a previously generated Skill or
+publishes a partial service set.
+
+Deleting a service from the configuration removes its whole subtree on the next
+successful run. Note that whole-tree replacement applies within one Skill name:
+switching from the legacy `springdoc-multi-package-api` layout to the default
+`api-docs` name leaves the old directory in place, so delete it manually.
 
 ## 3. Run the frontend
 

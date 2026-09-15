@@ -1,9 +1,23 @@
 {
-  "serviceId": "springdoc-multi-package",
-  "skillName": "springdoc-multi-package-api",
+  "keywords": ["API 文档", "接口联调", "前端请求"],
   "output": ".agents/skills",
-  "documents": [
-    { "id": "account", "url": "http://127.0.0.1:18080/v3/api-docs/account" },
-    { "id": "business", "url": "http://127.0.0.1:18080/v3/api-docs/business" }
+  "services": [
+    {
+      "serviceId": "springdoc-multi-package",
+      "sourceType": "internal",
+      "keywords": ["示例服务", "用户", "订单", "文件上传"],
+      "documents": [
+        {
+          "id": "account",
+          "url": "http://127.0.0.1:18080/v3/api-docs/account",
+          "keywords": ["账号", "用户查询", "用户详情"]
+        },
+        {
+          "id": "business",
+          "url": "http://127.0.0.1:18080/v3/api-docs/business",
+          "keywords": ["创建订单", "文件上传"]
+        }
+      ]
+    }
   ]
 }

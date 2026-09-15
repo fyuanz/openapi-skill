@@ -10,6 +10,6 @@ if (args.length) {
 }
 if (process.exitCode === undefined) {
   run(config ? { config } : {}).then((result) => {
-    console.log(`Generated ${result.documentCount} OpenAPI documents into ${result.skillDirectory} (${result.fileCount} files).`);
+    console.log(`Generated ${result.serviceCount} service(s) and ${result.documentCount} OpenAPI document(s) into ${result.skillDirectory} (${result.fileCount} files).`);
   }).catch((error: unknown) => { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; });
 }

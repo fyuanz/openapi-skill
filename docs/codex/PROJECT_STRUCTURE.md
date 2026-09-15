@@ -46,11 +46,11 @@
 |   |-- README.md
 |   `-- src/                # runtime auto-configuration, SpringDoc collection, ZIP endpoint and tests
 |-- smartdoc-agent-node/
-|   |-- package.json        # publishable unscoped smartdoc-agent package and CLI
+|   |-- package.json        # unscoped smartdoc-agent 1.4.0 source and CLI; not yet published
 |   |-- README.md           # default Chinese Node package guide
 |   |-- README.en.md        # equivalent English Node package guide with reciprocal link
-|   |-- src/                # TypeScript core-compatible generator, downloader and safe publisher
-|   `-- test/               # Node unit and loopback HTTP integration tests
+|   |-- src/                # service/project generators, keyword/config rules, downloader and safe publisher
+|   `-- test/               # Node unit, project-tree, publication and loopback HTTP integration tests
 `-- pom.xml
 ```
 
@@ -60,14 +60,15 @@
 | --- | --- |
 | `AGENTS.md` | First-read, test-first development, and documentation rules |
 | `README.md` / `README.en.md` | Runtime-first onboarding, legacy Maven compatibility, Skill usage and verification |
-| `docs/smartdoc-agent-design.md` | v3.7 runtime architecture, discovery and compatibility boundaries |
+| `docs/smartdoc-agent-design.md` | v3.8 runtime plus Node project-Skill architecture and compatibility boundaries |
 | `pom.xml` | Java 17 Maven parent; aggregates core, Maven plugin and runtime Starter |
 | `LICENSE` | User-selected MIT license |
 | `docs/maven-central.md` | Maven Central release and plugin-consumption instructions |
 | `docs/codex/DECISIONS.md` | Historical and current scope decisions |
 
-P0-P6 produced the core, safe publisher, Maven compatibility plugin, and aggregate output. v3.7 adds a runtime Starter and
-removes build-time startup/capture/generation from the SpringDoc testbed. Legacy IR remains deleted.
+P0-P6 produced the core, safe publisher, Maven compatibility plugin, and aggregate output. v3.7 added a runtime Starter
+and removed build-time startup/capture/generation from the SpringDoc testbed. v3.8 adds the Node 1.4.0 project mode:
+one self-contained Skill for explicitly configured internal and third-party services. Legacy IR remains deleted.
 
 ## Implementation Locations
 
@@ -82,12 +83,24 @@ Core, runtime entry point, and Maven compatibility entry point now exist:
   optional runtime properties, safe identity derivation, direct SpringDoc final-resource collection, deterministic in-memory
   ZIP creation, and the hidden `/smartdoc/skill.zip` controller.
 - `smartdoc-agent-spring-boot-starter/src/test/`: default-document and multi-group auto-configuration/ZIP tests.
-- `smartdoc-agent-node/`: Node.js 20+ TypeScript package. Its CLI loads explicit document ID/URL pairs, downloads all
-  inputs, invokes the core-compatible generator, and atomically publishes one Skill. Default output is the consuming
-  project's `.agents/skills/`; an explicit output parent is supported.
+- `smartdoc-agent-node/src/config.ts` accepts the preferred top-level `services` model, defaults its `skillName` to
+  `api-docs`, validates source types and project/service/document keywords, and normalizes the earlier single-service
+  configuration without changing that legacy contract.
+- `smartdoc-agent-node/src/project-generator.ts` generates one `smartdoc-agent-core/2`, `kind=project` tree. It builds
+  each service through the core-compatible service generator, omits nested `SKILL.md` files, physically relocates the
+  complete reference trees beneath `references/services/<serviceId>/references/`, and creates the root catalog,
+  provenance, and trusted entrypoint.
+- `smartdoc-agent-node/src/keywords.ts` applies deterministic keyword trimming, NFC normalization, de-duplication,
+  sorting, count/length/control-character checks, and bounded frontmatter discovery text.
+- `smartdoc-agent-node/src/index.ts` downloads the complete project input and routes legacy configuration to the
+  unchanged service generator or `services` configuration to the project generator. `publisher.ts` validates both
+  `smartdoc-agent-core/1` service and `smartdoc-agent-core/2` project ownership before staged replacement.
+- The Node CLI defaults output to the consuming project's `.agents/skills/`; an explicit relative or absolute output
+  parent remains supported.
 - `testbeds/maven-plugin-integration/`: two valid service-owner modules, an opt-in broken Java module, static OpenAPI inputs, POM examples, and `verify.ps1` for real lifecycle assertions.
 
-Do not add CLI, package repository, generic URL ingestion, or cross-service runtime aggregation. The standalone fixture at
+Do not add package repositories, unconfigured URL discovery, or cross-service aggregation to the embedded runtime
+Starter. The Node CLI's explicit trusted configuration is the only current remote URL ingestion boundary. The standalone fixture at
 `testbeds/springdoc-multi-package/` has `user`, `order`, `file`, and `common` packages plus `account`/`business` groups.
 It consumes the Starter but remains outside the root reactor. Core tests consume frozen sanitized snapshots offline.
 `testbeds/vue-ts-consumer/` is the consumer-side counterpart and also stays outside the Maven reactor; it is a plain npm
@@ -103,6 +116,10 @@ project whose generated Skill, `node_modules/`, and `dist/` are ignored rather t
   fixture test still writes asserted snapshots to `target/openapi/` for the separate refresh script.
 - For an output parent, the final Skill is `<skillName>/`; updater state is outside it under `.smartdoc/locks/<skillName>.lock`, `.smartdoc/staging/`, `.smartdoc/backups/`, and `.smartdoc/status/<serviceId>.json`.
 - Each service and aggregate owns separate output, staging, lock and status paths. Individual references use `references/documents/<documentId>/`; aggregate members use `references/services/<serviceId>/references/documents/<documentId>/`. The aggregate has one root `SKILL.md` and remains independently installable.
+- Node project output uses one `<skillName>/` (default `api-docs`) with one root `SKILL.md`. Its root catalog and
+  provenance are `references/catalog.md` and `references/source.json`; every physical member tree is under
+  `references/services/<serviceId>/references/`. Relative Markdown links provide navigation, not filesystem symlinks.
+  Node staging and backup attempts stay beside the output under `.smartdoc/staging/` and `.smartdoc/backups/`.
 - Preserve safe local ignore rules for IDE files, secrets, logs, and temporary files.
 - Generated restricted API documentation must not be committed as a substitute for sanitized fixtures.
 
@@ -115,3 +132,5 @@ project whose generated Skill, `node_modules/`, and `dist/` are ignored rather t
 - Stable files and deterministic ZIP bytes matter; a package repository/identity platform remains outside scope.
 - Runtime endpoints inherit application security and must not silently expose restricted API contracts.
 - Never replace a shared parent containing multiple service outputs. Do not infer service boundaries from Java packages or Maven directory names.
+- In Node project mode, every configured service and document is required for one full replacement. Never publish a
+  partial project tree or use a stale member as a substitute for a failed download.
