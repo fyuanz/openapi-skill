@@ -34,8 +34,9 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
   sample APIs, and a real random-port ZIP download.
 - Core retains 63 tests; Maven plugin retains 15 tests; the Starter retains 2 (80 across the reactor). The latter
   remains a compatibility path for authoritative static JSON and explicit cross-service `aggregate` / `both` generation.
-- `smartdoc-agent-node` is a tested, packable TypeScript package and CLI for atomic multi-URL generation. It defaults to
-  the consuming project root's `.agents/skills` and supports an explicit output parent.
+- `smartdoc-agent-node` is the unscoped `smartdoc-agent` TypeScript package and CLI for atomic multi-URL generation. It
+  defaults to the consuming project root's `.agents/skills`, supports an explicit output parent, and ships a Chinese
+  default README plus a reciprocally linked English guide.
 - `testbeds/vue-ts-consumer` closes the consumer loop: a real Vue 3 + TypeScript project generates the Skill from the
   running SpringDoc testbed and calls all five documented operations through a dev-server proxy. An independent read-only
   audit of that Skill found it sufficient to write a correct typed client, plus three readability gaps recorded in its

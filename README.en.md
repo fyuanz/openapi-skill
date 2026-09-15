@@ -22,10 +22,10 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The TypeScript package `@fyuanz/smartdoc-agent` downloads multiple configured OpenAPI JSON endpoints and generates one
+The TypeScript package `smartdoc-agent` downloads multiple configured OpenAPI JSON endpoints and generates one
 complete Skill under `.agents/skills/<skillName>/` by default. Install it as a development dependency, create
 `smartdoc-agent.config.json`, and run `smartdoc-agent` after the local backend starts. See the
-[Node package guide](smartdoc-agent-node/README.md) for the account/business configuration and custom output option.
+[Node package guide](smartdoc-agent-node/README.en.md) for the account/business configuration and custom output option.
 
 ## Release and requirements
 

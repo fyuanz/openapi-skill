@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-09-15 - Publish The Node Consumer Under An Unscoped Name With Chinese-First Documentation
+
+Status: Accepted
+
+Rename the Node package from `@fyuanz/smartdoc-agent` to the unscoped npm identity `smartdoc-agent`. Keep the executable
+name, library exports, configuration file, generated format, and runtime behavior unchanged. Update the Vue consumer
+fixture to use the new tarball identity; earlier closure evidence may retain the scoped name because it describes the
+package that was installed during that historical run.
+
+Make `smartdoc-agent-node/README.md` the default Chinese package guide and add an equivalent `README.en.md`, with
+reciprocal language links. Include both files in the published tarball so npm and local-package consumers receive both
+guides. Registry publication remains an explicit credentialed release action, separate from this repository change.
+
+Evidence: the package identity/documentation test failed first on the missing English guide, then all 9 Node tests
+passed. `npm pack --json` reported the unscoped name, the expected tarball filename, and both README files. The updated
+Vue consumer installed the new tarball and passed its strict production build. A direct no-cache request to the official
+npm registry returned HTTP 404 for `smartdoc-agent` on 2026-09-15, confirming it was unoccupied at verification time.
+
 ## 2026-09-14 - Make The Skill Description A Bilingual Action-Triggered Trigger
 
 Status: Accepted
@@ -66,7 +84,7 @@ readability gaps, each verified against source data in `testbeds/vue-ts-consumer
 
 ## 2026-09-14 - Add A TypeScript npm Consumer For Multi-URL Skill Generation
 
-Status: Accepted
+Status: Superseded for package identity and package documentation by the 2026-09-15 decision; generation behavior remains accepted
 
 Add `smartdoc-agent-node` as the publishable `@fyuanz/smartdoc-agent` package for Vue 3 and other Node.js 20+ projects.
 The consuming project explicitly maps each document ID to an HTTP(S) OpenAPI URL; all documents form one atomic service

@@ -21,7 +21,7 @@ outside scope.
 | P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
 | P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
-| P8 | TypeScript npm package for configured multi-URL Skill generation | Complete and committed; npm publication requires npm credentials |
+| P8 | TypeScript npm package for configured multi-URL Skill generation | Complete; renamed to unscoped `smartdoc-agent`, with bilingual package docs; registry publication remains separate |
 | P9 | Real Vue 3 + TypeScript consumer loop against the running SpringDoc service | Complete; build plus seven live call scenarios verified |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
@@ -29,7 +29,7 @@ outside scope.
 ## Current Implementation
 
 - `testbeds/vue-ts-consumer` is a real Vue 3 + TypeScript + Vite consumer. It installs the packed
-  `@fyuanz/smartdoc-agent` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
+  `smartdoc-agent` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
   testbed into its own `.agents/skills/`, and calls all five documented operations through a Vite dev-server proxy.
 - `smartdoc-agent-spring-boot-starter` auto-configures `GET /smartdoc/skill.zip` for Servlet/WebMVC applications.
 - It derives service identity from `spring.application.name`; enabled/path/serviceId/skillName are optional overrides.
@@ -40,13 +40,28 @@ outside scope.
   The hidden endpoint does not enter generated OpenAPI.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or SmartDoc Maven goal.
 - `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
-- `smartdoc-agent-node` provides `@fyuanz/smartdoc-agent`: a TypeScript library/CLI that downloads explicit grouped
+- `smartdoc-agent-node` provides unscoped `smartdoc-agent`: a TypeScript library/CLI that downloads explicit grouped
   OpenAPI URLs, generates one core-compatible Skill, and safely replaces `.agents/skills/<skillName>` by default.
 - Source is `1.3.0-SNAPSHOT` (default-semantics explanations at the point of use and a bilingual action-triggered
   description); the latest immutable Central release is `1.2.0`, including the runtime Starter. The Node package source
   is `1.3.0`, published from a packed tarball pending registry publication.
 
 ## Verified
+
+## 2026-09-15 - Unscoped Node Package Name And Bilingual Package Documentation
+
+- Renamed the package identity from `@fyuanz/smartdoc-agent` to unscoped `smartdoc-agent`; the CLI executable remains
+  `smartdoc-agent`, so configuration and invocation behavior are unchanged.
+- Replaced the Node package's English-only `README.md` with the default Chinese guide and added an equivalent
+  `README.en.md`. Both documents provide reciprocal language links, and both are included in the npm package.
+- Updated root onboarding and the Vue consumer dependency/tarball reference to the new package identity. Historical
+  closure records retain the old scoped name where they describe an earlier verified run.
+- Test-first evidence: the new package metadata/documentation test failed because `README.en.md` did not exist, then all
+  9 Node tests passed. `npm pack --json` produced `smartdoc-agent-1.3.0.tgz` with both README files among 20 entries; the
+  updated Vue consumer installed that tarball and its strict production build passed.
+- A direct no-cache check of the official npm registry returned HTTP 404 for `smartdoc-agent` on 2026-09-15, so the
+  unscoped name was not occupied at verification time.
+- Publishing the new unscoped package to npm is a separate credentialed release action and was not performed here.
 
 ## 2026-09-14 - Default-Semantics Readability Fixes And Bilingual Action-Triggered Description
 
@@ -137,7 +152,7 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-14 (real Vue 3 consumer loop verified).
+2026-09-15 (unscoped Node package identity and bilingual package documentation verified).
 
 ## 2026-09-14 - Node Consumer Committed And Pushed
 

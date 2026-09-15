@@ -70,7 +70,8 @@ must not be used to justify reintroducing build-time startup/capture into the re
 
 ## Node.js Package
 
-`@fyuanz/smartdoc-agent` targets Node.js 20+ and exports both a `smartdoc-agent` CLI and typed library functions. It uses
+The unscoped `smartdoc-agent` package targets Node.js 20+ and exports both a `smartdoc-agent` CLI and typed library
+functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. It uses
 explicit document IDs and HTTP(S) URLs, rejects redirects and external references, preserves the Java core's
 `smartdoc-agent-core/1` Skill layout and bounds, and publishes only after every download and output validation succeeds.
 The default output parent is `<consumer>/.agents/skills`; `output` supports a relative or absolute override.

@@ -1,7 +1,7 @@
 # vue-ts-consumer
 
 A real Vue 3 + TypeScript consumer that closes the loop between the
-`@fyuanz/smartdoc-agent` Skill generator, a running Spring Boot service, and a
+`smartdoc-agent` Skill generator, a running Spring Boot service, and a
 frontend project that actually calls that service.
 
 This testbed differs from `testbeds/springdoc-multi-package` and

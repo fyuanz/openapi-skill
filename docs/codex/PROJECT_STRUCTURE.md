@@ -46,7 +46,9 @@
 |   |-- README.md
 |   `-- src/                # runtime auto-configuration, SpringDoc collection, ZIP endpoint and tests
 |-- smartdoc-agent-node/
-|   |-- package.json        # publishable @fyuanz/smartdoc-agent package and CLI
+|   |-- package.json        # publishable unscoped smartdoc-agent package and CLI
+|   |-- README.md           # default Chinese Node package guide
+|   |-- README.en.md        # equivalent English Node package guide with reciprocal link
 |   |-- src/                # TypeScript core-compatible generator, downloader and safe publisher
 |   `-- test/               # Node unit and loopback HTTP integration tests
 `-- pom.xml
@@ -113,4 +115,3 @@ project whose generated Skill, `node_modules/`, and `dist/` are ignored rather t
 - Stable files and deterministic ZIP bytes matter; a package repository/identity platform remains outside scope.
 - Runtime endpoints inherit application security and must not silently expose restricted API contracts.
 - Never replace a shared parent containing multiple service outputs. Do not infer service boundaries from Java packages or Maven directory names.
-
