@@ -37,7 +37,8 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 
 - Java source is `1.3.0-SNAPSHOT` (default-semantics explanations and a bilingual action-triggered description); the
   latest Central release is `1.2.0`, containing the parent, core, Maven plugin, and runtime Spring Boot Starter.
-- Node package source is `1.4.0`. Its new project mode is implemented and locally verified but has not been published.
+- Node package `smartdoc-agent@1.4.0` is published to npm and is the current `latest`. Its project mode is verified end
+  to end in the real Vue consumer, and the registry artifact is byte-identical to the locally packed tarball.
 - `smartdoc-agent-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/smartdoc/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.

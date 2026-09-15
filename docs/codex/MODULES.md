@@ -8,7 +8,7 @@
 | `smartdoc-agent-core` | Per-service conversion, aggregate assembly, validation and safe filesystem publication | 63 tests pass |
 | `smartdoc-agent-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
 | `smartdoc-agent-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
-| `smartdoc-agent-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | `1.4.0` source; 23 Node tests pass; packed tarball verified in the real Vue consumer; publication pending |
+| `smartdoc-agent-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | `1.4.0` published to npm; 23 Node tests pass; packed tarball verified in the real Vue consumer |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no SmartDoc build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 | `testbeds/maven-plugin-integration` | Legacy static multi-service Maven lifecycle verification | Retained and passing at the prior milestone |
@@ -95,9 +95,9 @@ Skill. Redirects and external references remain rejected. The default output par
 `<consumer>/.agents/skills`; `output` supports a relative or absolute override.
 
 The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains supported and continues to emit
-the `smartdoc-agent-core/1` single-service layout. Project and legacy shapes cannot be mixed. The `1.4.0` package has
-not been published; the current implementation slice passes 23 Node tests and its packed tarball generated a 21-file
-project Skill in the real Vue consumer against the running SpringDoc testbed.
+the `smartdoc-agent-core/1` single-service layout. Project and legacy shapes cannot be mixed. The `1.4.0` package is
+published to npm as the current `latest`; the implementation slice passes 23 Node tests and its packed tarball
+generated a 21-file project Skill in the real Vue consumer against the running SpringDoc testbed.
 
 ## Testbed
 

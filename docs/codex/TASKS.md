@@ -24,8 +24,9 @@ artifact coordination remain outside scope.
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
 | P8 | TypeScript npm package for configured single-service multi-URL Skill generation | Complete for the `1.3.0` legacy configuration; renamed to unscoped `smartdoc-agent` with bilingual package docs |
 | P9 | Real Vue 3 + TypeScript consumer loop against the running SpringDoc service | Complete; build plus seven live call scenarios verified |
-| P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | In progress; 23 Node tests pass and the packed `1.4.0` tarball is verified end to end in the real Vue consumer, package release remains pending |
+| P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | Complete; 23 Node tests pass, the packed tarball is verified end to end in the real Vue consumer, and `smartdoc-agent@1.4.0` is published on npm |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
+| Release | npm release | `smartdoc-agent@1.4.0` published 2026-09-15 and now `latest`; the registry artifact is byte-identical to the packed tarball and installs and runs from the public registry |
 | Documentation | Chinese-default README, English guide and v3.7 design | Updated for runtime-first integration |
 
 ## Current Implementation
@@ -49,9 +50,10 @@ artifact coordination remain outside scope.
 - The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible and continues to emit
   the `smartdoc-agent-core/1` single-service layout.
 - Java source is `1.3.0-SNAPSHOT` (default-semantics explanations at the point of use and a bilingual action-triggered
-  description); the latest immutable Central release is `1.2.0`, including the runtime Starter. Node package source is
-  `1.4.0`; it has not been published. The packed `1.4.0` tarball is installed in `testbeds/vue-ts-consumer`, where it
-  generated the 21-file `api-docs` project Skill from the running testbed byte-identically on repeat runs.
+  description); the latest immutable Central release is `1.2.0`, including the runtime Starter. The Node package is
+  published as `smartdoc-agent@1.4.0` and is the current `latest`. That artifact is installed in
+  `testbeds/vue-ts-consumer`, where it generated the 21-file `api-docs` project Skill from the running testbed
+  byte-identically on repeat runs.
 
 ## Verified
 
@@ -91,8 +93,21 @@ artifact coordination remain outside scope.
 - Housekeeping note: because project mode defaults the Skill name, a consumer switching from the legacy
   `springdoc-multi-package-api` Skill to `api-docs` keeps the old directory until it is deleted manually. The whole-tree
   replacement guarantee applies within one Skill name; the stale legacy directory in this testbed was removed by hand.
-- Delivery remains in progress: the package is `1.4.0`, but npm publication and the corresponding tag have not been
-  performed.
+- Delivery: npm publication was completed separately, after this local verification run (see the release entry below).
+
+## 2026-09-15 - Node 1.4.0 Published To npm And Independently Verified From The Registry
+
+- Registry state: the unscoped `smartdoc-agent` package now reports `dist-tags.latest = 1.4.0`, with `1.3.0`
+  (2026-09-15T03:09:18Z) and `1.4.0` (2026-09-15T06:54:22Z) as its only versions. Maintainer `fyuan
+  <624728873@qq.com>`. The earlier "unoccupied / 404" note in DECISIONS describes the state at rename time only.
+- Artifact equivalence: the tarball downloaded from the public registry is 21,058 bytes with
+  `sha512-SSKT78zvVzVF9g8Wc1sGWCAqUGL7xCWMbPyVCfkea5gg+jkwQ79LaEKU4x+XfIdS13JXdDAbcrQ50H5xZ77tpw==`, which equals the
+  published `dist.integrity` and the locally packed `smartdoc-agent-1.4.0.tgz` byte for byte. The remote and local
+  entry lists are identical (24 entries), so nothing was added or lost in transit.
+- Fresh install: installing `smartdoc-agent@1.4.0` from the public registry into an empty directory succeeded, resolved
+  version `1.4.0`, registered the `smartdoc-agent` executable, and `dist/cli.js --help` printed its usage.
+- No Maven or generated-Skill behavior changed in this release step, so the Java reactor and the consumer Skill were
+  not regenerated.
 
 ## 2026-09-15 - Node Multi-Service Project Skill Implementation Slice
 

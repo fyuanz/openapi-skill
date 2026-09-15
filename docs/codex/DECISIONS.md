@@ -2,7 +2,7 @@
 
 ## 2026-09-15 - Generate One Self-Contained Node Project Skill For Multiple Services
 
-Status: Accepted; implementation slice verified, npm release pending
+Status: Accepted; verified end to end and released as `smartdoc-agent@1.4.0` on npm on 2026-09-15
 
 Make one API-documentation Skill the normal unit for a consuming project. The preferred Node configuration has a
 top-level `services` array and one optional top-level `skillName`, defaulting to `api-docs`. A service has a stable
@@ -42,7 +42,8 @@ document-local reference bounds.
 
 This is client-side aggregation from URLs the project owner explicitly configured. It does not authorize the embedded
 Spring Boot Starter to discover or fetch other services, and it does not add service-registry, gateway, repository, or
-cross-project synchronization behavior. The Node source version is `1.4.0`; it is not published. Current test-first
+cross-project synchronization behavior. The Node source version is `1.4.0`, published to npm as the unscoped
+`smartdoc-agent` on 2026-09-15 with `latest` resolving to it. Current test-first
 evidence is 23 passing Node tests across configuration, deterministic generation, keyword/source-type metadata, strict
 project validation, project-wide document/byte budgets, complete download/publication, failure retention,
 stale-member removal, default project naming, and legacy compatibility; the packed tarball was additionally verified
@@ -76,6 +77,10 @@ Evidence: the package identity/documentation test failed first on the missing En
 passed. `npm pack --json` reported the unscoped name, the expected tarball filename, and both README files. The updated
 Vue consumer installed the new tarball and passed its strict production build. A direct no-cache request to the official
 npm registry returned HTTP 404 for `smartdoc-agent` on 2026-09-15, confirming it was unoccupied at verification time.
+
+Follow-up 2026-09-15: the name was then claimed by this account and `smartdoc-agent@1.4.0` was published, becoming
+`latest`. The registry artifact was confirmed byte-identical to the locally packed tarball, so the 404 above records
+only the state at rename time and must not be read as the current package status.
 
 ## 2026-09-14 - Make The Skill Description A Bilingual Action-Triggered Trigger
 

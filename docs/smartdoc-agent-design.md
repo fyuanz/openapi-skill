@@ -2,7 +2,7 @@
 
 > 版本：3.8.0
 > 日期：2026-09-15
-> 状态：运行时 Starter 主链路已验证；Node 1.4.0 多服务 project Skill 通过 23 项测试，并在真实 Vue 消费者中完成打包与端到端生成验证，尚未发布
+> 状态：运行时 Starter 主链路已验证；Node 1.4.0 多服务 project Skill 通过 23 项测试，在真实 Vue 消费者中完成打包与端到端生成验证，并已发布到 npm（`smartdoc-agent@1.4.0`，当前 `latest`）
 
 本版保留运行时下载主链路，并为前端/Node 项目增加一个自包含 API 文档 Skill：显式配置多个内部或第三方
 服务及其文档，完整下载、生成并原子安装到项目。历史范围和被取代的构建期决策保留在
@@ -227,12 +227,12 @@ OpenAPI 语义、servers、安全定义、同名 Schema 和 `$ref` 始终按 ser
 | `smartdoc-agent-core` | OpenAPI 3.1.0 解析、契约/引用渲染、文件集校验和旧目录安全发布 | 63 项测试通过 |
 | `smartdoc-agent-spring-boot-starter` | Spring Boot 自动配置、SpringDoc 最终文档发现、运行时转换和 ZIP 下载 | 2 项单/多文档测试通过 |
 | `smartdoc-agent-maven-plugin` | 离线文件输入、构建期兼容、独立/汇总输出 | 15 项测试通过 |
-| `smartdoc-agent-node` | 显式 URL 下载、core/1 单服务兼容、core/2 多服务 project Skill 和本地原子发布 | 1.4.0 源码；23 项测试通过；真实消费者端到端生成已验证；未发布 |
+| `smartdoc-agent-node` | 显式 URL 下载、core/1 单服务兼容、core/2 多服务 project Skill 和本地原子发布 | 1.4.0 已发布到 npm（当前 latest）；23 项测试通过；真实消费者端到端生成已验证 |
 | `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 6 项测试通过 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x
 兼容性变化不会污染转换逻辑。Java 最新 Central 版本为 `1.2.0`，Java 开发源码为 `1.3.0-SNAPSHOT`；Node
-开发源码为 `1.4.0` 且尚未发布。已发布版本保持不可变。
+1.4.0 已发布到 npm 且为当前 `latest`。已发布版本保持不可变。
 
 ## 11. 暂不实现
 
