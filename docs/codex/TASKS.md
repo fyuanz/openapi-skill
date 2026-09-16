@@ -145,7 +145,9 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
 - `npm run build` in the Vue consumer passes `vue-tsc` and reproduces the unchanged 71.74 kB JS / 1.43 kB CSS bundle.
 - Documentation correction: the bare whole-tree hash `253e8c9d…` in the entry below was produced by a script that was
   not retained, so it cannot be checked against a later run. The reproducible value for the same tree is recorded above
-  with its algorithm.
+  with its algorithm, and the verifier itself is now committed as
+  `testbeds/vue-ts-consumer/verify-skill-tree.mjs` (checks file count, one context per document, suffix-free contract
+  names, link resolution, JSONL-free trusted navigation, exact security semantics, and emits the tree digest).
 
 ## 2026-09-16 - P13 Context-First Core/2 Navigation Implemented
 

@@ -71,6 +71,26 @@ successful run. Note that whole-tree replacement applies within one Skill name:
 switching from the legacy `springdoc-multi-package-api` layout to the default
 `api-docs` name leaves the old directory in place, so delete it manually.
 
+## 2b. Verify the generated Skill tree
+
+```shell
+node testbeds/vue-ts-consumer/verify-skill-tree.mjs
+```
+
+The verifier checks the file count, one unsplit `context.md` per document, the
+absence of routine digest suffixes, that every relative Markdown link resolves,
+that no trusted navigation file points at a JSONL index, that each operation page
+states the exact security semantics, and it prints a whole-tree SHA-256. Run it
+before and after a second `npm run skill:generate` to confirm the tree is
+byte-stable; a changed source document must change the digest, and an unchanged
+one must not.
+
+The digest is only meaningful together with its definition, which the script
+implements and documents inline: sha256 over the sorted
+`relativePath + "\0" + sha256(fileBytes)` lines of the tree. Bare hashes recorded
+in older reports used scripts that were not retained, so they cannot be compared
+against this value.
+
 ## 3. Run the frontend
 
 ```shell
