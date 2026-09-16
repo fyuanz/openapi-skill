@@ -1,8 +1,8 @@
 # Maven compile integration testbed
 
-This standalone Java 17 reactor verifies the SmartDoc Maven goal against real Maven lifecycle invocations.
+This standalone Java 17 reactor verifies the OpenAPI Skill Maven goal against real Maven lifecycle invocations.
 `orders-service` owns a two-document Skill and `billing-service` owns a one-document Skill. Both publish below
-the reactor's `target/generated-resources/smartdoc/` parent. The plugin execution is declared only in each service owner module and
+the reactor's `target/generated-resources/openapi-skill/` parent. The plugin execution is declared only in each service owner module and
 uses `<inherited>false>`.
 
 The inputs under each module's `src/main/openapi/` are authoritative static OpenAPI sources for this testbed.
@@ -37,7 +37,7 @@ and recovery. Failure injection modifies only copies below ignored `target/aggre
 Logs and outputs are in `target/aggregate-verification/`; final `both/` contains `orders-api`, `billing-api`, and
 the self-contained `platform-api`, all with SUCCESS status after recovery.
 
-Only change `smartdoc.output.mode` to switch this fixture's output mode. Production configuration belongs in
+Only change `openapi.skill.output.mode` to switch this fixture's output mode. Production configuration belongs in
 one owner after document producers; when that owner uses `both`, remove duplicate independent writers. The static
 testbed's `compile` phase does not prove runtime export at that phase. No real web environment is required;
 generated Skill usability is reviewed manually by the user.

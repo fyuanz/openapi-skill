@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-09-16 - Rename The Product And Start New Package Identities At 1.0.0
+
+Status: Accepted and implemented; publication remains manual
+
+Rename the repository and product to `openapi-skill`. Use the GitHub remote
+`https://github.com/fyuanz/openapi-skill.git`, npm package and CLI `openapi-skill`, config file
+`openapi-skill.config.json`, package key `openapiSkill`, Maven artifacts `io.github.fyuanz:openapi-skill*`, and Java
+namespace `io.github.fyuanz.openapi.skill.*`. Rename runtime-facing identities to `openapi.skill.runtime.*`,
+`/openapi-skill/skill.zip`, `.openapi-skill/`, and generated format `openapi-skill-core/1`.
+
+Because npm and Maven artifacts receive new identities, start both at `1.0.0`. Previously published
+`smartdoc-agent` and `smart-doc-agent` / `smartdoc-agent-*` artifacts remain immutable historical releases. Prepare and
+verify the new npm tarball and Maven reactor, but do not publish either registry; the user will perform those credentialed
+release actions. This decision supersedes current-name/version statements in older decisions without rewriting their
+historical evidence.
+
 ## 2026-09-15 - Use Semantic Core/3 Indexes And Centralized Reading Conventions
 
 Status: Accepted; implemented test-first in Java and Node
@@ -25,8 +41,10 @@ exhaustive operation/schema listings and generated tag files. Tags remain search
 document context. Move common OpenAPI absent/null/empty/default interpretation into one
 `references/conventions.md`, linked from generated operation and schema files. Only genuinely operation-specific notes,
 such as explicit empty security, remain inline. Publishers accept owned core/1 and core/2 trees for safe replacement,
-but all newly generated service and project trees use core/3. Node source advances to unreleased `1.5.0`; npm `latest`
-remains the immutable published `1.4.0` until a separate release is requested.
+but all newly generated service and project trees use core/3. Node source advances to `1.5.0`.
+
+Follow-up 2026-09-15: the user manually published `smartdoc-agent@1.5.0`; registry verification reports
+`dist-tags.latest = 1.5.0` and publication time `2026-09-15T09:19:57.619Z`.
 
 Alternatives considered: retain full hashes (deterministic but costly to read), use SpringDoc operationId as identity
 (not stable or guaranteed unique), put every row in catalog (poor targeted retrieval), or add RAG immediately (extra

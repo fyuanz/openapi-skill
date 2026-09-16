@@ -2,17 +2,17 @@
 
 ## Purpose
 
-SmartDoc-Agent converts OpenAPI contracts into Codex Skills. A running Spring Boot WebMVC service can expose a directly
+openapi-skill converts OpenAPI contracts into Codex Skills. A running Spring Boot WebMVC service can expose a directly
 downloadable Skill ZIP, while the TypeScript npm consumer downloads explicitly configured OpenAPI endpoints from one or
 more internal or third-party services and installs one complete project Skill into a Vue 3 or other Node.js project.
 
-The source of truth is `docs/smartdoc-agent-design.md`. Core conversion, the published Maven compatibility plugin, and
+The source of truth is `docs/openapi-skill-design.md`. Core conversion, the Maven compatibility plugin, and
 aggregate generation remain available. Web/frontend acceptance is user-reviewed and is not a delivery gate.
 
 ## Primary Workflow
 
-1. A Spring Boot application includes `smartdoc-agent-spring-boot-starter` and its existing SpringDoc configuration.
-2. After the application starts, `GET /smartdoc/skill.zip` triggers generation.
+1. A Spring Boot application includes `openapi-skill-spring-boot-starter` and its existing SpringDoc configuration.
+2. After the application starts, `GET /openapi-skill/skill.zip` triggers generation.
 3. The Starter enumerates local `GroupedOpenApi` beans, or selects the default document when no groups exist.
 4. It invokes SpringDoc's final WebMVC resources inside the same JVM. It does not inject the incomplete base `OpenAPI`
    model as the final contract and does not issue an HTTP self-request.
@@ -36,36 +36,36 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 
 ## Current Status
 
-- Java source is `1.3.0-SNAPSHOT` (core/3 semantic indexes, centralized conventions and a bilingual description); the
-  latest Central release is `1.2.0`, containing the parent, core, Maven plugin, and runtime Spring Boot Starter.
-- Node package `smartdoc-agent@1.4.0` is published to npm and is the current `latest`. Its project mode is verified end
-  to end in the real Vue consumer, and the registry artifact is byte-identical to the locally packed tarball.
-- `smartdoc-agent-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
-- Default path is `/smartdoc/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
+- Java artifacts are prepared as `io.github.fyuanz:openapi-skill*:1.0.0` with package namespace
+  `io.github.fyuanz.openapi.skill`; the new coordinates are not yet published to Maven Central.
+- Node package `openapi-skill@1.0.0` is packed and verified end to end in the real Vue consumer, but is not yet
+  published to npm.
+- `openapi-skill-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
+- Default path is `/openapi-skill/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
 - Multi-group and default-document runtime tests pass. The ZIP is deterministic across repeated requests and excludes
-  the hidden SmartDoc endpoint from the generated contract.
-- The SpringDoc testbed now has no Boot start/stop Maven executions, SpringDoc Maven capture, SmartDoc Maven goal,
+  the hidden OpenAPI Skill endpoint from the generated contract.
+- The SpringDoc testbed now has no Boot start/stop Maven executions, SpringDoc Maven capture, OpenAPI Skill Maven goal,
   generated OpenAPI directory, or generated Skill directory. Its six tests validate Swagger UI, two OpenAPI groups,
   sample APIs, and a real random-port ZIP download.
 - Core retains 67 tests; Maven plugin retains 15 tests; the Starter retains 2 (84 across the reactor). The latter
   remains a compatibility path for authoritative static JSON and explicit cross-service `aggregate` / `both` generation.
-- `smartdoc-agent-node` source is unreleased `1.5.0`; npm `latest` remains the published `1.4.0`. Preferred `services` configuration
+- `openapi-skill-node` is prepared as `1.0.0`. Preferred `services` configuration
   generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
   services plus project/service/document keywords, and publishes the complete service set atomically. The legacy
-  `serviceId` + `documents` configuration remains compatible, while new output uses core/3 and publishers recognize
-  owned core/1/core/2 trees during replacement.
-- Node verification currently passes 28 tests across configuration, generation, semantic indexes, provenance, downloading, project-tree
+  `serviceId` + `documents` configuration remains compatible, while new output uses `openapi-skill-core/1`.
+- Node verification currently passes 29 tests across configuration, generation, semantic indexes, provenance, downloading, project-tree
   validation, project-wide document/byte budgets, atomic legacy/project migration, stale service removal, package
-  metadata, and compatibility behavior. The locally packed `1.5.0` source tarball was installed into
-  `testbeds/vue-ts-consumer`; it builds and generated a 21-file core/3 `api-docs` project Skill from the running testbed.
+  metadata, and compatibility behavior. The locally packed `1.0.0` tarball was installed into
+  `testbeds/vue-ts-consumer`; it builds and generated a 21-file core/1 `api-docs` project Skill from the running testbed.
 - `testbeds/vue-ts-consumer` closes the consumer loop: a real Vue 3 + TypeScript project generates the Skill from the
   running SpringDoc testbed and calls all five documented operations through a dev-server proxy. An independent read-only
   audit of that Skill found it sufficient to write a correct typed client, plus three readability gaps recorded in its
-  `CLOSURE-REPORT.md` and since addressed by core/3 targeted lookup and centralized OpenAPI conventions.
+  `CLOSURE-REPORT.md` and since addressed by core/1 targeted lookup and centralized OpenAPI conventions.
 - Generated Skills describe themselves with a bilingual action-triggered sentence (task verbs, catalog navigation, a
   verification checklist, and generate-or-modify frontend request code) so LLM consumers can discover them by task.
-- Published releases: `1.0.0` on 2026-09-11, `1.1.0` and `1.2.0` on 2026-09-14.
+- Historical releases remain available under the old `smart-doc-agent` / `smartdoc-agent-*` Maven coordinates and
+  `smartdoc-agent` npm name. The new `openapi-skill` packages start at `1.0.0` and await manual publication.
 
 ## Commands
 
@@ -73,7 +73,7 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
-cd smartdoc-agent-node && npm test
+cd openapi-skill-node && npm test
 ```
 
 Consumer loop (generate the Skill, then build and run a real frontend):
@@ -90,7 +90,7 @@ Manual runtime check:
 
 ```text
 mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
-GET http://127.0.0.1:18080/smartdoc/skill.zip
+GET http://127.0.0.1:18080/openapi-skill/skill.zip
 ```
 
 Legacy Maven compatibility verification remains under `testbeds/maven-plugin-integration/`.

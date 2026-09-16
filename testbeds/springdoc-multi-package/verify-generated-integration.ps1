@@ -42,9 +42,9 @@ Assert-True ($tests -eq 6) "expected six runtime testbed tests, got $tests"
 Assert-True ($failures -eq 0 -and $errors -eq 0) "runtime testbed tests failed"
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $testbedRoot "target/generated-openapi"))) `
         "build-time OpenAPI export directory must not be created"
-Assert-True (-not (Test-Path -LiteralPath (Join-Path $testbedRoot "target/generated-resources/smartdoc"))) `
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $testbedRoot "target/generated-resources/openapi-skill"))) `
         "build-time Skill output directory must not be created"
-Assert-True ((@($buildLog | Where-Object { "$_" -match "spring-boot:(start|stop)|springdoc-openapi-maven-plugin|smartdoc-agent-maven-plugin" })).Count -eq 0) `
+Assert-True ((@($buildLog | Where-Object { "$_" -match "spring-boot:(start|stop)|springdoc-openapi-maven-plugin|openapi-skill-maven-plugin" })).Count -eq 0) `
         "build unexpectedly invoked an application start/export/Skill generation plugin"
 
-Write-Host "Runtime SmartDoc integration verification passed without build-time application startup or OpenAPI capture."
+Write-Host "Runtime OpenAPI Skill integration verification passed without build-time application startup or OpenAPI capture."

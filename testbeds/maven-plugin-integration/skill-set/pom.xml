@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.smartdoc.integration</groupId>
+        <groupId>io.github.fyuanz.openapi.skill.integration</groupId>
         <artifactId>maven-plugin-integration</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -12,18 +12,18 @@
     <!-- Explicit dependencies order this owner after both services, also under -T. -->
     <dependencies>
         <dependency>
-            <groupId>com.smartdoc.integration</groupId>
+            <groupId>io.github.fyuanz.openapi.skill.integration</groupId>
             <artifactId>orders-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.smartdoc.integration</groupId>
+            <groupId>io.github.fyuanz.openapi.skill.integration</groupId>
             <artifactId>billing-service</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
     <properties>
-        <smartdoc.output.mode>aggregate</smartdoc.output.mode>
+        <openapi.skill.output.mode>aggregate</openapi.skill.output.mode>
         <aggregate.orders.directory>${project.basedir}/../orders-service/src/main/openapi</aggregate.orders.directory>
         <aggregate.billing.directory>${project.basedir}/../billing-service/src/main/openapi</aggregate.billing.directory>
     </properties>
@@ -31,8 +31,8 @@
         <plugins>
             <plugin>
                 <groupId>io.github.fyuanz</groupId>
-                <artifactId>smartdoc-agent-maven-plugin</artifactId>
-                <version>${smartdoc.plugin.version}</version>
+                <artifactId>openapi-skill-maven-plugin</artifactId>
+                <version>${openapi.skill.plugin.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -42,10 +42,10 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <outputMode>${smartdoc.output.mode}</outputMode>
+                    <outputMode>${openapi.skill.output.mode}</outputMode>
                     <aggregateId>platform</aggregateId>
                     <aggregateSkillName>platform-api</aggregateSkillName>
-                    <outputDirectory>${smartdoc.output}</outputDirectory>
+                    <outputDirectory>${openapi.skill.output}</outputDirectory>
                     <services>
                         <service>
                             <serviceId>orders</serviceId>

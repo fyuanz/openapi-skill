@@ -7,15 +7,15 @@
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "skill:generate": "smartdoc-agent"
+    "skill:generate": "openapi-skill"
   },
   "dependencies": {
     "vue": "^3.5.13"
   },
   "devDependencies": {
-    "smartdoc-agent": "file:../../smartdoc-agent-node/smartdoc-agent-1.5.0.tgz",
     "@types/node": "^26.5.1",
     "@vitejs/plugin-vue": "^5.2.1",
+    "openapi-skill": "file:../../openapi-skill-node/openapi-skill-1.0.0.tgz",
     "typescript": "~5.7.3",
     "vite": "^6.1.0",
     "vue-tsc": "^2.2.0"

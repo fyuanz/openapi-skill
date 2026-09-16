@@ -4,8 +4,8 @@ target/
 
 # Node.js build output and dependencies
 **/node_modules/
-smartdoc-agent-node/dist/
-smartdoc-agent-node/*.tgz
+openapi-skill-node/dist/
+openapi-skill-node/*.tgz
 
 # Java compiler and crash output
 *.class

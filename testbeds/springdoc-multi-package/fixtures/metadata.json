@@ -1,44 +1,44 @@
 {
-    "serviceId":  "springdoc-multi-package",
-    "skillName":  "springdoc-multi-package-api",
-    "java":  "17",
-    "springBoot":  "3.5.9",
-    "springdoc":  "2.8.15",
-    "captureCommand":  "powershell -NoProfile -File testbeds/springdoc-multi-package/refresh-fixtures.ps1",
-    "capture":  "SpringBootTest random loopback port; HTTP connect 5s/request 20s; test 60s; fork 120s; context closed after test",
-    "sanitization":  "All data authored as fictional samples; no external API data. Pretty printing only; no semantic rewrite.",
-    "documents":  [
-                      {
-                          "documentId":  "account",
-                          "endpoint":  "/v3/api-docs/account",
-                          "file":  "account.json",
-                          "openapi":  "3.1.0",
-                          "sha256":  "3ceabee792b06dfadc51c7df5da496ab9ed65651697097440542f1489553734d",
-                          "operations":  2,
-                          "schemas":  3
-                      },
-                      {
-                          "documentId":  "business",
-                          "endpoint":  "/v3/api-docs/business",
-                          "file":  "business.json",
-                          "openapi":  "3.1.0",
-                          "sha256":  "e97bd7076eb8ba141a4a5dc7231c7477f8699ab2022b0a5606b78206083b7e4b",
-                          "operations":  2,
-                          "schemas":  4
-                      }
-                  ],
-    "sourceSha256":  {
-                         "pom.xml":  "6a63ea352d055f5ee736b94175caa65f7a9f7c9798e01c6db5734cf39ecc8488",
-                         "src/main/java/com/smartdoc/testbed/common/Address.java":  "e921d3576eac9374d0d5843cf59abbd5ca7e0f9952b6bee5456d1f24f7e2fa8f",
-                         "src/main/java/com/smartdoc/testbed/common/ApiError.java":  "d8e967433781dfa8484f2d264501ccf0ad5658f52eac3183c8f349b8d8cda91e",
-                         "src/main/java/com/smartdoc/testbed/common/OpenApiConfiguration.java":  "c6270c2a9d5d3f7c691f463724dcb1c2736058a4aacc0bacd4d2e6126e85f3ec",
-                         "src/main/java/com/smartdoc/testbed/common/ValidationAdvice.java":  "254a837462651f9cccdb7b1484f2980cbdf56a38f23eb0931eac02843ee986c0",
-                         "src/main/java/com/smartdoc/testbed/file/FileController.java":  "3ae6838c6c20bcf9dedb7090711c6b08acaf86f163f82a5f0f0605b1abe40049",
-                         "src/main/java/com/smartdoc/testbed/order/CreateOrder.java":  "9131a8f40ee26bc96956b3594345b94369ee55c2d1deec725fdbd333ecd0b9ff",
-                         "src/main/java/com/smartdoc/testbed/order/OrderController.java":  "01d8ec03661fff45a10777425b26f9eafe13e87f8f108e102e226ae735c064aa",
-                         "src/main/java/com/smartdoc/testbed/TestbedApplication.java":  "27c934983e7aa2b8effc4c10f42666766ec0047bd4fd15814f5450c3028f7470",
-                         "src/main/java/com/smartdoc/testbed/user/UserController.java":  "3f49f430b915e7aac04367744b1b9c42a5015906547a15fd955abe06ff0f7d03",
-                         "src/main/java/com/smartdoc/testbed/user/UserView.java":  "aa5a2bbf7e96a5c055f660d692c53396c120e1a8b09a3ef0e793e44958dc3f96",
-                         "src/main/resources/application.properties":  "30c1f2f760131c9b286ed44b21ad13dbb1a89587acfa3ed4ae18fa22072439ff"
-                     }
+  "serviceId": "springdoc-multi-package",
+  "skillName": "springdoc-multi-package-api",
+  "java": "17",
+  "springBoot": "3.5.9",
+  "springdoc": "2.8.15",
+  "captureCommand": "powershell -NoProfile -File testbeds/springdoc-multi-package/refresh-fixtures.ps1",
+  "capture": "SpringBootTest random loopback port; HTTP connect 5s/request 20s; test 60s; fork 120s; context closed after test",
+  "sanitization": "All data authored as fictional samples; no external API data. Pretty printing only; no semantic rewrite.",
+  "documents": [
+    {
+      "documentId": "account",
+      "endpoint": "/v3/api-docs/account",
+      "file": "account.json",
+      "openapi": "3.1.0",
+      "sha256": "8ab44c8c1cf0addc731f3428c8a2a46d38a925d70adf88a80c514d0c79214261",
+      "operations": 2,
+      "schemas": 3
+    },
+    {
+      "documentId": "business",
+      "endpoint": "/v3/api-docs/business",
+      "file": "business.json",
+      "openapi": "3.1.0",
+      "sha256": "8e27729c420206335f7d169debff8cffcc105dbc7083486cc93958684a51b293",
+      "operations": 2,
+      "schemas": 4
+    }
+  ],
+  "sourceSha256": {
+    "pom.xml": "d6de8953b0570eec80bb58dadb76ecb9eeec9135c223f8fe0af81fad75bc2b02",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/Address.java": "6e40548e0554d7c2e63bd26124a9aecc575aff832829fb3d96ad4b1589f38654",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/ApiError.java": "30ef9916130669fb8092dbb7675e749e6736eac9a6e041ca6696c4f96523efd5",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/OpenApiConfiguration.java": "caeb5e60efab8fb2b5c4744fd6b59d9a91e79cff6dee7a0b25da12d698d16b15",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/ValidationAdvice.java": "bf5366db8c3ca132716241d532bbc8b7af22f3ef469d750da9aaa6c643af7174",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/file/FileController.java": "6a60830691bb9704cd9edf8ef57db935adcad493489990caedb342a24bb2ff69",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/CreateOrder.java": "adf473f13801416d0aa90e7493376952e4a2c42baccf9450a90484978c1d742d",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/OrderController.java": "102b70ca3f6125e396e3270346885d34180a48ac021269fcd40eddef1fc2ffbd",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/TestbedApplication.java": "ee23b076394685db11a15c1e2b2696995a2b6b54b018c35cbf573694a9786b59",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserController.java": "6b12df19837e0e6f564ec60aeefdda6b7e885671a18cd3901dac6dd959d12335",
+    "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserView.java": "fddc2b98bee0e528d7cd6435f08b2407ab26566b65aa574fb9688f1b2c47df1d",
+    "src/main/resources/application.properties": "30c1f2f760131c9b286ed44b21ad13dbb1a89587acfa3ed4ae18fa22072439ff"
+  }
 }

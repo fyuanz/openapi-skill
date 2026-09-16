@@ -4,20 +4,20 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `1.3.0-SNAPSHOT` source (Central release `1.2.0`); four-module reactor |
-| `smartdoc-agent-core` | Per-service conversion, semantic indexes, aggregate assembly, validation and safe filesystem publication | 67 tests pass |
-| `smartdoc-agent-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
-| `smartdoc-agent-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
-| `smartdoc-agent-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | unreleased `1.5.0` source passes 28 tests; npm latest remains published `1.4.0` |
-| `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no SmartDoc build executions |
+| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:1.0.0` prepared; four-module reactor |
+| `openapi-skill-core` | Per-service conversion, semantic indexes, aggregate assembly, validation and safe filesystem publication | 67 tests pass |
+| `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
+| `openapi-skill-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
+| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | `openapi-skill@1.0.0` passes 29 tests and is packed but unpublished |
+| `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no OpenAPI Skill build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 | `testbeds/maven-plugin-integration` | Legacy static multi-service Maven lifecycle verification | Retained and passing at the prior milestone |
 
 ## Parent Project
 
-Release coordinates are `io.github.fyuanz` at `1.3.0-SNAPSHOT` source. Central `1.2.0` contains the parent, core, Maven
-plugin, and runtime Starter. Java packages remain `com.smartdoc.agent`; the opt-in Central release profile and signing
-process remain unchanged.
+New release coordinates are `io.github.fyuanz:openapi-skill*` at `1.0.0`. Java packages use
+`io.github.fyuanz.openapi.skill`; the opt-in Central release profile and signing process remain unchanged. The renamed
+artifacts are prepared but not yet published.
 
 ## Core
 
@@ -42,14 +42,14 @@ rebased, cyclic aliases, and ambiguous Path Item reference siblings fail explici
 
 The Starter depends on core and the SpringDoc WebMVC API. Boot discovers
 `RuntimeSkillAutoConfiguration` through `AutoConfiguration.imports` when a Servlet application and SpringDoc resource are
-present and `smartdoc.runtime.enabled` is not false.
+present and `openapi.skill.runtime.enabled` is not false.
 
 - `RuntimeSkillProperties`: optional enabled/path/serviceId/skillName overrides.
 - `RuntimeSkillNames`: safe defaults from `spring.application.name`.
 - `SpringDocOpenApiCollector`: enumerates `GroupedOpenApi` or selects the default document, then calls
   `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` directly in the same JVM.
 - `RuntimeSkillArchive`: invokes core and creates a sorted, fixed-timestamp ZIP with one Skill root.
-- `RuntimeSkillEndpoint`: hidden read-only controller at `${smartdoc.runtime.path:/smartdoc/skill.zip}`.
+- `RuntimeSkillEndpoint`: hidden read-only controller at `${openapi.skill.runtime.path:/openapi-skill/skill.zip}`.
 
 The collector does not treat the application's base `OpenAPI` bean as the final generated contract and does not perform
 HTTP self-requests. It supplies a wrapped request representing the original SpringDoc path so SpringDoc server URL
@@ -70,15 +70,15 @@ must not be used to justify reintroducing build-time startup/capture into the re
 
 ## Node.js Package
 
-The unscoped `smartdoc-agent` package targets Node.js 20+ and exports both a `smartdoc-agent` CLI and typed library
-functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `1.5.0` source retains the
+The unscoped `openapi-skill` package targets Node.js 20+ and exports both an `openapi-skill` CLI and typed library
+functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `1.0.0` retains the
 preferred top-level `services` configuration: one project may contain internal and third-party services, and each
 service may contain multiple explicit document ID/HTTP(S) URL pairs. One configuration produces one self-contained
 project Skill; `skillName` defaults to `api-docs` and no service has a separately installed Skill.
 
 Project generation physically embeds each complete service reference tree under
 `references/services/<serviceId>/references/`, omits member `SKILL.md` files, and connects the root catalog to service
-catalogs with relative Markdown links. Root provenance uses `smartdoc-agent-core/3` and `kind=project`; nested service
+catalogs with relative Markdown links. Root provenance uses `openapi-skill-core/1` and `kind=project`; nested service
 provenance and the flattened service/document list preserve origin without merging OpenAPI objects or resolving `$ref`
 across documents. `sourceType` is limited to `internal|third-party` and defaults to `internal`.
 
@@ -95,21 +95,21 @@ Skill. Redirects and external references remain rejected. The default output par
 `<consumer>/.agents/skills`; `output` supports a relative or absolute override.
 
 The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains supported. Project and legacy
-configuration shapes cannot be mixed; new output uses core/3, while the publisher can safely replace owned core/1 and
-core/2 trees. The unreleased `1.5.0` implementation passes 28 Node tests. npm `latest` remains `1.4.0`, whose packed
-tarball generated a 21-file project Skill in the real Vue consumer against the running SpringDoc testbed.
+configuration shapes cannot be mixed; new output uses core/1, while the publisher can safely replace owned core/1 and
+core/2 trees from the historical format are no longer emitted. The prepared `1.0.0` implementation passes 28 Node tests; its packed tarball
+generated a 21-file project Skill in the real Vue consumer against the running SpringDoc testbed.
 
 ## Testbed
 
 `testbeds/springdoc-multi-package` uses Spring Boot 3.5.9, SpringDoc 2.8.15, and the current runtime Starter. Its POM has no
-Boot start/stop execution, SpringDoc Maven plugin, or SmartDoc Maven plugin. A real random-port test downloads the current
+Boot start/stop execution, SpringDoc Maven plugin, or OpenAPI Skill Maven plugin. A real random-port test downloads the current
 two-group ZIP and validates its catalog/source structure. The build verifier asserts the removed build directories and
 plugin invocations stay absent. Frozen `fixtures/` remain only as deterministic core test data.
 
 `testbeds/vue-ts-consumer` is the consumer-side counterpart. It is a real Vue 3 + TypeScript + Vite project that installs
 the packed Node package, runs `npm run skill:generate` against the running SpringDoc testbed, and calls all five
-documented operations through a Vite dev-server proxy. It now installs the local `1.5.0` tarball, declares one
-`springdoc-multi-package` service with project/service/document keywords, and generates the 21-file core/3 `api-docs`
+documented operations through a Vite dev-server proxy. It now installs the local `1.0.0` tarball, declares one
+`springdoc-multi-package` service with project/service/document keywords, and generates the 21-file core/1 `api-docs`
 project Skill. `src/api/client.ts` carries
 the typed client and the error shape. `README.md` documents the reproducible sequence; `CLOSURE-REPORT.md` records the
 verification evidence, the three readability gaps found by an independent read-only Skill audit, and the later

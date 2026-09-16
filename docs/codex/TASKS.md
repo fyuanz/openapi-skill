@@ -3,12 +3,13 @@
 ## Current Scope
 
 Product design v3.9.0 keeps the embedded Spring Boot runtime endpoint as the primary SpringDoc workflow. The application
-generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no SmartDoc build
+generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no OpenAPI Skill build
 executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-The v3.6 Maven aggregate and safe publication features remain compatible. Node `1.5.0` source builds on project mode
+The v3.6 Maven aggregate and safe publication features remain compatible. Renamed Node `1.0.0` builds on project mode
 that downloads explicitly configured documents for multiple internal or third-party services and installs one
-self-contained core/3 project Skill with compact machine indexes and semantic paths. npm `latest` remains `1.4.0`.
+self-contained `openapi-skill-core/1` project Skill with compact machine indexes and semantic paths. The new npm and
+Maven packages are prepared but not published.
 Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
 artifact coordination remain outside scope.
 
@@ -27,13 +28,14 @@ artifact coordination remain outside scope.
 | P9 | Real Vue 3 + TypeScript consumer loop against the running SpringDoc service | Complete; build plus seven live call scenarios verified |
 | P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | Complete; 23 Node tests pass, the packed tarball is verified end to end in the real Vue consumer, and `smartdoc-agent@1.4.0` is published on npm |
 | P11 | core/3 compact catalog, semantic IDs/filenames, JSONL lookup indexes, and centralized conventions | Complete in Java and Node source; 84 reactor tests, 28 Node tests and 6 runtime testbed tests pass |
+| P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
-| Release | npm release | `smartdoc-agent@1.4.0` published 2026-09-15 and now `latest`; the registry artifact is byte-identical to the packed tarball and installs and runs from the public registry |
+| Release | npm release | `smartdoc-agent@1.5.0` manually published 2026-09-15 and verified as current `latest` |
 | Documentation | Chinese-default README, English guide and v3.9 design | Updated for runtime and core/3 retrieval layout |
 
 ## Current Implementation
 
-- New output uses `smartdoc-agent-core/3`. `catalog.md` is a compact human entry point; sorted
+- New output uses `openapi-skill-core/1`. `catalog.md` is a compact human entry point; sorted
   `operations.jsonl`/`schemas.jsonl` provide direct machine lookup, and `conventions.md` holds shared OpenAPI reading
   defaults once per service tree.
 - Operation/schema IDs are semantic and independent of SpringDoc `operationId`. Contract filenames use readable slugs
@@ -44,38 +46,53 @@ artifact coordination remain outside scope.
   and operation-index rows.
 
 - `testbeds/vue-ts-consumer` is a real Vue 3 + TypeScript + Vite consumer. It installs the packed
-  `smartdoc-agent` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
+  `openapi-skill@1.0.0` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
   testbed into its own `.agents/skills/`, and calls all five documented operations through a Vite dev-server proxy.
-- `smartdoc-agent-spring-boot-starter` auto-configures `GET /smartdoc/skill.zip` for Servlet/WebMVC applications.
+- `openapi-skill-spring-boot-starter` auto-configures `GET /openapi-skill/skill.zip` for Servlet/WebMVC applications.
 - It derives service identity from `spring.application.name`; enabled/path/serviceId/skillName are optional overrides.
 - `GroupedOpenApi` beans define the complete document set. With no groups, the default SpringDoc document is used.
 - Final JSON comes from `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` in-process, not an HTTP self-request and
   not the incomplete base `OpenAPI` bean.
 - Each request invokes existing core conversion and returns a sorted, fixed-timestamp ZIP rooted at `<skillName>/`.
   The hidden endpoint does not enter generated OpenAPI.
-- The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or SmartDoc Maven goal.
-- `smartdoc-agent-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
-- `smartdoc-agent-node` provides unscoped `smartdoc-agent`: preferred `services` configuration generates one
-  self-contained `smartdoc-agent-core/3`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
+- The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or OpenAPI Skill Maven goal.
+- `openapi-skill-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
+- `openapi-skill-node` provides unscoped `openapi-skill`: preferred `services` configuration generates one
+  self-contained `openapi-skill-core/1`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
   configured internal or third-party services. It accepts project/service/document keywords, keeps service/document
   contracts separate beneath `references/services/<serviceId>/references/`, and safely replaces the whole project tree.
-- The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible as configuration;
-  newly generated service trees use `smartdoc-agent-core/3`. Publishers can replace owned core/1 and core/2 trees.
-- Java source is `1.3.0-SNAPSHOT` (core/3 semantic indexes, centralized conventions and a bilingual action-triggered
-  description); the latest immutable Central release is `1.2.0`, including the runtime Starter. The Node package is
-  published as `smartdoc-agent@1.4.0` and is the current `latest`. That artifact is installed in
-  `testbeds/vue-ts-consumer`, where it previously generated the 21-file `api-docs` project Skill from the running testbed
-  byte-identically on repeat runs.
+- The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible as configuration.
+- Java artifacts use `io.github.fyuanz:openapi-skill*:1.0.0`; Java packages use
+  `io.github.fyuanz.openapi.skill.*`. The Node package is `openapi-skill@1.0.0`. Both ecosystems await manual publication.
 
 ## Verified
+
+## 2026-09-16 - Repository And Package Rename Prepared
+
+- Repository/SCM URL: `https://github.com/fyuanz/openapi-skill.git`; local module directories are `openapi-skill-*`.
+- npm package/CLI/config: `openapi-skill@1.0.0`, `openapi-skill`, `openapi-skill.config.json`, and
+  `package.json#openapiSkill`. The name returned npm registry 404 before publication.
+- Maven/Java: `io.github.fyuanz:openapi-skill*:1.0.0` and `io.github.fyuanz.openapi.skill.*`.
+- Runtime/config identities: `/openapi-skill/skill.zip`, `openapi.skill.runtime.*`, `.openapi-skill/`, and
+  `openapi-skill-core/1`.
+- Red-to-green evidence: the renamed npm metadata/config tests first failed in 7 cases, and the former-identity migration
+  test then failed before implementation; the final 29-test Node suite and 84-test Java reactor passed. `npm pack`
+  produced `openapi-skill-1.0.0.tgz` with 24 entries (23,408 bytes), and the
+  Vue consumer installed it and built successfully. The SpringDoc testbed passed 6 tests after the known Windows javac
+  resource-close retry. npm and Maven publication were intentionally not performed.
+
+## 2026-09-15 - Node 1.5.0 Published Manually
+
+- The user manually published `smartdoc-agent@1.5.0`.
+- Registry verification reports `version = 1.5.0`, `dist-tags.latest = 1.5.0`, and publication time
+  `2026-09-15T09:19:57.619Z`.
 
 ## 2026-09-15 - Core/3 Semantic Index And Retrieval Layout
 
 - Red-to-green coverage was added for semantic identities, six-character filenames and collision extension, compact
   catalogs, centralized conventions, sorted JSONL indexes, missing/index-drift validation, and nested project indexes.
-- Node source is `1.5.0` and passes 28 tests. Its 24-file, 23.3 kB packed artifact installs into the real Vue consumer;
-  the consumer build and live two-document generation both pass. This source version has not been published; npm
-  `latest` remains `1.4.0`.
+- Node `1.5.0` passes 28 tests. Its 24-file, 23.3 kB packed artifact installs into the real Vue consumer; the consumer
+  build and live two-document generation both pass. It is published as npm `latest`.
 - The Java reactor passes 67 core, 15 Maven-plugin and 2 Starter tests (84 total). The standalone runtime testbed passes
   6 tests and produces the same core/3 indexes through its real HTTP ZIP endpoint. On this Windows host, a clean testbed
   compile intermittently reports javac's known resource-close error after writing classes; the immediate non-clean
@@ -242,7 +259,7 @@ artifact coordination remain outside scope.
 - The first sandbox testbed attempt hit the previously recorded Windows `javac` resource-close failure before tests;
   the same command passed outside that sandbox without source changes.
 - Prior Maven aggregate/static verification remains valid for the unchanged compatibility behavior.
-- Current Node package suite: 28 tests pass for legacy and project configuration, semantic index generation, download
+- Current Node package suite: 29 tests pass for legacy and project configuration, semantic index generation, download
   and publication.
 - `git diff --check` passes after documentation cleanup; bilingual onboarding and v3.7 project records describe the same
   runtime-first boundary.
@@ -266,8 +283,8 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-15 (core/3 semantic indexes and targeted retrieval verified across the 84-test Java reactor, 28-test Node suite,
-six-test SpringDoc testbed, and real Vue consumer; Node 1.5.0 release not requested).
+2026-09-16 (`openapi-skill` rename verified across the 84-test Java reactor, 29-test Node suite,
+six-test SpringDoc testbed, final npm tarball, and real Vue consumer; npm and Maven publication remain manual).
 
 ## 2026-09-14 - Node Consumer Committed And Pushed
 

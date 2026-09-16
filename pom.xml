@@ -6,13 +6,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.fyuanz</groupId>
-    <artifactId>smart-doc-agent</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <artifactId>openapi-skill</artifactId>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
 
-    <name>smart-doc-agent</name>
+    <name>openapi-skill</name>
     <description>OpenAPI 文档转 Skill · 父工程</description>
-    <url>https://github.com/fyuanz/smart-doc</url>
+    <url>https://github.com/fyuanz/openapi-skill</url>
 
     <licenses>
         <license>
@@ -34,16 +34,16 @@
     <scm child.scm.connection.inherit.append.path="false"
          child.scm.developerConnection.inherit.append.path="false"
          child.scm.url.inherit.append.path="false">
-        <connection>scm:git:https://github.com/fyuanz/smart-doc.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/fyuanz/smart-doc.git</developerConnection>
-        <url>https://github.com/fyuanz/smart-doc</url>
+        <connection>scm:git:https://github.com/fyuanz/openapi-skill.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/fyuanz/openapi-skill.git</developerConnection>
+        <url>https://github.com/fyuanz/openapi-skill</url>
         <tag>HEAD</tag>
     </scm>
 
     <modules>
-        <module>smartdoc-agent-core</module>
-        <module>smartdoc-agent-maven-plugin</module>
-        <module>smartdoc-agent-spring-boot-starter</module>
+        <module>openapi-skill-core</module>
+        <module>openapi-skill-maven-plugin</module>
+        <module>openapi-skill-spring-boot-starter</module>
     </modules>
 
     <properties>

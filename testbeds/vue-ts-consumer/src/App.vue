@@ -133,7 +133,7 @@ async function callInvalidOrderWithStatus() {
 </script>
 
 <template>
-  <h1>SmartDoc Skill 真实消费端</h1>
+  <h1>OpenAPI Skill 真实消费端</h1>
   <p class="subtitle">
     Vue 3 + TypeScript 前端，通过 Vite 代理真实调用 <code>127.0.0.1:18080</code> 上
     <code>springdoc-multi-package</code> 服务的分组合约（account / business）。

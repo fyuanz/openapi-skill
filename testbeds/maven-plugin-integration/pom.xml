@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.smartdoc.integration</groupId>
+    <groupId>io.github.fyuanz.openapi.skill.integration</groupId>
     <artifactId>maven-plugin-integration</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -13,8 +13,8 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <smartdoc.plugin.version>1.3.0-SNAPSHOT</smartdoc.plugin.version>
-        <smartdoc.output>${maven.multiModuleProjectDirectory}/target/generated-resources/smartdoc</smartdoc.output>
+        <openapi.skill.plugin.version>1.0.0</openapi.skill.plugin.version>
+        <openapi.skill.output>${maven.multiModuleProjectDirectory}/target/generated-resources/openapi-skill</openapi.skill.output>
     </properties>
     <build>
         <pluginManagement>

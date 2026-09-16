@@ -2,14 +2,14 @@
 
 本文件记录 2026-09-14 第一次「真实前端消费端」闭环测试的结果与发现。它是**测试证据**，不是产品文档。
 
-## 2026-09-15 core/3 补充验证
+## 2026-09-16 openapi-skill 改名补充验证
 
-- 安装本地 `smartdoc-agent@1.5.0` tarball（24 个条目，23.3 kB），`npm run build` 成功。
+- 安装本地 `openapi-skill@1.0.0` tarball（24 个条目，23,408 bytes），`npm run build` 成功。
 - 从运行在 `127.0.0.1:18080` 的两个真实 SpringDoc 分组执行 `npm run skill:generate` 成功，输出 21 个文件。
-- 输出为 `smartdoc-agent-core/3` project Skill；每个服务包含排序的 `operations.jsonl` / `schemas.jsonl` 和
+- 输出为 `openapi-skill-core/1` project Skill；每个服务包含排序的 `operations.jsonl` / `schemas.jsonl` 和
   一份 `conventions.md`。
 - operation/schema 文件名使用可读 slug 和 6 位短摘要；生成树未发现 32 位以上摘要文件名或 `tags/` 文件。
-- 下文 1.3.0/1.4.0 内容保留为原始历史证据。
+- 下文保留旧 `smartdoc-agent` 名称下的原始历史证据。
 
 ## 闭环链路
 
@@ -18,7 +18,7 @@ testbeds/springdoc-multi-package  (Spring Boot 3.5.9 + springdoc 2.8.15, :18080)
         │  GET /v3/api-docs/account   (account 组, 2 operations)
         │  GET /v3/api-docs/business  (business 组, 2 operations)
         ▼
-smartdoc-agent-node  @fyuanz/smartdoc-agent@1.3.0  (本地 tgz 安装)
+smartdoc-agent-node  @fyuanz/smartdoc-agent@1.3.0  (历史本地 tgz 安装)
         │  npm run skill:generate
         ▼
 testbeds/vue-ts-consumer/.agents/skills/springdoc-multi-package-api/   (19 files)
@@ -34,7 +34,7 @@ Vue 3 + TS 前端  src/api/client.ts  (5 个接口的真实调用)
 
 | 步骤 | 命令 | 结果 |
 | --- | --- | --- |
-| 依赖安装 | `mvn -B -DskipTests install` | BUILD SUCCESS（4 模块，1.2.0） |
+| 依赖安装 | `mvn -B -DskipTests install` | BUILD SUCCESS（4 模块，1.0.0） |
 | 启动后端 | `spring-boot:run`（固定 `--server.port=18080`） | `/v3/api-docs/account` 200、`/v3/api-docs/business` 200 |
 | 生成 Skill | `npm run skill:generate` | 19 files，commit 到 `.agents/skills/springdoc-multi-package-api` |
 | 类型与构建 | `npm run build`（`vue-tsc -b && vite build`） | 通过，71.74 kB JS / 1.43 kB CSS |
@@ -124,7 +124,7 @@ Vue 3 + TS 前端  src/api/client.ts  (5 个接口的真实调用)
   finding/explaining/implementing/debugging，按 catalog 定位接口，核对参数、请求体、响应、状态码、Schema、
   鉴权与错误，生成或修改前端请求代码；分组列表经 `boundedList` 截断，32 文档最坏情况下仍是单行 YAML 安全值
   且 ≤1024 字符。不可信 API 源文本（标题、tag、summary）依旧不进入模板。
-- **本 testbed 已重新验证**：用重打包的 `@fyuanz/smartdoc-agent@1.3.0` tarball 重装并重新生成 Skill（19 文件），
+- **本 testbed 已重新验证**：用重打包的 `@fyuanz/openapi-skill@1.3.0` tarball 重装并重新生成 Skill（19 文件），
   新 description 为 587 字符单行，4 个 operation 文件全部带语义小节，account/business SHA-256 摘要与
   历史记录一致。
 - 领域同义词（如 billing 的 账单/计费/发票）属不可信源文本，不能进 description；用户可配置的 description
@@ -137,12 +137,12 @@ skill:generate`），变化在生成产物与配置形态。
 
 | 步骤 | 命令 | 结果 |
 | --- | --- | --- |
-| 打包 | `npm pack` | `smartdoc-agent-1.4.0.tgz`，24 个条目，21,058 B（解包 74,238 B） |
-| 安装 | `npm install`（`file:` 依赖） | `node_modules/smartdoc-agent` 解析为 `1.4.0` |
-| 后端 | `spring-boot:run --server.port=18080` | account 200（2 paths）、business 200（2 paths）、`/smartdoc/skill.zip` 200（17,043 B） |
-| 生成 | `npm run skill:generate` | 21 files → `.agents/skills/api-docs/`（`smartdoc-agent-core/2`、`kind=project`） |
+| 打包 | `npm pack` | `openapi-skill-1.4.0.tgz`，24 个条目，21,058 B（解包 74,238 B） |
+| 安装 | `npm install`（`file:` 依赖） | `node_modules/openapi-skill` 解析为 `1.4.0` |
+| 后端 | `spring-boot:run --server.port=18080` | account 200（2 paths）、business 200（2 paths）、`/openapi-skill/skill.zip` 200（17,043 B） |
+| 生成 | `npm run skill:generate` | 21 files → `.agents/skills/api-docs/`（`openapi-skill-core/2`、`kind=project`） |
 | 校验 | 自写校验脚本 | 32 条相对链接全部命中，无嵌套 `SKILL.md`，描述为 464 字符单行，三类关键词均有序去重 |
-| 确定性 | 重复生成 | 整树 SHA-256 恒为 `b8940cff…9dfc`，`.smartdoc/staging`、`backups` 均为空 |
+| 确定性 | 重复生成 | 整树 SHA-256 恒为 `b8940cff…9dfc`，`.openapi-skill/staging`、`backups` 均为空 |
 | 失败保留 | business 指向关闭端口 | CLI 退出码 1（`DOWNLOAD: fetch failed`），旧 Skill 整树字节不变 |
 | 陈旧清理 | serviceId 改名后重生成 | `references/services/` 仅剩新服务目录 |
 | 构建 | `npm run build` | `vue-tsc` 严格检查 + `vite build` 通过，71.74 kB JS / 1.43 kB CSS |

@@ -1,16 +1,16 @@
-# SmartDoc-Agent
+# openapi-skill
 
 [简体中文](README.md) | **English**
 
 Turn the current OpenAPI contract of a running Spring Boot service into a downloadable Skill ZIP. After startup, one
-read-only endpoint returns the complete catalog, request/response contracts, and Schema references. SmartDoc no longer
+read-only endpoint returns the complete catalog, request/response contracts, and Schema references. OpenAPI Skill no longer
 needs Maven phases, a second application process, HTTP capture of `/v3/api-docs`, or build-directory intermediates.
 
 ## Features and scope
 
-- **Runtime download**: adding the starter exposes `GET /smartdoc/skill.zip`, generated from the current instance on demand.
+- **Runtime download**: adding the starter exposes `GET /openapi-skill/skill.zip`, generated from the current instance on demand.
 - **Automatic discovery**: reuses SpringDoc's final resources and enumerates `GroupedOpenApi` without duplicate OpenAPI URL configuration.
-- **Configurable output**: runtime defaults to one Skill per application; the published Maven plugin retains complete aggregate/coexistence compatibility.
+- **Configurable output**: runtime defaults to one Skill per application; the Maven plugin retains complete aggregate/coexistence compatibility.
 - **Contract preservation**: parameters, request bodies, responses, media types, authentication definitions, and Schema data, with semantic operation IDs, machine indexes, and local-reference navigation.
 - **No filesystem side effects**: validates a complete result and creates a deterministic ZIP in memory; unchanged contracts produce identical bytes.
 - **Local conversion**: the core does not call LLMs, business APIs, or external reference URLs. Source free text stays separate from trusted Skill instructions.
@@ -22,9 +22,9 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The `1.5.0` source of the TypeScript package `smartdoc-agent` defaults to one self-contained API Skill per frontend
-project and adds `operations.jsonl` / `schemas.jsonl`, semantic filenames, and centralized conventions; the latest npm
-release remains `1.4.0`. Multiple microservices, multiple documents within each service, and third-party providers are
+The new TypeScript package `openapi-skill@1.0.0` defaults to one self-contained API Skill per
+frontend project and adds `operations.jsonl` / `schemas.jsonl`, semantic filenames, and centralized conventions.
+Multiple microservices, multiple documents within each service, and third-party providers are
 organized below one `.agents/skills/api-docs/` directory; `skillName` can override the `api-docs` default.
 
 ```json
@@ -63,22 +63,22 @@ Root, service, and document `keywords` respectively support Skill discovery, ser
 `sourceType` is `internal` by default and also accepts `third-party`. Every service reference is physically included and
 reached through relative Markdown links; no filesystem symbolic link or separately installed service Skill is needed.
 
-SmartDoc downloads and validates every configured service and document before replacing the complete directory once.
+OpenAPI Skill downloads and validates every configured service and document before replacing the complete directory once.
 Any failure retains the previous complete Skill instead of publishing a subset. The original
 `serviceId + skillName + documents` single-service configuration remains supported. Install the package as a development
-dependency and see the [Node package guide](smartdoc-agent-node/README.en.md) for scripts, overrides, and migration details.
+dependency and see the [Node package guide](openapi-skill-node/README.en.md) for scripts, overrides, and migration details.
 
 ## Release and requirements
 
-The current release is `1.2.0`. It adds the runtime Starter and retains Maven build-time single-service and aggregate
-compatibility; SpringDoc applications should prefer the runtime Starter.
+The first release under the new name is prepared as `1.0.0`. Neither npm nor Maven Central has been published yet;
+the maintainer will perform both release actions manually. SpringDoc applications should prefer the runtime Starter.
 
 | Artifact | Purpose |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.2.0` | Parent POM |
-| `io.github.fyuanz:smartdoc-agent-core:1.2.0` | Offline conversion and safe output publication |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.2.0` | Maven `generate-skill` goal |
-| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0` | Runtime discovery and ZIP download |
+| `io.github.fyuanz:openapi-skill:1.0.0` | Parent POM |
+| `io.github.fyuanz:openapi-skill-core:1.0.0` | Offline conversion and safe output publication |
+| `io.github.fyuanz:openapi-skill-maven-plugin:1.0.0` | Maven `generate-skill` goal |
+| `io.github.fyuanz:openapi-skill-spring-boot-starter:1.0.0` | Runtime discovery and ZIP download |
 
 Use JDK 17 and Maven. The verified environment is Maven 3.9.16 / JDK 17.0.19. Repository integration scripts require PowerShell. The sample uses Spring Boot 3.5.9 and springdoc 2.8.15.
 
@@ -87,13 +87,13 @@ Use JDK 17 and Maven. The verified environment is Maven 3.9.16 / JDK 17.0.19. Re
 Clone the repository and run from its root:
 
 ```shell
-git clone https://github.com/fyuanz/smart-doc.git
-cd smart-doc
+git clone https://github.com/fyuanz/openapi-skill.git
+cd openapi-skill
 mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-The first command installs the snapshot. The second runs ordinary tests and packaging with no SmartDoc application
+The first command installs the prepared `1.0.0` artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
 start/stop, OpenAPI capture, or generated files. Tests verify the runtime ZIP on a random port.
 
 For a manual check, start the application:
@@ -102,7 +102,7 @@ For a manual check, start the application:
 mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 ```
 
-Then download `http://127.0.0.1:18080/smartdoc/skill.zip`. It contains the account/business groups, 4 operations,
+Then download `http://127.0.0.1:18080/openapi-skill/skill.zip`. It contains the account/business groups, 4 operations,
 and 7 document-local Schemas.
 
 ## Recommended: add the runtime starter
@@ -112,13 +112,13 @@ For a Spring Boot WebMVC service whose SpringDoc output is exact OpenAPI 3.1.0, 
 ```xml
 <dependency>
     <groupId>io.github.fyuanz</groupId>
-    <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
-    <version>1.2.0</version>
+    <artifactId>openapi-skill-spring-boot-starter</artifactId>
+    <version>1.0.0</version>
 </dependency>
 ```
 
-No SmartDoc Maven plugin, execution, phase, OpenAPI URL, document directory, or output directory is required. Once the
-application is running, `GET /smartdoc/skill.zip` downloads the Skill. The starter:
+No OpenAPI Skill Maven plugin, execution, phase, OpenAPI URL, document directory, or output directory is required. Once the
+application is running, `GET /openapi-skill/skill.zip` downloads the Skill. The starter:
 
 - enumerates the `GroupedOpenApi` beans used by Swagger UI, or uses the default document when there are no groups;
 - calls `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` in process to obtain the post-controller-scan JSON;
@@ -133,18 +133,18 @@ without issuing an HTTP self-request.
 All overrides are optional:
 
 ```properties
-smartdoc.runtime.enabled=true
-smartdoc.runtime.path=/smartdoc/skill.zip
-smartdoc.runtime.service-id=my-service
-smartdoc.runtime.skill-name=my-service-api
+openapi.skill.runtime.enabled=true
+openapi.skill.runtime.path=/openapi-skill/skill.zip
+openapi.skill.runtime.service-id=my-service
+openapi.skill.runtime.skill-name=my-service-api
 ```
 
 The endpoint follows the application's existing Spring Security rules; explicitly protect it when the API contract is
-sensitive. See the [starter guide](smartdoc-agent-spring-boot-starter/README.md).
+sensitive. See the [starter guide](openapi-skill-spring-boot-starter/README.md).
 
 ## Microservices: individual and complete aggregate Skills
 
-The following is the `1.2.0` Maven plugin compatibility path for projects that still need offline static JSON
+The following is the `1.0.0` Maven plugin compatibility path for projects that still need offline static JSON
 or build-time cross-service aggregation. Prefer the runtime starter for a current application's Skill ZIP.
 
 | `outputMode` | Output |
@@ -158,8 +158,8 @@ Configure this plugin under `build/plugins` in one coordinator module. It must r
 ```xml
 <plugin>
     <groupId>io.github.fyuanz</groupId>
-    <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.2.0</version>
+    <artifactId>openapi-skill-maven-plugin</artifactId>
+    <version>1.0.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>
@@ -194,7 +194,7 @@ Each service can use the explicit `documents` list shown earlier instead of a di
 Default output:
 
 ```text
-target/generated-resources/smartdoc/
+target/generated-resources/openapi-skill/
 ├── orders-api/             # Individual orders Skill
 ├── billing-api/            # Individual billing Skill
 └── platform-api/           # One complete aggregate Skill
@@ -251,14 +251,14 @@ After an API change, download again and replace the complete old Skill so delete
 
 | Observation | What to check |
 | --- | --- |
-| Download endpoint returns 404 | Ensure the starter is on the runtime classpath and `smartdoc.runtime.enabled` is not `false` |
+| Download endpoint returns 404 | Ensure the starter is on the runtime classpath and `openapi.skill.runtime.enabled` is not `false` |
 | Download endpoint returns 500 | Check that SpringDoc is enabled, the final JSON is exact OpenAPI 3.1.0, and local `$ref` targets are complete |
-| Unexpected ZIP name | Set `spring.application.name`, or override `smartdoc.runtime.service-id` / `skill-name` |
+| Unexpected ZIP name | Set `spring.application.name`, or override `openapi.skill.runtime.service-id` / `skill-name` |
 | 401/403 with Spring Security | Authorize the download path according to project policy; do not expose restricted API contracts just for download |
 
 Runtime generation has no stale-file fallback: a successful request returns one fully validated ZIP, while a failed request
 returns an application error and no partial archive. The old Maven plugin's status, lock, and recovery behavior remains
-documented in its [plugin guide](smartdoc-agent-maven-plugin/README.md).
+documented in its [plugin guide](openapi-skill-maven-plugin/README.md).
 
 ## Development and verification
 
@@ -276,22 +276,22 @@ powershell -NoProfile -File testbeds/maven-plugin-integration/verify.ps1
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 ```
 
-The SpringDoc script proves that an ordinary build performs no application start/stop, HTTP capture, or SmartDoc Maven
+The SpringDoc script proves that an ordinary build performs no application start/stop, HTTP capture, or OpenAPI Skill Maven
 goal, then downloads and checks the ZIP on a real random port. The Maven-plugin script retains compatibility coverage.
 
-`1.2.0` adds single-document/multi-group runtime starter tests and six testbed checks. See
+`1.0.0` adds single-document/multi-group runtime starter tests and six testbed checks. See
 [task records](docs/codex/TASKS.md) for current results. The user will continue to review Skill usability manually.
 
 ## Repository and documentation
 
 | Path | Contents |
 | --- | --- |
-| [smartdoc-agent-core](smartdoc-agent-core/) | Input validation, contract conversion, safe publication |
-| [smartdoc-agent-spring-boot-starter](smartdoc-agent-spring-boot-starter/) | Runtime SpringDoc discovery, conversion, and ZIP download |
-| [smartdoc-agent-maven-plugin](smartdoc-agent-maven-plugin/) | Maven configuration, directory discovery, update entry point |
+| [openapi-skill-core](openapi-skill-core/) | Input validation, contract conversion, safe publication |
+| [openapi-skill-spring-boot-starter](openapi-skill-spring-boot-starter/) | Runtime SpringDoc discovery, conversion, and ZIP download |
+| [openapi-skill-maven-plugin](openapi-skill-maven-plugin/) | Maven configuration, directory discovery, update entry point |
 | [SpringDoc testbed](testbeds/springdoc-multi-package/) | Multi-package, multi-group sample and runtime verification |
 | [Maven integration testbed](testbeds/maven-plugin-integration/) | Multiple services, repeated/parallel builds, failure isolation |
-| [Design (Chinese)](docs/smartdoc-agent-design.md) | v3.7 runtime primary path and compatibility boundaries |
+| [Design (Chinese)](docs/openapi-skill-design.md) | v3.7 runtime primary path and compatibility boundaries |
 | [Release and usage (Chinese)](docs/maven-central.md) | Maven Central setup and maintainer publishing workflow |
 | [Task status](docs/codex/TASKS.md) | Completed work, verification evidence, and next steps |
 

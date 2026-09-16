@@ -1,0 +1,40 @@
+{
+  "name": "openapi-skill",
+  "version": "1.0.0",
+  "description": "Generate one project API documentation Skill from multiple OpenAPI 3.1.0 services.",
+  "type": "module",
+  "bin": {
+    "openapi-skill": "dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "README.en.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test",
+    "prepublishOnly": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": ["openapi", "codex", "skill", "microservices", "api-documentation", "typescript"],
+  "homepage": "https://github.com/fyuanz/openapi-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fyuanz/openapi-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fyuanz/openapi-skill/issues"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

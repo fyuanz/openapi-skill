@@ -2,7 +2,7 @@
   "openapi" : "3.1.0",
   "info" : {
     "description" : "仅用于文档契约验证；全部数据为虚构样例，Bearer 定义仅演示文档元数据。",
-    "title" : "SmartDoc 多包测试服务",
+    "title" : "OpenAPI Skill 多包测试服务",
     "version" : "1.0.0"
   },
   "servers" : [ {

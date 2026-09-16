@@ -1,16 +1,16 @@
-# SmartDoc-Agent
+# openapi-skill
 
 **简体中文** | [English](README.en.md)
 
 将运行中 Spring Boot 服务的 OpenAPI 文档转换为前端开发可使用的 Skill ZIP。服务启动后访问一个只读接口，
-即可下载包含接口目录、请求响应契约和 Schema 引用的完整 Skill；不再为 SmartDoc 修改 Maven phase、启动第二个
+即可下载包含接口目录、请求响应契约和 Schema 引用的完整 Skill；不再为 OpenAPI Skill 修改 Maven phase、启动第二个
 应用进程、通过 HTTP 抓取 `/v3/api-docs`，也不在构建目录生成中间文件。
 
 ## 功能与边界
 
-- **纯运行时下载**：加入 Starter 后自动提供 `GET /smartdoc/skill.zip`，每次请求基于当前运行实例生成。
+- **纯运行时下载**：加入 Starter 后自动提供 `GET /openapi-skill/skill.zip`，每次请求基于当前运行实例生成。
 - **自动发现**：直接复用 SpringDoc 最终文档资源；自动枚举 `GroupedOpenApi`，无需重复配置 OpenAPI URL。
-- **可配置输出**：运行时默认一应用一 Skill；已发布的 Maven 插件仍支持全部服务的完整汇总及两者共存。
+- **可配置输出**：运行时默认一应用一 Skill；Maven 插件支持全部服务的完整汇总及两者共存。
 - **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供语义化接口 ID、机器索引和本地引用导航。
 - **无磁盘副作用**：生成结果先完整校验，再确定性地内存打包；相同契约得到相同 ZIP 字节。
 - **本地转换**：核心不调用 LLM、业务接口或外部引用地址；源文档自由文本与可信 Skill 指令分离。
@@ -21,16 +21,16 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`smartdoc-agent-node` 提供 TypeScript npm 包 `smartdoc-agent`。`1.5.0` 源码推荐一个前端项目只生成一份接口文档
-Skill，并增加 `operations.jsonl` / `schemas.jsonl`、语义文件名和集中 conventions；npm 当前最新版本仍为
-`1.4.0`。多个微服务、每个服务的多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
+`openapi-skill-node` 提供待发布的 TypeScript npm 包 `openapi-skill@1.0.0`。它推荐一个前端项目只生成一份接口文档
+Skill，并增加 `operations.jsonl` / `schemas.jsonl`、语义文件名和集中 conventions。多个微服务、每个服务的
+多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
 `api-docs`，输出到 Vue 项目根目录的 `.agents/skills/api-docs/`。
 
 ```shell
-npm install --save-dev smartdoc-agent
+npm install --save-dev openapi-skill
 ```
 
-在项目根目录创建 `smartdoc-agent.config.json`：
+在项目根目录创建 `openapi-skill.config.json`：
 
 ```json
 {
@@ -64,7 +64,7 @@ npm install --save-dev smartdoc-agent
 }
 ```
 
-将 `"skill:generate": "smartdoc-agent"` 加入 `package.json#scripts`，执行 `npm run skill:generate`。
+将 `"skill:generate": "openapi-skill"` 加入 `package.json#scripts`，执行 `npm run skill:generate`。
 根级、服务级和文档级 `keywords` 分别用于发现项目 Skill、选择服务和定位文档；`sourceType` 支持
 `internal`（默认）与 `third-party`。生成结果物理包含所有服务的引用文件，通过 Skill 内的相对 Markdown
 链接分层导航，不依赖文件系统符号链接或其他已安装 Skill。
@@ -72,19 +72,19 @@ npm install --save-dev smartdoc-agent
 工具会先下载和校验全部服务的全部文档，再一次性替换完整 `api-docs` 目录。任一成员失败时保留上一份
 完整结果，不发布缺服务的部分 Skill。`skillName`、`output` 和 `timeoutMs` 均可在根级覆盖；旧版
 `serviceId + skillName + documents` 单服务配置继续兼容。完整配置和迁移示例见
-[Node 包中文 README](smartdoc-agent-node/README.md)；[English](smartdoc-agent-node/README.en.md)。
+[Node 包中文 README](openapi-skill-node/README.md)；[English](openapi-skill-node/README.en.md)。
 
 ## 版本与环境
 
-当前正式版本为 `1.2.0`。它新增运行时 Starter，并继续提供 Maven 构建期的单服务/汇总兼容能力；
-对于 SpringDoc 应用，推荐使用运行时 Starter。
+改名后的首个待发布版本为 `1.0.0`。npm 与 Maven Central 均尚未发布；本仓库已准备好对应制品，
+发布操作由维护者手动完成。对于 SpringDoc 应用，推荐使用运行时 Starter。
 
 | 构件 | 用途 |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.2.0` | 父 POM |
-| `io.github.fyuanz:smartdoc-agent-core:1.2.0` | 离线转换与安全输出 |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.2.0` | Maven `generate-skill` 目标 |
-| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0` | 运行时自动发现与 ZIP 下载 |
+| `io.github.fyuanz:openapi-skill:1.0.0` | 父 POM |
+| `io.github.fyuanz:openapi-skill-core:1.0.0` | 离线转换与安全输出 |
+| `io.github.fyuanz:openapi-skill-maven-plugin:1.0.0` | Maven `generate-skill` 目标 |
+| `io.github.fyuanz:openapi-skill-spring-boot-starter:1.0.0` | 运行时自动发现与 ZIP 下载 |
 
 使用 JDK 17 和 Maven；已验证环境为 Maven 3.9.16 / JDK 17.0.19。仓库集成验证脚本使用 PowerShell。示例服务使用 Spring Boot 3.5.9 和 springdoc 2.8.15。
 
@@ -93,13 +93,13 @@ npm install --save-dev smartdoc-agent
 克隆仓库后，在仓库根目录执行：
 
 ```shell
-git clone https://github.com/fyuanz/smart-doc.git
-cd smart-doc
+git clone https://github.com/fyuanz/openapi-skill.git
+cd openapi-skill
 mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-第一条命令安装当前 Snapshot，第二条只执行普通测试和打包，不包含 SmartDoc 的应用启停、OpenAPI 抓取或文件生成。
+第一条命令将待发布的 `1.0.0` 安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
 测试会在随机端口验证运行时 ZIP 接口，详见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
 
 手动体验时启动应用：
@@ -108,7 +108,7 @@ mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 ```
 
-随后下载 `http://127.0.0.1:18080/smartdoc/skill.zip`。该样例 ZIP 包含 account/business 两组、4 个接口和
+随后下载 `http://127.0.0.1:18080/openapi-skill/skill.zip`。该样例 ZIP 包含 account/business 两组、4 个接口和
 7 个文档内 Schema。
 
 ## 推荐：接入运行时 Starter
@@ -118,13 +118,13 @@ mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 ```xml
 <dependency>
     <groupId>io.github.fyuanz</groupId>
-    <artifactId>smartdoc-agent-spring-boot-starter</artifactId>
-    <version>1.2.0</version>
+    <artifactId>openapi-skill-spring-boot-starter</artifactId>
+    <version>1.0.0</version>
 </dependency>
 ```
 
-无需 SmartDoc Maven plugin、execution、phase、OpenAPI URL、文档目录或输出目录。应用启动后访问
-`GET /smartdoc/skill.zip` 即可下载。Starter 自动执行：
+无需 OpenAPI Skill Maven plugin、execution、phase、OpenAPI URL、文档目录或输出目录。应用启动后访问
+`GET /openapi-skill/skill.zip` 即可下载。Starter 自动执行：
 
 - 从 `GroupedOpenApi` Bean 枚举与 Swagger UI 对应的分组；无分组时使用默认文档。
 - 调用 `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` 在进程内取得扫描 Controller 后的最终 JSON。
@@ -138,18 +138,18 @@ mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 以下覆盖项全部可选：
 
 ```properties
-smartdoc.runtime.enabled=true
-smartdoc.runtime.path=/smartdoc/skill.zip
-smartdoc.runtime.service-id=my-service
-smartdoc.runtime.skill-name=my-service-api
+openapi.skill.runtime.enabled=true
+openapi.skill.runtime.path=/openapi-skill/skill.zip
+openapi.skill.runtime.service-id=my-service
+openapi.skill.runtime.skill-name=my-service-api
 ```
 
 下载接口沿用应用已有的 Spring Security 规则；受限契约应显式保护该路径。完整说明见
-[Starter README](smartdoc-agent-spring-boot-starter/README.md)。
+[Starter README](openapi-skill-spring-boot-starter/README.md)。
 
 ## 微服务：独立 Skill 与完整汇总共存
 
-下面是 `1.2.0` Maven 插件的兼容能力，适用于仍需离线静态 JSON 或构建期跨服务汇总的项目。
+下面是 `1.0.0` Maven 插件的兼容能力，适用于仍需离线静态 JSON 或构建期跨服务汇总的项目。
 新接入若只需当前应用的 Skill ZIP，优先使用上面的运行时 Starter。
 
 | `outputMode` | 输出 |
@@ -163,8 +163,8 @@ smartdoc.runtime.skill-name=my-service-api
 ```xml
 <plugin>
     <groupId>io.github.fyuanz</groupId>
-    <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.2.0</version>
+    <artifactId>openapi-skill-maven-plugin</artifactId>
+    <version>1.0.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>
@@ -199,7 +199,7 @@ smartdoc.runtime.skill-name=my-service-api
 默认生成：
 
 ```text
-target/generated-resources/smartdoc/
+target/generated-resources/openapi-skill/
 ├── orders-api/             # 独立订单服务 Skill
 ├── billing-api/            # 独立账单服务 Skill
 └── platform-api/           # 唯一完整汇总 Skill
@@ -255,13 +255,13 @@ powershell -NoProfile -File testbeds/maven-plugin-integration/verify-aggregate.p
 
 | 现象 | 检查方式 |
 | --- | --- |
-| 下载接口 404 | 确认 Starter 依赖已进入运行时 classpath，且 `smartdoc.runtime.enabled` 未设为 `false` |
+| 下载接口 404 | 确认 Starter 依赖已进入运行时 classpath，且 `openapi.skill.runtime.enabled` 未设为 `false` |
 | 下载接口 500 | 检查 SpringDoc 是否启用、最终 JSON 是否为精确 OpenAPI 3.1.0，以及本地 `$ref` 是否完整 |
-| ZIP 名称不符合预期 | 设置 `spring.application.name`，或覆盖 `smartdoc.runtime.service-id` / `skill-name` |
+| ZIP 名称不符合预期 | 设置 `spring.application.name`，或覆盖 `openapi.skill.runtime.service-id` / `skill-name` |
 | 有 Spring Security 时 401/403 | 按项目安全策略授权下载路径；不要为了下载公开受限 API 文档 |
 
 运行时生成没有旧文件回退：请求成功即返回一份完整校验后的 ZIP，请求失败则返回服务错误且不产生半成品。
-旧 Maven 插件的状态、锁、恢复与警告语义仍见[插件说明](smartdoc-agent-maven-plugin/README.md)。
+旧 Maven 插件的状态、锁、恢复与警告语义仍见[插件说明](openapi-skill-maven-plugin/README.md)。
 
 ## 开发与验证
 
@@ -279,22 +279,22 @@ powershell -NoProfile -File testbeds/maven-plugin-integration/verify.ps1
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 ```
 
-SpringDoc 脚本验证普通构建中没有应用启停、HTTP 抓取或 SmartDoc Maven goal，并在随机真实端口下载、检查 ZIP。
+SpringDoc 脚本验证普通构建中没有应用启停、HTTP 抓取或 OpenAPI Skill Maven goal，并在随机真实端口下载、检查 ZIP。
 Maven 插件脚本继续验证旧兼容入口。
 
-`1.2.0` 增加运行时 Starter 单文档/多分组测试和 6 项测试服务验证；最新结果见
+`1.0.0` 增加运行时 Starter 单文档/多分组测试和 6 项测试服务验证；最新结果见
 [任务记录](docs/codex/TASKS.md)。Skill 使用效果仍由用户人工校验后反馈。
 
 ## 项目结构与文档
 
 | 路径 | 内容 |
 | --- | --- |
-| [smartdoc-agent-core](smartdoc-agent-core/) | 输入校验、契约转换、安全发布 |
-| [smartdoc-agent-spring-boot-starter](smartdoc-agent-spring-boot-starter/) | 运行时 SpringDoc 发现、转换与 ZIP 下载 |
-| [smartdoc-agent-maven-plugin](smartdoc-agent-maven-plugin/) | Maven 配置、目录发现、更新入口 |
+| [openapi-skill-core](openapi-skill-core/) | 输入校验、契约转换、安全发布 |
+| [openapi-skill-spring-boot-starter](openapi-skill-spring-boot-starter/) | 运行时 SpringDoc 发现、转换与 ZIP 下载 |
+| [openapi-skill-maven-plugin](openapi-skill-maven-plugin/) | Maven 配置、目录发现、更新入口 |
 | [SpringDoc 测试服务](testbeds/springdoc-multi-package/) | 多包、多分组示例与运行时验证 |
 | [Maven 集成测试](testbeds/maven-plugin-integration/) | 多服务、重复/并行构建和失败隔离 |
-| [设计文档](docs/smartdoc-agent-design.md) | v3.7 运行时主链路与兼容边界 |
+| [设计文档](docs/openapi-skill-design.md) | v3.7 运行时主链路与兼容边界 |
 | [发布与使用](docs/maven-central.md) | Maven Central 配置与维护者发布流程 |
 | [任务状态](docs/codex/TASKS.md) | 已完成工作、验证证据与后续计划 |
 

@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $testbedRoot = (Resolve-Path $PSScriptRoot).Path
 $repositoryRoot = (Resolve-Path (Join-Path $testbedRoot "../..")).Path
-$outputRoot = Join-Path $testbedRoot "target/generated-resources/smartdoc"
+$outputRoot = Join-Path $testbedRoot "target/generated-resources/openapi-skill"
 
 function Invoke-CheckedMaven([string] $workingDirectory, [string[]] $arguments) {
     Push-Location $workingDirectory
@@ -45,7 +45,7 @@ function Assert-True([bool] $condition, [string] $message) {
 }
 
 function Read-Status([string] $serviceId, [string] $root = $outputRoot) {
-    $path = Join-Path $root ".smartdoc/status/$serviceId.json"
+    $path = Join-Path $root ".openapi-skill/status/$serviceId.json"
     return Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
 }
 
@@ -70,8 +70,8 @@ Invoke-CheckedMaven $repositoryRoot @("-B", "-DskipTests", "install") | Out-Null
 $initialLog = Invoke-CheckedMaven $testbedRoot @("-B", "clean", "compile")
 Assert-True (Test-Path -LiteralPath (Join-Path $outputRoot "orders-api/SKILL.md") -PathType Leaf) "orders Skill missing"
 Assert-True (Test-Path -LiteralPath (Join-Path $outputRoot "billing-api/SKILL.md") -PathType Leaf) "billing Skill missing"
-Assert-True ((@($initialLog | Where-Object { "$_" -match 'SmartDoc \[orders\] SUCCESS' })).Count -eq 1) "orders must update once"
-Assert-True ((@($initialLog | Where-Object { "$_" -match 'SmartDoc \[billing\] SUCCESS' })).Count -eq 1) "billing must update once"
+Assert-True ((@($initialLog | Where-Object { "$_" -match 'OpenAPI Skill \[orders\] SUCCESS' })).Count -eq 1) "orders must update once"
+Assert-True ((@($initialLog | Where-Object { "$_" -match 'OpenAPI Skill \[billing\] SUCCESS' })).Count -eq 1) "billing must update once"
 
 $ordersFirst = (Read-Status "orders").attemptedAt
 $billingFirst = (Read-Status "billing").attemptedAt
@@ -122,10 +122,10 @@ Assert-True ((Read-Status "orders").outcome -eq "FAILED") "invalid orders docume
 Assert-True ((Get-TreeDigest (Join-Path $outputRoot "orders-api")) -eq $ordersDigest) "orders Skill changed after failure"
 Assert-True ((Read-Status "billing").outcome -eq "SUCCESS") "billing did not succeed beside orders failure"
 Assert-True ((Read-Status "billing").attemptedAt -ne $billingBeforeFailure) "billing was not attempted beside orders failure"
-Assert-True ((@($failureLog | Where-Object { "$_" -match 'SmartDoc \[orders\] FAILED' })).Count -eq 1) "orders warning missing"
+Assert-True ((@($failureLog | Where-Object { "$_" -match 'OpenAPI Skill \[orders\] FAILED' })).Count -eq 1) "orders warning missing"
 
 $firstFailureRoot = Join-Path $testbedRoot "target/first-failure"
-Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dsmartdoc.output=$firstFailureRoot", "-Dorders.account.path=$invalidInput", "compile") | Out-Null
+Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dopenapi.skill.output=$firstFailureRoot", "-Dorders.account.path=$invalidInput", "compile") | Out-Null
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $firstFailureRoot "orders-api"))) "first failure published a Skill"
 Assert-True ((Read-Status "orders" $firstFailureRoot).outcome -eq "FAILED") "first failure status missing"
 
@@ -135,20 +135,20 @@ Assert-True ((Read-Status "orders").outcome -eq "FAILED") "missing input did not
 Assert-True ((Get-TreeDigest (Join-Path $outputRoot "orders-api")) -eq $ordersDigest) "orders Skill changed after missing input"
 
 $invalidConfigRoot = Join-Path $testbedRoot "target/invalid-config"
-$configLog = Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dsmartdoc.output=$invalidConfigRoot", "-Dorders.service.id=INVALID", "compile")
+$configLog = Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dopenapi.skill.output=$invalidConfigRoot", "-Dorders.service.id=INVALID", "compile")
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $invalidConfigRoot "orders-api"))) "invalid configuration published a Skill"
-Assert-True ((@($configLog | Where-Object { "$_" -match 'SmartDoc \[INVALID\] FAILED: CONFIG:' })).Count -eq 1) "configuration warning missing"
+Assert-True ((@($configLog | Where-Object { "$_" -match 'OpenAPI Skill \[INVALID\] FAILED: CONFIG:' })).Count -eq 1) "configuration warning missing"
 
 $emptyConfigRoot = Join-Path $testbedRoot "target/empty-config"
-$emptyConfigLog = Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dsmartdoc.output=$emptyConfigRoot", "-Dorders.service.id=", "compile")
+$emptyConfigLog = Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dopenapi.skill.output=$emptyConfigRoot", "-Dorders.service.id=", "compile")
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $emptyConfigRoot "orders-api"))) "missing serviceId published a Skill"
-Assert-True ((@($emptyConfigLog | Where-Object { "$_" -match 'SmartDoc \[<unconfigured>\] FAILED: CONFIG:' })).Count -eq 1) "missing serviceId warning missing"
+Assert-True ((@($emptyConfigLog | Where-Object { "$_" -match 'OpenAPI Skill \[<unconfigured>\] FAILED: CONFIG:' })).Count -eq 1) "missing serviceId warning missing"
 
 $blockedOutput = Join-Path $testbedRoot "target/blocked-output"
 Set-Content -LiteralPath $blockedOutput -Value "do not replace" -Encoding UTF8
-$writeLog = Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dsmartdoc.output=$blockedOutput", "compile")
+$writeLog = Invoke-CheckedMaven $testbedRoot @("-B", "-pl", "orders-service", "-Dopenapi.skill.output=$blockedOutput", "compile")
 Assert-True ((Get-Content -LiteralPath $blockedOutput -Raw).Contains("do not replace")) "blocked output file was modified"
-Assert-True ((@($writeLog | Where-Object { "$_" -match 'SmartDoc \[orders\] FAILED' })).Count -eq 1) "write warning missing"
+Assert-True ((@($writeLog | Where-Object { "$_" -match 'OpenAPI Skill \[orders\] FAILED' })).Count -eq 1) "write warning missing"
 
 $brokenLog = Invoke-FailingMaven $testbedRoot @("-B", "-Pbroken-business-build", "-pl", "broken-service", "compile")
 Assert-True ((@($brokenLog | Where-Object { "$_" -match 'COMPILATION ERROR|Compilation failure' })).Count -gt 0) "expected Java compilation error was not reported"

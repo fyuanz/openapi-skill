@@ -1,22 +1,21 @@
 # Maven Central 发布与使用
 
-发布坐标为 `io.github.fyuanz`，最新正式版本为 `1.2.0`，许可证为 MIT。
-Java 包名继续使用 `com.smartdoc.agent`；Maven 坐标迁移不改变 Java API。
+新坐标为 `io.github.fyuanz`，首个准备发布的版本为 `1.0.0`，许可证为 MIT；本次只完成发布准备，
+不执行 Maven Central 上传。Java 包命名空间为 `io.github.fyuanz.openapi.skill`。
 
-`1.2.0`（2026-09-14 发布）新增运行时 Spring Boot Starter 和 Skill ZIP 下载接口。
-`1.1.0`（2026-09-14 发布）包含 `outputMode=service|aggregate|both` 多服务汇总配置。
-`1.0.0`（2026-09-11 发布）只支持单服务配置；两个正式版本均不可覆盖。
-当前 Git 源码和标签 `v1.2.0` 对应本次正式发布；后续改动需要新版本和对应 Git 标签。
+旧项目曾以 `smart-doc-agent` / `smartdoc-agent-*` 坐标发布 `1.0.0`、`1.1.0` 和 `1.2.0`；这些制品保持不可变。
+新项目使用全新的 `openapi-skill` / `openapi-skill-*` 坐标，因此从 `1.0.0` 重新起版。发布成功后再创建对应 Git 标签，
+不可提前把未发布源码描述成 Central 正式版本。
 配置见[中文 README](../README.md)。
 
 | 构件 | 用途 |
 | --- | --- |
-| `io.github.fyuanz:smart-doc-agent:1.2.0` | 父 POM，提供公共版本和发布元数据 |
-| `io.github.fyuanz:smartdoc-agent-core:1.2.0` | 离线 OpenAPI 转 Skill、汇总装配与安全发布 |
-| `io.github.fyuanz:smartdoc-agent-maven-plugin:1.2.0` | Maven `generate-skill` 目标（含单服务/汇总/共存） |
-| `io.github.fyuanz:smartdoc-agent-spring-boot-starter:1.2.0` | 运行时 Skill ZIP |
+| `io.github.fyuanz:openapi-skill:1.0.0` | 父 POM，提供公共版本和发布元数据 |
+| `io.github.fyuanz:openapi-skill-core:1.0.0` | 离线 OpenAPI 转 Skill、汇总装配与安全发布 |
+| `io.github.fyuanz:openapi-skill-maven-plugin:1.0.0` | Maven `generate-skill` 目标（含单服务/汇总/共存） |
+| `io.github.fyuanz:openapi-skill-spring-boot-starter:1.0.0` | 运行时 Skill ZIP |
 
-## 使用已发布 Maven 插件（兼容入口）
+## 使用准备发布的 Maven 插件（兼容入口）
 
 发布到 Central 后无需添加额外仓库。将插件配置在服务的唯一生成责任模块；下面沿用本仓库
 SpringDoc 测试项目的身份和目录。实际服务应调整身份、路径和 phase。
@@ -24,8 +23,8 @@ SpringDoc 测试项目的身份和目录。实际服务应调整身份、路径�
 ```xml
 <plugin>
     <groupId>io.github.fyuanz</groupId>
-    <artifactId>smartdoc-agent-maven-plugin</artifactId>
-    <version>1.2.0</version>
+    <artifactId>openapi-skill-maven-plugin</artifactId>
+    <version>1.0.0</version>
     <inherited>false</inherited>
     <executions>
         <execution>
@@ -44,8 +43,8 @@ SpringDoc 测试项目的身份和目录。实际服务应调整身份、路径�
 ```
 
 该片段消费已有本地 JSON，适合静态权威契约或显式跨服务汇总。新的 SpringDoc 应用优先使用
-`1.2.0` 运行时 Starter；它不需要 Maven phase 或文档目录。见
-[运行时说明](../smartdoc-agent-spring-boot-starter/README.md)。
+`1.0.0` 运行时 Starter；它不需要 Maven phase 或文档目录。见
+[运行时说明](../openapi-skill-spring-boot-starter/README.md)。
 
 ## 维护者发布
 
@@ -85,7 +84,7 @@ mvn -B -Pcentral-release -s <private-settings.xml> deploy
 请求超时后先用已有 deployment ID 查询状态，避免重复上传。
 Central 正式版本不可覆盖；后续改动需要新版本和对应 Git 标签。
 
-本机已经在用户目录 `.m2/smartdoc-central/` 建立 settings、Windows DPAPI 加密凭据、加密口令和
+本机已有的发布辅助目录仍为 `.m2/smartdoc-central/`，其中保存 settings、Windows DPAPI 加密凭据、加密口令和
 `invoke-release.ps1` 辅助脚本。它支持 `-Phase install`、`-Phase deploy` 和可选的 `-Clean`，
 从本机密钥环临时导出密钥至进程环境，退出时清理相关环境变量。文件不属于 Git 项目。
 DPAPI 文件绑定当前 Windows 用户；迁移机器时应单独安全备份密钥和可恢复的口令。
