@@ -4,27 +4,28 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:1.1.0-SNAPSHOT`; parent, core and Starter reactor |
-| `openapi-skill-core` | Per-service conversion, context-first navigation, aggregate assembly, validation and safe filesystem publication | 68 tests pass |
+| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.0.0-SNAPSHOT`; parent, core and Starter reactor |
+| `openapi-skill-core` | Per-service conversion, context-first navigation, aggregate assembly, validation and safe filesystem publication | 69 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
-| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | local `openapi-skill@1.1.0` source passes 30 tests; not published |
+| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | local `openapi-skill@2.0.0` source passes 41 tests; `1.0.0`/`1.1.0` published, `2.0.0` not published |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no OpenAPI Skill build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 
 ## Parent Project
 
 Coordinates are `io.github.fyuanz:openapi-skill`, `openapi-skill-core`, and
-`openapi-skill-spring-boot-starter`; P13 source is `1.1.0-SNAPSHOT`. Java packages use
-`io.github.fyuanz.openapi.skill`; no P13 Central publication was requested.
+`openapi-skill-spring-boot-starter`; current source is `2.0.0-SNAPSHOT` after the published `1.0.0`. Java packages use
+`io.github.fyuanz.openapi.skill`; no `2.0.0` Central publication was requested.
 
 ## Core
 
 `SkillGenerator.generate(serviceId, skillName, documents)` converts a complete map of document IDs to exact OpenAPI 3.1.0
 JSON bytes into an immutable map of relative paths to UTF-8 content. It preserves operation/schema JSON plus effective
-parameters, servers, and security, and creates compact catalogs, one complete document context, sorted machine JSONL
-indexes, and precomputed document-local direct/transitive reference closures. Semantic IDs do not depend on SpringDoc
-operationId; unique safe filenames are clean and suffixes are reserved for true collisions or filesystem-safety
-fallbacks. Shared absent/null/empty/default semantics live once in `conventions.md`, linked from contract
+parameters, servers, and security, and creates compact catalogs, one group-index document context, one interface file per
+first OpenAPI tag, sorted machine JSONL indexes, and precomputed document-local direct/transitive reference closures.
+Semantic IDs do not depend on SpringDoc operationId; unique safe filenames are clean and bounded to 72 characters, and
+suffixes are reserved for true collisions or filesystem-safety fallbacks. Shared absent/null/empty/default semantics live
+once in `conventions.md`, linked from contract
 files. The `SKILL.md` frontmatter carries a bilingual action-triggered
 description built only from validated identities; `boundedList()` truncates the interpolated group list so the
 32-document worst case stays a single YAML-safe line under 1024 characters.
@@ -60,14 +61,14 @@ management-port resource layouts, remote service aggregation, caching, and artif
 ## Node.js Package
 
 The unscoped `openapi-skill` package targets Node.js 20+ and exports both an `openapi-skill` CLI and typed library
-functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `1.1.0` retains the
+functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `2.0.0` retains the
 preferred top-level `services` configuration: one project may contain internal and third-party services, and each
 service may contain multiple explicit document ID/HTTP(S) URL pairs. One configuration produces one self-contained
 project Skill; `skillName` defaults to `api-docs` and no service has a separately installed Skill.
 
 Project generation physically embeds each complete service reference tree under
 `references/services/<serviceId>/references/`, omits member `SKILL.md` files, and connects the root catalog to service
-catalogs with relative Markdown links. Root provenance uses `openapi-skill-core/2` and `kind=project`; nested service
+catalogs with relative Markdown links. Root provenance uses `openapi-skill-core/3` and `kind=project`; nested service
 provenance and the flattened service/document list preserve origin without merging OpenAPI objects or resolving `$ref`
 across documents. `sourceType` is limited to `internal|third-party` and defaults to `internal`.
 
@@ -83,10 +84,10 @@ configured document must download and validate before staged replacement, so fai
 Skill. Redirects and external references remain rejected. The default output parent is
 `<consumer>/.agents/skills`; `output` supports a relative or absolute override.
 
-The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains supported. Project and legacy
-configuration shapes cannot be mixed; new output uses core/2, while the publisher recognizes owned core/1 only for safe
-atomic replacement. The local `1.1.0` implementation passes 30 Node tests; its packed tarball generates the project Skill
-in the real Vue consumer against the running SpringDoc testbed.
+The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains accepted. Project and legacy
+configuration shapes cannot be mixed; every new tree uses core/3, while the publisher recognizes owned core/1 and
+core/2 trees only for safe atomic replacement. The local `2.0.0` implementation passes 41 Node tests; its packed tarball
+generates the project Skill in the real Vue consumer against the running SpringDoc testbed.
 
 ## Testbed
 
@@ -97,9 +98,10 @@ plugin invocations stay absent. Frozen `fixtures/` remain only as deterministic 
 
 `testbeds/vue-ts-consumer` is the consumer-side counterpart. It is a real Vue 3 + TypeScript + Vite project that installs
 the packed Node package, runs `npm run skill:generate` against the running SpringDoc testbed, and calls all five
-documented operations through a Vite dev-server proxy. It now installs the local `1.1.0` tarball, declares one
-`springdoc-multi-package` service with project/service/document keywords, and generates the core/2 `api-docs` project
-Skill with context-first navigation. `src/api/client.ts` carries
+documented operations through a Vite dev-server proxy. It now installs the local `2.0.0` tarball, declares one
+`springdoc-multi-package` service with project/service/document keywords, and generates the core/3 `api-docs` project
+Skill with tag-grouped navigation. `verify-skill-tree.mjs` re-checks the tree and pins its whole-tree SHA-256.
+`src/api/client.ts` carries
 the typed client and the error shape. `README.md` documents the reproducible sequence; `CLOSURE-REPORT.md` records the
 verification evidence, the three readability gaps found by an independent read-only Skill audit, and the later
 project-mode run. Generated output (`node_modules/`, `dist/`, `.agents/`) is gitignored, so the Skill is regenerated

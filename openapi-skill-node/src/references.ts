@@ -287,7 +287,11 @@ function at(root: unknown, pointer: string): unknown {
 }
 
 export function digest(bytes: Uint8Array): string { return createHash('sha256').update(bytes).digest('hex'); }
-export function label(text: string): string { return [...text].map((char) => /[\p{L}\p{N} /_-]/u.test(char) ? char : `&#${char.codePointAt(0)};`).join(''); }
+/**
+ * Escapes only ASCII punctuation, which is what Markdown gives meaning to. Non-ASCII text — Chinese
+ * punctuation included — passes through unchanged so the generated documents stay readable.
+ */
+export function label(text: string): string { return [...text].map((char) => /[\p{L}\p{N} /_-]/u.test(char) || char.codePointAt(0)! > 0x7f ? char : `&#${char.codePointAt(0)};`).join(''); }
 export function sorted<V>(map: ReadonlyMap<string, V>): [string, V][] { return [...map.entries()].sort(([a], [b]) => compareText(a, b)); }
 
 export function operationIdentity(method: string, path: string): string { return `${method}\0${path}`; }
@@ -299,11 +303,35 @@ export function operationFiles(operations: ReadonlyArray<readonly [string, strin
   return semanticFiles(readable);
 }
 
+const ENCODER = new TextEncoder();
+/** One shared bound for generated stems: long enough to keep a complete path tail, short enough for any filesystem. */
+const MAX_STEM = 72;
+const MAX_STEM_BYTES = 72;
+const RESERVED_NAME = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+const UNTAGGED = 'untagged';
+/** Characters a group file name keeps verbatim; every other character becomes a separator. */
+const TAG_CHAR = /[\p{L}\p{N}_-]/u;
+
+/** Operation, schema and reference names: ASCII stems that stay stable under normalization. */
 export function semanticFiles(readableByIdentity: ReadonlyMap<string, string>): Map<string, string> {
+  return allocateFiles(readableByIdentity, slug);
+}
+
+/**
+ * Group file names keep the OpenAPI tag text itself, including non-ASCII scripts. A Chinese tag such as
+ * `航线任务` therefore stays readable instead of collapsing onto the shared ASCII stem `item`.
+ */
+export function tagFiles(readableByIdentity: ReadonlyMap<string, string>): Map<string, string> {
+  return allocateFiles(readableByIdentity, tagStem);
+}
+
+/** Allocates one name per identity; every member of a real collision group receives a digest suffix. */
+function allocateFiles(readableByIdentity: ReadonlyMap<string, string>,
+  stemOf: (readable: string) => string): Map<string, string> {
   const groups = new Map<string, string[]>();
   const stems = new Map<string, string>();
   for (const [identity, readable] of sorted(readableByIdentity)) {
-    const stem = slug(readable);
+    const stem = stemOf(readable);
     stems.set(identity, stem);
     const key = stem.toLowerCase();
     groups.set(key, [...(groups.get(key) ?? []), identity]);
@@ -321,7 +349,7 @@ export function semanticFiles(readableByIdentity: ReadonlyMap<string, string>): 
   for (const identities of groups.values()) {
     if (identities.length === 1 && !needsFallback(readableByIdentity.get(identities[0]!), stems.get(identities[0]!)!)) continue;
     for (const identity of identities.sort(compareText)) {
-      const hash = digest(new TextEncoder().encode(identity));
+      const hash = digest(ENCODER.encode(identity));
       let allocated = false;
       for (let length = 6; ;) {
         const candidate = `${stems.get(identity)!}--${hash.slice(0, length)}.md`;
@@ -342,7 +370,24 @@ export function semanticFiles(readableByIdentity: ReadonlyMap<string, string>): 
 
 function needsFallback(readable: string | undefined, stem: string): boolean {
   const hasAscii = /[A-Za-z0-9]/.test(readable ?? '');
-  return (!hasAscii && stem === 'item') || /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i.test(stem);
+  return (!hasAscii && stem === 'item') || RESERVED_NAME.test(stem);
+}
+
+function tagStem(value: string): string {
+  let result = '';
+  let separator = false;
+  let bytes = 0;
+  for (const char of value.normalize('NFC')) {
+    if (TAG_CHAR.test(char)) {
+      const addition = (separator && result ? 1 : 0) + ENCODER.encode(char).byteLength;
+      if (bytes + addition > MAX_STEM_BYTES) break;
+      if (separator && result) result += '-';
+      result += char;
+      bytes += addition;
+      separator = false;
+    } else separator = result.length > 0;
+  }
+  return result.replace(/-+$/, '') || UNTAGGED;
 }
 
 function slug(value: string): string {
@@ -356,7 +401,7 @@ function slug(value: string): string {
       result += char;
       separator = false;
     } else separator = result.length > 0;
-    if (result.length >= 48) break;
+    if (result.length >= MAX_STEM) break;
   }
   return result.replace(/-+$/, '') || 'item';
 }

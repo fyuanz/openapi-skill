@@ -59,7 +59,7 @@ class SkillGeneratorReferenceTest {
                 operation.path("operation").path("requestBody").path("$ref").asText());
         assertEquals(0, files.keySet().stream().filter(path -> path.contains("/tags/")).count());
         assertTrue(files.get("references/operations.jsonl").contains("\"tags\":[\"orders\",\"writes\"]"));
-        assertTrue(files.get("references/documents/public/context.md").contains("Order APIs"));
+        assertTrue(files.get("references/documents/public/groups/orders.md").contains("Order APIs"));
         assertTrue(files.keySet().stream().anyMatch(path -> path.contains("/refs/")));
         String operationPage = files.entrySet().stream()
                 .filter(entry -> entry.getKey().contains("/operations/"))

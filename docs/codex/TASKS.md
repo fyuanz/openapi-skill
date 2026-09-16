@@ -6,11 +6,11 @@ Product design v4.0.0 keeps the embedded Spring Boot runtime endpoint as the pri
 generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no OpenAPI Skill build
 executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-Maven build-time compatibility has been removed by explicit user decision. Node `1.1.0` source builds on project mode
+Maven build-time compatibility has been removed by explicit user decision. Node `2.0.0` source builds on project mode
 that downloads explicitly configured documents for multiple internal or third-party services and installs one
-self-contained `openapi-skill-core/2` project Skill with one complete document context, clean semantic paths and
-precomputed reference closures. JSONL is retained only as a compact machine index. The 1.1.0 npm and Maven changes are
-implemented in source but not published.
+self-contained `openapi-skill-core/3` project Skill: one slim group-index context per document, one file per first
+OpenAPI tag, clean semantic paths and precomputed reference closures. JSONL is retained only as a compact machine
+index. The 2.0.0 npm and Maven changes are implemented in source but not published.
 Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
 artifact coordination remain outside scope.
 
@@ -31,9 +31,10 @@ artifact coordination remain outside scope.
 | P11 | core/3 compact catalog, semantic IDs/filenames, JSONL lookup indexes, and centralized conventions | Complete in Java and Node source; current reactor has 69 tests after compatibility removal |
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
 | P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Complete in Java and Node; runtime/Vue evidence verified, publication not requested |
-| Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
-| Release | npm release | `smartdoc-agent@1.5.0` manually published 2026-09-15 and verified as current `latest` |
-| Documentation | Chinese-default README, English guide and v4.0 design | Updated for context-first core/2 navigation |
+| P14 | Tag-grouped navigation: one readable file per first OpenAPI tag, slim group-index context, catalog-owned server/security facts, 72-character names, breaking 2.0.0 release | Complete in Java and Node; runtime/Vue/cross-implementation evidence verified, publication not requested |
+| Release | Maven Central releases | `1.0.0` for the `openapi-skill*` coordinates published 2026-09-16; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
+| Release | npm release | `openapi-skill@1.0.0` and `1.1.0` published 2026-09-16 (`latest = 1.1.0`); `2.0.0` is prepared but not published |
+| Documentation | Chinese-default README, English guide and v4.0 design | Updated for tag-grouped core/3 navigation |
 
 ## P13 Implementation Plan - Completed
 
@@ -91,18 +92,22 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
 
 ## Current Implementation
 
-- New output uses `openapi-skill-core/2`. `catalog.md` selects a service/document; every document has exactly one complete,
-  unsplit `context.md` that lists each operation once with a direct link. Sorted `operations.jsonl`/`schemas.jsonl` remain
-  machine/validator artifacts, while `conventions.md` holds shared OpenAPI reading defaults once per service tree.
-- Operation/schema IDs are semantic and independent of SpringDoc `operationId`. Unique safe contracts use clean names;
-  deterministic short suffixes are limited to real case-insensitive collisions and filesystem-safety fallbacks. Full
-  source SHA-256 stays in provenance.
-- Trusted Skill guidance navigates through context and operation Markdown. Each operation includes the generator-computed
-  direct/transitive document-local reference closure and recursive edges, so no JSONL search or LLM graph derivation is
-  required.
+- New output uses `openapi-skill-core/3`. `catalog.md` selects a service/document and carries that document's readable
+  server and security facts; every document has exactly one `context.md` that is now a slim group index and lists each
+  first-tag group once with its interface count. Operations live in
+  `references/documents/<docId>/groups/<tag>.md`, one file per first OpenAPI tag with the tag's own name (Chinese names
+  included) and one `- [title](../operations/<file>.md) — \`METHOD /path\`` line each. Sorted
+  `operations.jsonl`/`schemas.jsonl` remain machine/validator artifacts and now carry `group`/`groupFile` columns,
+  while `conventions.md` holds shared OpenAPI reading defaults once per service tree.
+- Operation/schema IDs are semantic and independent of SpringDoc `operationId`. Unique safe contracts use clean names
+  bounded to 72 characters; deterministic short suffixes are limited to real case-insensitive collisions and
+  filesystem-safety fallbacks. Full source SHA-256 stays in provenance.
+- Trusted Skill guidance navigates catalog → context → group → operation Markdown. Each operation includes the
+  generator-computed direct/transitive document-local reference closure and recursive edges, so no JSONL search or LLM
+  graph derivation is required.
 
 - `testbeds/vue-ts-consumer` is a real Vue 3 + TypeScript + Vite consumer. It installs the packed
-  local `openapi-skill@1.1.0` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
+  local `openapi-skill@2.0.0` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
   testbed into its own `.agents/skills/`, and calls all five documented operations through a Vite dev-server proxy.
 - `openapi-skill-spring-boot-starter` auto-configures `GET /openapi-skill/skill.zip` for Servlet/WebMVC applications.
 - It derives service identity from `spring.application.name`; enabled/path/serviceId/skillName are optional overrides.
@@ -113,14 +118,54 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   The hidden endpoint does not enter generated OpenAPI.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or OpenAPI Skill Maven goal.
 - `openapi-skill-node` provides unscoped `openapi-skill`: preferred `services` configuration generates one
-  self-contained `openapi-skill-core/2`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
+  self-contained `openapi-skill-core/3`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
   configured internal or third-party services. It accepts project/service/document keywords, keeps service/document
   contracts separate beneath `references/services/<serviceId>/references/`, and safely replaces the whole project tree.
-- The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible as configuration.
-- Java source artifacts use `io.github.fyuanz:openapi-skill*:1.1.0-SNAPSHOT`; Java packages use
-  `io.github.fyuanz.openapi.skill.*`. Node source is `openapi-skill@1.1.0`. No P13 package was published.
+- The earlier top-level `serviceId` + `skillName` + `documents` configuration remains accepted as configuration, but it
+  also emits the core/3 layout; the former core/1 and core/2 trees are recognised only so an owned tree can be replaced.
+- Java source artifacts use `io.github.fyuanz:openapi-skill*:2.0.0-SNAPSHOT`; Java packages use
+  `io.github.fyuanz.openapi.skill.*`. Node source is `openapi-skill@2.0.0`. No `2.0.0` package was published.
 
 ## Verified
+
+## 2026-09-16 - Core/3 Tag-Grouped Navigation Delivered
+
+- Trigger: a consumer project reported that generating a Skill from a 124-operation OpenAPI 3.1.0 document made the
+  agent prompt too large. The redesign was evaluated and approved by the user with three explicit decisions:
+  group inside a document (not across documents), split by the OpenAPI 3.1 `tags` with Chinese names allowed, and
+  breaking changes permitted with no compatibility requirement.
+- Node `openapi-skill@2.0.0` passes `npm test` with 41 tests (40 before this slice; the new one publishes a tree whose
+  group files carry Chinese tag names). Java `2.0.0-SNAPSHOT` passes `mvn -B clean install` with 71 tests (69 core +
+  2 Starter) and produces `openapi-skill-core-2.0.0-SNAPSHOT.jar` and
+  `openapi-skill-spring-boot-starter-2.0.0-SNAPSHOT.jar`. The standalone SpringDoc testbed passes 6 tests.
+- Red first: the new Node test failed with
+  `OUTPUT: unsafe generated path references/documents/uav/groups/Terra重建管理.md`, the identical error the real Vue
+  consumer hit, before the publisher's ASCII-only path allowlist accepted Unicode. Java's validator and Node's
+  publisher now share the same `[\p{L}\p{N}._/-]+` rule.
+- Measured on the 124-operation sample: 151 files, `context.md` 1,660 B, `catalog.md` 513 B, `SKILL.md` 2,568 B, 19
+  group files with the largest at 2,621 B. Worst-case mandatory read 4,794 B versus the former 28,084-byte context
+  (17%). Files whose names were previously truncated now keep the full semantic stem (longest 55 characters) after the
+  48→72 bound change.
+- Real consumer loop: the packed `openapi-skill-2.0.0.tgz` (24 files, 28,419 bytes, shasum
+  `32eac2110ebe5a9893cc2a980062285ce0ed90fc`) is installed into `testbeds/vue-ts-consumer`, generates a 24-file
+  project Skill with 2 contexts and 3 Chinese group files (`用户管理.md`, `订单管理.md`, `文件管理.md`), and its Vite
+  production build reproduces the unchanged 71.74 kB JS / 1.43 kB CSS bundle.
+- `testbeds/vue-ts-consumer/verify-skill-tree.mjs` was updated for core/3 (24 files, 3 group files, group-index
+  context, catalog-owned server/security facts, every operation listed by exactly one group in the slimmed
+  single-line form) and reports PASS: 37 links, 0 broken, 0 digest-suffixed contracts, 0 JSONL references in trusted
+  navigation, 4 operations with exact security semantics. Two consecutive generations produce the identical
+  whole-tree SHA-256 `745f0e0ec44a9eda52fb0868c00c0600b193307b19e2b39f0966f752721148bc` under the algorithm in
+  DECISIONS.
+- Cross-implementation check against the live runtime: `GET /openapi-skill/skill.zip` on the running SpringDoc
+  testbed returned a 15,807-byte ZIP whose service tree and the Node project's nested service tree contain the same 21
+  files in the same paths. 6 are byte-identical, 11 match after JSON normalization, and the 4 remaining differ only by
+  consumer-configured keywords/source type and the runtime's default `skillName` — no layout or naming drift.
+- Packaging hazard found and recorded: re-packing a tarball at an unchanged version leaves `package-lock.json`
+  pinning the previous integrity, so `npm install` restored the stale build from cache and the consumer kept failing
+  after the fix. The lock had to be regenerated before the fixed tarball was actually installed.
+- Registry state was read, not assumed: npm `openapi-skill` has `1.0.0` and `1.1.0` (`latest`), and Maven Central has
+  `io.github.fyuanz:openapi-skill{,-core,-spring-boot-starter}:1.0.0`. Both sides therefore receive a genuine major
+  bump to `2.0.0`. No npm or Maven publication was performed in this slice.
 
 ## 2026-09-16 - P13 Independent Re-Verification And Clean-Build Artifact Purity
 
@@ -396,9 +441,10 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-16 (P13 context-first `openapi-skill-core/2` independently re-verified: clean-build 70-test Java reactor, 30-test
-Node suite, byte-identical tarball, deterministic 21-file project Skill with a pinned whole-tree hash, live-digest
-equivalence, and the unchanged Vue build; no P13 npm or Maven publication was performed).
+2026-09-16 (core/3 tag-grouped navigation delivered in Java and Node: 71-test Java reactor, 41-test Node suite, 6-test
+SpringDoc testbed, a deterministic 24-file project Skill with a pinned whole-tree hash, a 21-file cross-implementation
+agreement with the live runtime ZIP, and Node/Maven advanced to the breaking 2.0.0 line; neither registry was
+published).
 
 ## 2026-09-14 - Node Consumer Committed And Pushed
 

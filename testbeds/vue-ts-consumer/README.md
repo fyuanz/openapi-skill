@@ -59,7 +59,8 @@ npm run skill:generate
 maps its account/business document IDs to the two live endpoints. It also
 demonstrates project-, service-, and document-level keywords. Because `skillName`
 is omitted, the output is `.agents/skills/api-docs/`:
-`openapi-skill-core/2`, `kind=project`, one root `SKILL.md`, one complete unsplit `context.md` per document, clean
+`openapi-skill-core/3`, `kind=project`, one root `SKILL.md`, one group-index `context.md` per document, one
+`groups/<tag>.md` interface file per first OpenAPI tag (Chinese tag names kept verbatim), clean
 semantic contract paths, precomputed operation reference closures, and the service tree physically embedded under
 `references/services/<serviceId>/`. JSONL indexes remain machine validation artifacts. All services
 and documents are downloaded and validated before the complete project Skill is

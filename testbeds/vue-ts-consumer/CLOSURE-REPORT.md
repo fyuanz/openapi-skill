@@ -2,6 +2,26 @@
 
 本文件记录 2026-09-14 第一次「真实前端消费端」闭环测试的结果与发现。它是**测试证据**，不是产品文档。
 
+## 2026-09-16 core/3 tag 分组补充验证
+
+- 安装本地未发布的 `openapi-skill@2.0.0` tarball（24 个文件，28,419 B；shasum
+  `32eac2110ebe5a9893cc2a980062285ce0ed90fc`），Node 41 项测试及 Vue 严格类型/生产构建通过。
+- 从两个真实 SpringDoc 分组重新生成 `openapi-skill-core/3` project Skill：24 个文件、2 份分组索引 `context.md`、
+  3 个中文分组文件（`用户管理.md`、`订单管理.md`、`文件管理.md`）、4 个 operation、37 条相对链接 0 断链、
+  0 个摘要后缀契约、可信导航 0 处 JSONL 引用。
+- `verify-skill-tree.mjs` 已按 core/3 重写（文件数、分组文件、分组索引上下文、catalog 承载 servers/security、
+  每个 operation 恰好被一个分组列出且为单行精简格式）。连续两次生成的整树 SHA-256 恒为
+  `745f0e0ec44a9eda52fb0868c00c0600b193307b19e2b39f0966f752721148bc`。
+- **跨实现比对**：从运行中的 testbed `GET /openapi-skill/skill.zip`（15,807 B）解出 Java 运行时产物，与本
+  Node 工程内嵌的同一 service 子树逐文件比对 —— 文件集合与路径**完全一致（21 = 21）**，其中 6 个字节相同
+  （`conventions.md`、`operations.jsonl`、`schemas.jsonl` 及 3 个分组文件），11 个在把 fenced JSON 重新序列化后
+  相同，其余 4 个仅相差消费端配置的关键词/`sourceType` 与运行时默认 `skillName`。
+- **已记录的已知差异**：Java（Jackson）与 Node（`JSON.stringify`）的 JSON 缩进风格不同，因此上面 11 个文件
+  并非跨实现逐字节相同。该差异早于本次改造、只影响 Markdown 代码块内的排版、不影响任何被解析的值；对齐
+  序列化器留作独立切片。
+- **打包陷阱**：同版本号重新打包后，`package-lock.json` 仍钉着上一次的 integrity，`npm install` 会按 integrity
+  从缓存恢复旧构建——消费者在修复后仍复现同一错误，直到清掉 lock 重装才真正用上新 tarball。
+
 ## 2026-09-16 P13 core/2 context-first 补充验证
 
 - 安装本地未发布的 `openapi-skill@1.1.0` tarball（24 个文件，26.0 kB；shasum

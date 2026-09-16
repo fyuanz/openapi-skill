@@ -49,13 +49,14 @@ final class GeneratedSkillValidator {
         validateEntrypoint(files.get("SKILL.md"), skillName);
         JsonNode source = validateSource(files.get("references/source.json"), serviceId, skillName);
         String version = source.path("generatorVersion").asText();
-        if (("openapi-skill-core/1".equals(version) || "openapi-skill-core/2".equals(version)) && !source.has("kind"))
-            validateIndexes(files, source, "openapi-skill-core/2".equals(version));
+        if (("openapi-skill-core/1".equals(version) || "openapi-skill-core/2".equals(version)
+                || "openapi-skill-core/3".equals(version)) && !source.has("kind"))
+            validateIndexes(files, source, "openapi-skill-core/3".equals(version));
         validateLinks(files, normalized);
     }
 
     private String validatePath(String value) {
-        if (value == null || value.isBlank() || value.contains("\\") || !value.matches("[A-Za-z0-9._/-]+"))
+        if (value == null || value.isBlank() || value.contains("\\") || !value.matches("[\\p{L}\\p{N}._/-]+"))
             throw invalid("unsafe generated path " + value);
         final Path path;
         try { path = Path.of(value); }
@@ -140,24 +141,38 @@ final class GeneratedSkillValidator {
     private void validateContextsAndClosures(Map<String, String> files, JsonNode source,
                                              java.util.List<JsonNode> operationRows) {
         var expectedContexts = new HashSet<String>();
+        var expectedGroups = new HashSet<String>();
         for (JsonNode document : source.path("documents")) {
             String documentId = document.path("documentId").asText();
             String contextPath = "references/documents/" + documentId + "/context.md";
             expectedContexts.add(contextPath);
             String context = files.get(contextPath);
             if (context == null) throw invalid(contextPath + " is missing");
-            if (!context.contains("## Interfaces")) throw invalid(contextPath + " has no interface directory");
-            long expected = operationRows.stream().filter(row -> documentId.equals(row.path("documentId").asText())).count();
-            long linked = operationRows.stream().filter(row -> documentId.equals(row.path("documentId").asText()))
-                    .filter(row -> occurrences(context,
-                            "](operations/" + Path.of(row.path("file").asText()).getFileName() + ")") == 1)
-                    .count();
-            if (linked != expected) throw invalid(contextPath + " does not link every operation exactly once");
+            if (!context.contains("## Interface groups")) throw invalid(contextPath + " has no interface group index");
+            for (JsonNode row : operationRows) {
+                if (!documentId.equals(row.path("documentId").asText())) continue;
+                String groupFile = row.path("groupFile").asText();
+                if (groupFile.isBlank()) throw invalid(contextPath + " has an operation without a group");
+                String groupPath = "references/" + groupFile;
+                expectedGroups.add(groupPath);
+                String group = files.get(groupPath);
+                String name = Path.of(row.path("file").asText()).getFileName().toString();
+                if (group == null || occurrences(group, "](../operations/" + name + ")") != 1)
+                    throw invalid(groupPath + " does not link every one of its operations exactly once");
+                String relative = Path.of(contextPath).getParent().relativize(Path.of(groupPath))
+                        .toString().replace('\\', '/');
+                if (!context.contains("](" + relative + ")"))
+                    throw invalid(contextPath + " omits the group link " + relative);
+            }
         }
         var actualContexts = files.keySet().stream()
                 .filter(path -> path.startsWith("references/documents/") && path.endsWith("/context.md"))
                 .collect(java.util.stream.Collectors.toSet());
         if (!actualContexts.equals(expectedContexts)) throw invalid("document contexts do not match source metadata");
+        var actualGroups = files.keySet().stream()
+                .filter(path -> path.startsWith("references/documents/") && path.contains("/groups/"))
+                .collect(java.util.stream.Collectors.toSet());
+        if (!actualGroups.equals(expectedGroups)) throw invalid("document groups do not match the operation index");
         for (JsonNode row : operationRows) {
             String operationPath = "references/" + row.path("file").asText();
             String operation = files.get(operationPath);

@@ -1,5 +1,74 @@
 # Decisions
 
+## 2026-09-16 - Group Document Operations By Their First OpenAPI Tag
+
+Status: Accepted and implemented test-first in Java and Node; unused 1.x numbers were never released
+
+A real 124-operation OpenAPI 3.1.0 document (UAV Hub, 19 tag groups) produced a `context.md` that had to be read
+completely before any interface could be opened, and the consumer reported the resulting prompt as too large. Measure
+that as the design driver: the old per-document context was 28,084 bytes, of which a 2,644-byte raw JSON head
+(`info`/`servers`/`security`/`tags`/`securitySchemes`) was mandatory reading for every question.
+
+Group every document's operations by `tags[0]` — the operation's **first** OpenAPI tag — into one file per tag under
+`references/documents/<docId>/groups/<tag>.md`. A tag name is used as the file name verbatim when it is path-safe, so
+Chinese tag names stay readable (`用户管理.md`, `订单管理.md`); an operation with no tag at all goes to `untagged.md`.
+An operation belongs to exactly one group, so the trusted instructions tell a reader to check the document's other
+groups before concluding that an interface is undocumented. A tag declared more than once in `tags[]` contributes
+every distinct description to its single file rather than creating a second file.
+
+`context.md` stops being a per-operation directory and becomes a small group index: document keywords plus one link
+per group with its interface count. Documented `servers` and `securitySchemes`/`security` facts move to the service
+`catalog.md` as readable prose produced by a dedicated renderer, so a raw contract dump leaves the mandatory-read path
+while the catalog still repeats the document's server addresses and authentication facts. Each group entry is one line,
+`- [<semantic title>](../operations/<file>.md) — \`METHOD /path\``. `Source operationId` and `Tags` are dropped from
+entries because the file path already identifies the contract and the group already states the tag; both remain
+recoverable from `operations.jsonl`, which gains `group` and `groupFile` columns. The group index accepts CJK content,
+so the publisher and both validators now accept Unicode generated paths instead of an ASCII-only allowlist.
+
+Raise the semantic filename bound from 48 to 72 characters. The 48-character cap silently truncated real names —
+`delete-drone-terra-reconstruction-model-file-by-f.md` lost the `fileId` that made it searchable — while the longest
+stem in the sample document is 55 characters. Group files need a separate stem function: the ASCII `slug()` collapses
+every CJK tag to the same `item` stem (19 tags produced 3 distinct stems), so tag stemming preserves `\p{L}\p{N}_-`
+across scripts, normalizes to NFC, and still applies the collision and reserved-name fallbacks.
+
+The changed required layout is `openapi-skill-core/3`. Because this breaks the generated tree that the published
+artifacts produce, advance the npm package to `2.0.0` and the Maven reactor to `2.0.0-SNAPSHOT`. Registry state at the
+time of the decision, read directly rather than assumed: npm `openapi-skill` has `1.0.0` and `1.1.0` (`latest`),
+Maven Central `io.github.fyuanz:openapi-skill{,-core,-spring-boot-starter}` has `1.0.0`, and the npm `1.1.0` tarball
+shasum `2a2837a61ce3ddf5bb752f4620df12d0eaa3041c` equals the local file. The `1.1.0` Maven and npm numbers that were
+never released are skipped rather than reused. Publication remains a separate, user-performed action.
+
+Evidence:
+
+- Node passes 41 tests (40 before this slice) and the Java reactor passes 71 (69 core + 2 Starter) on `mvn -B clean
+  install`; the standalone SpringDoc testbed passes 6.
+- On the 124-operation sample the generated tree is 151 files: `context.md` 1,660 B, `catalog.md` 513 B, 19 group files
+  with the largest at 2,621 B. The worst-case mandatory read falls from 28,084 B to
+  `catalog + context + largest group` = 4,794 B, about 17% of the former context.
+- The runtime ZIP from the live SpringDoc testbed and the Node project's nested service tree contain the **same 21
+  files in the same paths**, including the three Chinese group files. Six are byte-identical (`conventions.md`,
+  `operations.jsonl`, `schemas.jsonl`, and all three group files), eleven are identical after re-serializing fenced
+  JSON blocks, and the remaining four differ only by consumer-configured `sourceType`/keywords and the runtime's
+  default `skillName`.
+- The consumer testbed failed first with
+  `OUTPUT: unsafe generated path .../groups/用户管理.md` — an ASCII-only path allowlist that the unit tests never
+  reached. A new failing test reproduced it exactly before the fix.
+
+Alternatives considered:
+
+- Keep one flat `context.md` and rely on size. Rejected: it is the reported defect.
+- Merge tags whose names look similar (for example two `设备管理` declarations). Rejected as unnecessary — grouping
+  by `tags[0]` already puts both under one file, and OpenAPI tag names are the contract's own vocabulary, not
+  something the generator should second-guess.
+- Transliterate or slugify Chinese tag names to ASCII. Rejected: it discards the searchable vocabulary the contract
+  already provides, and the 48-character truncation was a defect to remove, not a reason to keep naming lossy.
+- Use `operationId` as the entry title. Rejected: it is optional and not guaranteed unique.
+
+Known divergence recorded rather than silently accepted: Java (Jackson) and Node (`JSON.stringify`) indent embedded
+JSON differently, so the eleven operation/schema files above are not byte-identical across implementations. This is
+pre-existing, confined to pretty-printing inside Markdown code fences, and does not affect any parsed value; aligning
+the serializers is deferred as its own slice instead of being rushed into this one.
+
 ## 2026-09-16 - Require Clean Builds For Inspected Artifacts And Self-Describing Tree Hashes
 
 Status: Accepted as a verification rule

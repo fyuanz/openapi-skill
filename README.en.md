@@ -22,8 +22,10 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The current source prepares the unreleased TypeScript package `openapi-skill@1.1.0`. It defaults to one self-contained
-API Skill per frontend project and adds one document-level `context.md` directory, clean semantic filenames,
+The current source prepares the unreleased TypeScript package `openapi-skill@2.0.0`; npm currently serves `1.0.0` and
+`1.1.0`. It defaults to one self-contained
+API Skill per frontend project and adds a `context.md` group index keyed by the OpenAPI `tags`, one interface file per
+tag under its own readable name (Chinese tag names are kept verbatim), clean semantic filenames,
 generator-computed reference closures, and centralized conventions. JSONL remains a machine validation artifact.
 Multiple microservices, multiple documents within each service, and third-party providers are
 organized below one `.agents/skills/api-docs/` directory; `skillName` can override the `api-docs` default.
@@ -71,8 +73,10 @@ dependency and see the [Node package guide](openapi-skill-node/README.en.md) for
 
 ## Release and requirements
 
-The first release under the new name is `1.0.0`. The npm package has been published manually; the Maven Central
-artifacts have not been published yet. SpringDoc applications should use the runtime Starter.
+The first release under the new name is `1.0.0`, and both the npm package and the Maven Central artifacts have been
+published manually. The source now carries the breaking `2.0.0` line — the generated layout moves from the published
+npm `openapi-skill-core/1` and `openapi-skill-core/2` trees to `openapi-skill-core/3` — which is not published yet.
+SpringDoc applications should use the runtime Starter.
 
 | Artifact | Purpose |
 | --- | --- |
@@ -93,7 +97,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-The first command installs the current `1.1.0-SNAPSHOT` source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
+The first command installs the current `2.0.0-SNAPSHOT` source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
 start/stop, OpenAPI capture, or generated files. Tests verify the runtime ZIP on a random port.
 
 For a manual check, start the application:
@@ -154,6 +158,11 @@ Download the ZIP and extract its **entire Skill directory** into the frontend pr
     ├── catalog.md
     ├── source.json
     └── documents/
+        └── <document>
+            ├── context.md        # group index; read this first
+            ├── groups/           # one file per OpenAPI tag, named after the tag
+            ├── operations/
+            └── schemas/
 ```
 
 Try this task in the frontend project and verify that your agent actually discovers and uses the Skill:

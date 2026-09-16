@@ -21,8 +21,10 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`openapi-skill-node` 当前源码版本为待发布的 `openapi-skill@1.1.0`。它推荐一个前端项目只生成一份接口文档
-Skill，并使用单一 document `context.md` 导航、无冲突纯语义文件名、预计算引用闭包和集中 conventions；
+`openapi-skill-node` 当前源码版本为待发布的 `openapi-skill@2.0.0`；npm 上已发布的是 `1.0.0` 与 `1.1.0`。
+它推荐一个前端项目只生成一份接口文档
+Skill，并使用按 OpenAPI `tags` 分组的分组索引 `context.md`、每个 tag 一个可读名称的接口文件（中文 tag 名直接保留）、
+无冲突纯语义文件名、预计算引用闭包和集中 conventions；
 JSONL 仅保留为机器校验索引。多个微服务、每个服务的
 多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
 `api-docs`，输出到 Vue 项目根目录的 `.agents/skills/api-docs/`。
@@ -77,7 +79,9 @@ npm install --save-dev openapi-skill
 
 ## 版本与环境
 
-改名后的首个版本为 `1.0.0`。npm 包已由维护者手动发布；Maven Central 制品尚未发布。
+改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布；当前源码已推进到破坏性的
+`2.0.0`（生成产物布局由已发布 npm 版本的 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为
+`openapi-skill-core/3`），尚未发布。
 对于 SpringDoc 应用，推荐使用运行时 Starter。
 
 | 构件 | 用途 |
@@ -99,7 +103,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-第一条命令将当前 `1.1.0-SNAPSHOT` 源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
+第一条命令将当前 `2.0.0-SNAPSHOT` 源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
 测试会在随机端口验证运行时 ZIP 接口，详见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
 
 手动体验时启动应用：
@@ -159,6 +163,11 @@ openapi.skill.runtime.skill-name=my-service-api
     ├── catalog.md
     ├── source.json
     └── documents/
+        └── <文档>
+            ├── context.md        # 分组索引，先读这里
+            ├── groups/           # 每个 OpenAPI tag 一个文件，文件名即 tag
+            ├── operations/
+            └── schemas/
 ```
 
 然后在前端项目中尝试以下任务，并确认所用 Agent 实际发现并使用了该 Skill：

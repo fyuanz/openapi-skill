@@ -13,16 +13,17 @@ test('generates one deterministic navigable skill from multiple documents', asyn
   assert.equal([...first.keys()].filter((path) => path.includes('/operations/')).length, 4);
   assert.equal([...first.keys()].filter((path) => path.includes('/schemas/')).length, 7);
   const source = JSON.parse(first.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'openapi-skill-core/2');
+  assert.equal(source.generatorVersion, 'openapi-skill-core/3');
   assert.equal(source.sourceType, undefined, 'legacy generator metadata must remain byte-compatible in shape');
   assert.equal(source.keywords, undefined, 'legacy generator metadata must not gain empty keyword fields');
   assert.deepEqual(source.documents.map(({ documentId }) => documentId), ['account', 'business']);
   assert.match(first.get('SKILL.md'), /references\/catalog\.md/);
   assert.doesNotMatch(first.get('SKILL.md'), /operations\.jsonl|schemas\.jsonl/);
+  assert.match(first.get('references/catalog.md'), /Defined security schemes/);
   for (const id of ['account', 'business']) {
     const context = first.get(`references/documents/${id}/context.md`);
-    assert.match(context, /## Interfaces/);
-    assert.match(context, /Defined security schemes/);
+    assert.match(context, /## Interface groups/);
+    assert.ok(!context.includes('```json'), 'the document context must not dump the raw contract');
   }
 });
 
@@ -107,7 +108,7 @@ test('keeps local references navigable and rejects external references', () => {
     if (!path.endsWith('.md')) continue;
     for (const match of content.matchAll(/\]\(([^)]+)\)/g)) {
       const base = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : '';
-      const resolved = new URL(match[1], `file:///${base}`).pathname.slice(1);
+      const resolved = decodeURIComponent(new URL(match[1], `file:///${base}`).pathname.slice(1));
       assert.ok(files.has(resolved), `${path} -> ${resolved}`);
     }
   }
@@ -141,7 +142,7 @@ test('generates one self-contained project Skill with logical service navigation
   assert.match(files.get('SKILL.md'), /订单/);
   assert.doesNotMatch(files.get('SKILL.md'), /下单/);
   const source = JSON.parse(files.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'openapi-skill-core/2');
+  assert.equal(source.generatorVersion, 'openapi-skill-core/3');
   assert.equal(source.kind, 'project');
   assert.equal(source.skillName, 'api-docs');
   assert.deepEqual(source.services.map(({ serviceId }) => serviceId), ['orders', 'shipping']);
@@ -152,7 +153,7 @@ test('generates one self-contained project Skill with logical service navigation
     if (!path.endsWith('.md')) continue;
     for (const match of content.matchAll(/\]\(([^)]+)\)/g)) {
       const base = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : '';
-      const resolved = new URL(match[1], `file:///${base}`).pathname.slice(1);
+      const resolved = decodeURIComponent(new URL(match[1], `file:///${base}`).pathname.slice(1));
       assert.ok(files.has(resolved), `${path} -> ${resolved}`);
     }
   }

@@ -41,7 +41,7 @@
 |   |-- README.md
 |   `-- src/                # runtime auto-configuration, SpringDoc collection, ZIP endpoint and tests
 |-- openapi-skill-node/
-|   |-- package.json        # unscoped openapi-skill 1.1.0 source and CLI; locally packed, not published
+|   |-- package.json        # unscoped openapi-skill 2.0.0 source and CLI; locally packed, 1.0.0/1.1.0 published
 |   |-- README.md           # default Chinese Node package guide
 |   |-- README.en.md        # equivalent English Node package guide with reciprocal link
 |   |-- src/                # service/project generators, keyword/config rules, downloader and safe publisher
@@ -64,8 +64,9 @@
 P0-P6 historically produced the core, safe publisher, Maven compatibility plugin, and aggregate output. The compatibility
 module was later removed by product decision. v3.7 added a runtime Starter
 and removed build-time startup/capture/generation from the SpringDoc testbed. v3.8 added Node project mode; v3.9 added
-semantic indexes and centralized conventions; v4.0 adds core/2 context-first navigation, clean paths and precomputed
-reference closures. Legacy IR remains deleted.
+semantic indexes and centralized conventions; v4.0 added core/2 context-first navigation, clean paths and precomputed
+reference closures; v4.1 adds core/3 tag grouping, a slim group-index context, catalog-owned server/security facts and
+readable 72-character names. Legacy IR remains deleted.
 
 ## Implementation Locations
 
@@ -81,7 +82,7 @@ Core and runtime entry points now exist:
 - `openapi-skill-node/src/config.ts` accepts the preferred top-level `services` model, defaults its `skillName` to
   `api-docs`, validates source types and project/service/document keywords, and normalizes the earlier single-service
   configuration without changing that legacy contract.
-- `openapi-skill-node/src/project-generator.ts` generates one `openapi-skill-core/2`, `kind=project` tree. It builds
+- `openapi-skill-node/src/project-generator.ts` generates one `openapi-skill-core/3`, `kind=project` tree. It builds
   each service through the core-compatible service generator, omits nested `SKILL.md` files, physically relocates the
   complete reference trees beneath `references/services/<serviceId>/references/`, and creates the root catalog,
   provenance, and trusted entrypoint.
@@ -89,8 +90,11 @@ Core and runtime entry points now exist:
   sorting, count/length/control-character checks, and bounded frontmatter discovery text.
 - `openapi-skill-node/src/index.ts` downloads the complete project input and routes legacy configuration to the
   service generator or `services` configuration to the project generator. `publisher.ts` validates
-  `openapi-skill-core/2` contexts, closures and machine indexes before staged replacement; owned core/1 trees are
-  recognized only as replacement inputs.
+  `openapi-skill-core/3` contexts, group files, closures and machine indexes before staged replacement; owned core/1 and
+  core/2 trees are recognized only as replacement inputs.
+- `openapi-skill-node/src/references.ts` allocates two filename families in two deterministic passes: ASCII semantic
+  slugs for operations and schemas, and tag stems that preserve `\p{L}\p{N}_-` so a Chinese tag keeps its own name.
+  `generator.ts` renders the catalog facts, the group-index context, the group files and the slimmed one-line entries.
 - The Node CLI defaults output to the consuming project's `.agents/skills/`; an explicit relative or absolute output
   parent remains supported.
 

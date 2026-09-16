@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-Generate one self-contained Codex Skill from OpenAPI 3.1.0 JSON endpoints exposed by one or more services. The current, unpublished `1.1.0` source defaults to one API-documentation Skill per project and adds context-first LLM navigation. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
+Generate one self-contained Codex Skill from OpenAPI 3.1.0 JSON endpoints exposed by one or more services. The current, unpublished `2.0.0` source defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
 
 ## Install
 
@@ -63,10 +63,15 @@ The configuration levels have distinct roles:
 
 Service and document boundaries remain intact: OpenAPI objects are not merged, `$ref` values are not resolved across documents, and gateway prefixes are not inferred. The output has one root `SKILL.md`; every service is physically included below `references/services/<serviceId>/` and reached through relative Markdown links. These are not filesystem symbolic links, so the complete `api-docs` directory remains portable.
 
-Each service reference root uses `openapi-skill-core/2`. Every document has exactly one `context.md` listing all
-operations with method/path, summary, tags, configured keywords, and direct Markdown links. LLM navigation starts there
-and never requires reading or searching JSONL. Compact `operations.jsonl` and `schemas.jsonl` files remain as machine
-validation indexes. Operation identities use service, document, HTTP method, and path rather than the optional or
+Each service reference root uses `openapi-skill-core/3`. Every document has exactly one `context.md`, and it is a
+**group index**: it lists each of the document's tag groups with its interface count. Each group opens
+`groups/<tag>.md`, whose file name is the OpenAPI tag itself (Chinese names are kept verbatim), holding one
+`- [semantic title](../operations/<file>.md) — \`METHOD /path\`` line per operation. An operation belongs to its
+**first** tag only, so when a contract is not in the expected group, check the document's other groups first. The
+document's declared servers and security facts live in the service `catalog.md` instead of consuming mandatory-read
+context space. Compact `operations.jsonl` and `schemas.jsonl` files remain as machine
+validation indexes (the former carries `group`/`groupFile` columns), and LLM navigation never requires reading or
+searching them. Operation identities use service, document, HTTP method, and path rather than the optional or
 duplicate-prone SpringDoc `operationId`; the latter remains a navigation alias. Operation and Schema files use clean
 semantic names such as `get-users-by-id.md` when unique; a short digest appears only for a case-insensitive collision or
 filesystem-safety fallback. Each operation also contains a generator-computed direct/transitive reference list and
@@ -94,7 +99,7 @@ Each URL must use HTTP(S), return JSON successfully, and declare exact `openapi:
 
 ## Legacy single-service compatibility
 
-Existing configurations do not need an immediate migration. Version `1.1.0` still accepts the original single-service shape and its explicit Skill name:
+Existing configurations do not need an immediate migration. Version `2.0.0` still accepts the original single-service shape and its explicit Skill name, but its output is the same core/3 layout:
 
 ```json
 {

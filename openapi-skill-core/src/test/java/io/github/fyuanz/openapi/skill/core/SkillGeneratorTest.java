@@ -49,7 +49,7 @@ class SkillGeneratorTest {
             }
         }
         JsonNode source = mapper.readTree(files.get("references/source.json"));
-        assertEquals("openapi-skill-core/2", source.path("generatorVersion").asText());
+        assertEquals("openapi-skill-core/3", source.path("generatorVersion").asText());
         assertEquals(2, source.path("documents").size());
         assertTrue(source.path("documents").findValuesAsText("apiVersion").stream().allMatch("1.0.0"::equals));
         checkLinks(files);

@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.en.md)
 
-从一个或多个服务的 OpenAPI 3.1.0 JSON 地址生成一份自包含的 Codex Skill。当前未发布的 `1.1.0` 源码默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并生成面向 LLM 的 context-first 导航。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
+从一个或多个服务的 OpenAPI 3.1.0 JSON 地址生成一份自包含的 Codex Skill。当前未发布的 `2.0.0` 源码默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
 
 ## 安装
 
@@ -63,9 +63,13 @@ npm install --save-dev openapi-skill
 
 每个服务及其文档保持独立边界，不会合并 OpenAPI 对象、跨文档解析 `$ref`，也不会猜测网关前缀。生成目录只包含一个根 `SKILL.md`，服务内容物理包含在 `references/services/<serviceId>/` 下，并通过相对 Markdown 链接导航；这里不使用文件系统符号链接，复制完整 `api-docs` 目录即可使用。
 
-生成的服务 reference 根使用 `openapi-skill-core/2`。每份文档只有一个 `context.md`，其中列出全部接口的
-method/path、摘要、tag、配置关键词和直接 Markdown 链接；LLM 从这个目录进入 operation，不需要读取或搜索
-JSONL。`operations.jsonl`、`schemas.jsonl` 仍作为紧凑的机器校验索引保留。接口主键使用 service、document、
+生成的服务 reference 根使用 `openapi-skill-core/3`。每份文档只有一个 `context.md`，它是**分组索引**：列出该文档的
+每个 tag 分组及其接口数；点进去是 `groups/<tag>.md`，文件名就是 OpenAPI 里的 tag 名（中文名直接保留），
+每个 operation 一行 `- [语义化标题](../operations/<file>.md) — \`METHOD /path\``，并只出现在它的**第一个** tag
+里。因此契约里找不到某个接口时，先检查该文档的其它分组。文档声明的 servers 与 security 事实写在服务
+`catalog.md` 里，不再占必读的 context 篇幅。`operations.jsonl`、`schemas.jsonl` 仍作为紧凑的机器校验索引
+保留（前者带 `group`/`groupFile` 列），LLM 导航不需要读取或搜索
+JSONL。接口主键使用 service、document、
 HTTP method 和 path，不依赖可缺失或重复的 SpringDoc `operationId`；后者仅作为导航别名。operation/schema
 文件在无冲突时使用纯语义名，例如 `get-users-by-id.md`；只有大小写不敏感冲突或文件系统安全回退才追加
 短摘要。每个 operation 还包含生成器预计算的完整直接/传递引用清单和递归边，LLM 不需要自行计算 `$ref`
@@ -93,7 +97,7 @@ npm run skill:generate
 
 ## 旧单服务配置兼容
 
-已有配置无需立即迁移，`1.1.0` 仍接受原来的单服务结构并保留显式 Skill 名称：
+已有配置无需立即迁移，`2.0.0` 仍接受原来的单服务结构并保留显式 Skill 名称，但生成结果同样是 core/3 布局：
 
 ```json
 {

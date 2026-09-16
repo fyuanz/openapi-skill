@@ -1,11 +1,16 @@
 package io.github.fyuanz.openapi.skill.core;
 
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.*;
+import java.util.function.UnaryOperator;
 
 /** Human-readable generated paths with a deterministic discriminator only for real collisions. */
 final class SemanticNames {
-    private static final int MAX_SLUG = 48;
+    /** One shared bound for generated stems: long enough to keep a complete path tail, short enough for any filesystem. */
+    private static final int MAX_SLUG = 72;
+    private static final int MAX_STEM_BYTES = 72;
+    private static final String UNTAGGED = "untagged";
 
     private SemanticNames() {}
 
@@ -22,12 +27,24 @@ final class SemanticNames {
         return files(Map.of(identity, readable)).get(identity);
     }
 
+    /**
+     * Group file names keep the OpenAPI tag text itself, including non-ASCII scripts. A Chinese tag such as
+     * 航线任务 therefore stays readable instead of collapsing onto a shared ASCII stem.
+     */
+    static Map<String, String> tagFiles(Map<String, String> readableByIdentity) {
+        return files(readableByIdentity, SemanticNames::tagStem);
+    }
+
     /** Allocates all names together so every member of a collision group is treated consistently. */
     static Map<String, String> files(Map<String, String> readableByIdentity) {
+        return files(readableByIdentity, SemanticNames::slug);
+    }
+
+    private static Map<String, String> files(Map<String, String> readableByIdentity, UnaryOperator<String> stemOf) {
         var groups = new TreeMap<String, List<String>>();
         var stems = new TreeMap<String, String>();
         for (var entry : new TreeMap<>(readableByIdentity).entrySet()) {
-            String stem = slug(entry.getValue());
+            String stem = stemOf.apply(entry.getValue());
             stems.put(entry.getKey(), stem);
             groups.computeIfAbsent(stem.toLowerCase(Locale.ROOT), ignored -> new ArrayList<>()).add(entry.getKey());
         }
@@ -95,5 +112,36 @@ final class SemanticNames {
         }
         while (!result.isEmpty() && result.charAt(result.length() - 1) == '-') result.deleteCharAt(result.length() - 1);
         return result.isEmpty() ? "item" : result.toString().toLowerCase(Locale.ROOT);
+    }
+
+    /** Tag stems keep letters, digits, underscores and hyphens of any script; every other character separates. */
+    static String tagStem(String value) {
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFC);
+        var result = new StringBuilder();
+        boolean separator = false;
+        int bytes = 0;
+        for (int offset = 0; offset < normalized.length();) {
+            int codePoint = normalized.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+            if (Character.isLetterOrDigit(codePoint) || codePoint == '_' || codePoint == '-') {
+                int addition = (separator && !result.isEmpty() ? 1 : 0) + utf8Width(codePoint);
+                if (bytes + addition > MAX_STEM_BYTES) break;
+                if (separator && !result.isEmpty()) result.append('-');
+                result.appendCodePoint(codePoint);
+                bytes += addition;
+                separator = false;
+            } else {
+                separator = !result.isEmpty();
+            }
+        }
+        while (!result.isEmpty() && result.charAt(result.length() - 1) == '-') result.deleteCharAt(result.length() - 1);
+        return result.isEmpty() ? UNTAGGED : result.toString();
+    }
+
+    private static int utf8Width(int codePoint) {
+        if (codePoint < 0x80) return 1;
+        if (codePoint < 0x800) return 2;
+        if (codePoint < 0x10000) return 3;
+        return 4;
     }
 }

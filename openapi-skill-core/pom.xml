@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.fyuanz</groupId>
         <artifactId>openapi-skill</artifactId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>2.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>openapi-skill-core</artifactId>
     <name>OpenAPI Skill Core</name>

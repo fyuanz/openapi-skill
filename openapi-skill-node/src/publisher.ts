@@ -4,6 +4,11 @@ import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:p
 import { randomUUID } from 'node:crypto';
 import { identity } from './generator.js';
 
+/** Layout version this generator emits; the publisher accepts it plus the former identities below. */
+const CURRENT_VERSION = 'openapi-skill-core/3';
+/** Versions that carry the machine-only operation and schema JSONL indexes. */
+const INDEX_BEARING_VERSIONS = [CURRENT_VERSION, 'openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/3'];
+
 export async function publishSkill(outputParent: string, serviceId: string, skillName: string, files: ReadonlyMap<string, string>): Promise<string> {
   identity(serviceId); identity(skillName);
   const nextKind = validateFiles(files, serviceId, skillName);
@@ -57,7 +62,7 @@ function validateTree(files: ReadonlyMap<string, string>, skillName: string, all
   if (!files.size || files.size > 10_000) throw new Error('OUTPUT: generated file set is empty or too large');
   const lower = new Set<string>(); let bytes = 0;
   for (const [path, content] of files) {
-    if (!path || path.includes('\\') || !/^[A-Za-z0-9._/-]+$/.test(path) || isAbsolute(path) || posix.normalize(path) !== path || path.startsWith('../')) throw new Error(`OUTPUT: unsafe generated path ${path}`);
+    if (!path || path.includes('\\') || !/^[\p{L}\p{N}._/-]+$/u.test(path) || isAbsolute(path) || posix.normalize(path) !== path || path.startsWith('../')) throw new Error(`OUTPUT: unsafe generated path ${path}`);
     if (lower.has(path.toLowerCase())) throw new Error(`OUTPUT: case-insensitive path collision at ${path}`); lower.add(path.toLowerCase());
     bytes += Buffer.byteLength(content); if (bytes > 64 * 1024 * 1024) throw new Error('OUTPUT: generated content exceeds 64 MiB');
   }
@@ -71,15 +76,13 @@ function validateTree(files: ReadonlyMap<string, string>, skillName: string, all
   if (!source || typeof source !== 'object' || Array.isArray(source)) throw new Error('OUTPUT: source metadata must be an object');
   const metadata = source as Record<string, unknown>;
   const generatorVersion = metadata.generatorVersion as string;
-  const formerIdentity = ['openapi-skill-core/1', 'smartdoc-agent-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'];
-  if (metadata.skillName !== skillName || (generatorVersion !== 'openapi-skill-core/2'
+  const formerIdentity = ['openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'];
+  if (metadata.skillName !== skillName || (generatorVersion !== 'openapi-skill-core/3'
       && !(allowFormerIdentity && formerIdentity.includes(generatorVersion)))) {
     throw new Error('OUTPUT: source metadata owner or generator does not match');
   }
-  if ((generatorVersion === 'openapi-skill-core/2' || generatorVersion === 'openapi-skill-core/1'
-      || generatorVersion === 'smartdoc-agent-core/3')
-      && metadata.kind === undefined) {
-    validateIndexes(files, '', metadata, generatorVersion === 'openapi-skill-core/2');
+  if (INDEX_BEARING_VERSIONS.includes(generatorVersion) && metadata.kind === undefined) {
+    validateIndexes(files, '', metadata, generatorVersion === CURRENT_VERSION);
   }
   for (const [path, content] of files) if (path.endsWith('.md')) validateLinks(path, content, files);
   return metadata;
@@ -87,8 +90,8 @@ function validateTree(files: ReadonlyMap<string, string>, skillName: string, all
 
 function validateProjectSource(source: Record<string, unknown>, files: ReadonlyMap<string, string>, allowFormerIdentity = false): void {
   const generatorVersion = source.generatorVersion as string;
-  if (generatorVersion !== 'openapi-skill-core/2'
-      && !(allowFormerIdentity && ['openapi-skill-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'].includes(generatorVersion))) {
+  if (generatorVersion !== CURRENT_VERSION
+      && !(allowFormerIdentity && ['openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'].includes(generatorVersion))) {
     throw new Error('OUTPUT: project source version is invalid');
   }
   if (source.serviceId !== undefined) throw new Error('OUTPUT: project source must not impersonate a service owner');
@@ -113,10 +116,9 @@ function validateProjectSource(source: Record<string, unknown>, files: ReadonlyM
     try { nestedSource = JSON.parse(nested) as Record<string, unknown>; } catch { throw new Error(`OUTPUT: project service source is invalid for ${service.serviceId}`); }
     if (nestedSource.serviceId !== service.serviceId) throw new Error(`OUTPUT: project service owner mismatch for ${service.serviceId}`);
     if (JSON.stringify(nestedSource) !== JSON.stringify(service)) throw new Error(`OUTPUT: project service provenance mismatch for ${service.serviceId}`);
-    if (nestedSource.generatorVersion === 'openapi-skill-core/2' || nestedSource.generatorVersion === 'openapi-skill-core/1'
-        || nestedSource.generatorVersion === 'smartdoc-agent-core/3') {
+    if (INDEX_BEARING_VERSIONS.includes(nestedSource.generatorVersion as string)) {
       validateIndexes(files, `references/services/${service.serviceId}/`, nestedSource,
-        nestedSource.generatorVersion === 'openapi-skill-core/2');
+        nestedSource.generatorVersion === CURRENT_VERSION);
     }
     for (const document of service.documents) {
       if (!document || typeof document !== 'object' || Array.isArray(document)) throw new Error('OUTPUT: project document metadata is invalid');
@@ -188,6 +190,7 @@ function validateIndex(files: ReadonlyMap<string, string>, path: string, referen
 function validateContextsAndClosures(files: ReadonlyMap<string, string>, references: string,
   documents: unknown[], operations: Record<string, unknown>[]): void {
   const expectedContexts = new Set<string>();
+  const expectedGroups = new Set<string>();
   for (const value of documents) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('OUTPUT: document metadata is invalid');
     const documentId = (value as Record<string, unknown>).documentId;
@@ -195,15 +198,25 @@ function validateContextsAndClosures(files: ReadonlyMap<string, string>, referen
     const contextPath = `${references}documents/${documentId}/context.md`;
     expectedContexts.add(contextPath);
     const context = files.get(contextPath);
-    if (!context || !context.includes('## Interfaces')) throw new Error(`OUTPUT: ${contextPath} has no interface directory`);
+    if (!context || !context.includes('## Interface groups')) throw new Error(`OUTPUT: ${contextPath} has no interface group index`);
     for (const row of operations.filter((operation) => operation.documentId === documentId)) {
+      if (typeof row.groupFile !== 'string') throw new Error(`OUTPUT: ${contextPath} has an operation without a group`);
+      const groupPath = `${references}${row.groupFile}`;
+      expectedGroups.add(groupPath);
+      const group = files.get(groupPath);
       const name = posix.basename(String(row.file));
-      if (context.split(`](operations/${name})`).length - 1 !== 1) throw new Error(`OUTPUT: ${contextPath} does not link every operation exactly once`);
+      if (!group || group.split(`](../operations/${name})`).length - 1 !== 1)
+        throw new Error(`OUTPUT: ${groupPath} does not link every one of its operations exactly once`);
+      const relative = posix.relative(posix.dirname(contextPath), groupPath);
+      if (!context.includes(`](${relative})`)) throw new Error(`OUTPUT: ${contextPath} omits the group link ${relative}`);
     }
   }
   const actualContexts = [...files.keys()].filter((path) => path.startsWith(`${references}documents/`) && path.endsWith('/context.md'));
   if (actualContexts.length !== expectedContexts.size || actualContexts.some((path) => !expectedContexts.has(path)))
     throw new Error('OUTPUT: document contexts do not match source metadata');
+  const actualGroups = [...files.keys()].filter((path) => path.startsWith(`${references}documents/`) && path.includes('/groups/'));
+  if (actualGroups.length !== expectedGroups.size || actualGroups.some((path) => !expectedGroups.has(path)))
+    throw new Error('OUTPUT: document groups do not match the operation index');
   for (const row of operations) {
     const operationPath = `${references}${String(row.file)}`;
     const operation = files.get(operationPath);

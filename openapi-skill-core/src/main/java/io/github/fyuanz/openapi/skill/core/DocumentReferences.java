@@ -367,12 +367,21 @@ final class DocumentReferences {
         catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
 
+    /**
+     * Escapes only ASCII punctuation, which is what Markdown gives meaning to. Non-ASCII text — Chinese
+     * punctuation included — passes through unchanged so the generated documents stay readable.
+     */
     static String label(String text) {
         var result = new StringBuilder();
         text.codePoints().forEach(c -> {
-            if (Character.isLetterOrDigit(c) || c == ' ' || c == '/' || c == '-' || c == '_') result.appendCodePoint(c);
+            if (Character.isLetterOrDigit(c) || c == ' ' || c == '/' || c == '-' || c == '_' || c > 0x7f) result.appendCodePoint(c);
             else result.append("&#").append(c).append(';');
         });
         return result.toString();
+    }
+
+    /** A backtick-free code span: Markdown renders its content literally, so URLs and paths stay exact. */
+    static String codeSpan(String text) {
+        return text.indexOf('`') < 0 ? "`" + text + "`" : label(text);
     }
 }
