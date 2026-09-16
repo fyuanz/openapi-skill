@@ -1,8 +1,31 @@
 # Decisions
 
+## 2026-09-16 - Require Clean Builds For Inspected Artifacts And Self-Describing Tree Hashes
+
+Status: Accepted as a verification rule
+
+`mvn -B install` without `clean` packaged stale `com.smartdoc.agent.*` classes, left behind in `target/classes` by the
+product rename, into `openapi-skill-core-1.1.0-SNAPSHOT.jar`. The same source with `mvn -B clean install` passes the
+same 70 tests and yields 17 `io.github.fyuanz.*` classes with zero legacy entries. Any build whose output is inspected,
+compared, or released must therefore run `clean` first; a green non-clean build says nothing about artifact contents.
+This is not a source defect — the rename commit is correct — but it would have shipped a wrong JAR if a release had been
+cut from that working tree.
+
+Whole-tree determinism hashes must be recorded together with their normalization algorithm. Earlier entries recorded
+bare digests (`b8940cff…`, `253e8c9d…`) produced by verification scripts that lived under the gitignored `target/`
+directory and were not retained, so those values can no longer be reproduced or compared. The durable form is
+"sha256 over the sorted `relpath\0sha256(content)` lines of the tree" plus the value; the current 21-file Vue consumer
+tree is `99547bf1a8b8…` under that definition.
+
+Alternatives considered:
+
+- Keep building without `clean` because it is faster. Rejected: it hid a rename defect inside the published artifact.
+- Record only the bare hash for brevity. Rejected: unreproducible evidence is worse than no evidence for a determinism
+  claim, and it cannot be compared against a later run.
+
 ## 2026-09-16 - Make Document Context The LLM Navigation Surface
 
-Status: Proposed; recorded for user confirmation, not implemented
+Status: Accepted and implemented test-first in Java and Node; registry publication remains separate
 
 Replace the current LLM-facing JSONL-search workflow with deterministic Markdown navigation. Each OpenAPI document keeps
 exactly one `context.md`, and that page becomes its complete interface directory: document description, explicitly
@@ -31,11 +54,10 @@ operation override, and an unstated fact. A scheme definition alone is not rende
 summaries, descriptions, tags, examples, and configured navigation labels remain reference data and never become trusted
 instructions or authorization to invoke an API.
 
-If accepted for implementation, treat the changed required layout and navigation contract as
-`openapi-skill-core/2`. Implement it test-first in both Java and Node, update validators and project assembly, accept an
-owned core/1 tree only for safe atomic replacement, regenerate the runtime and Vue consumer evidence, and update active
-documentation. Publication remains a separate explicit action. Until the user confirms the plan, core/1 behavior and
-all generated artifacts remain unchanged.
+The changed required layout and navigation contract is `openapi-skill-core/2`. Java and Node implement it with mirrored
+contract tests, validators and project assembly; publishers recognize an owned core/1 tree only for safe atomic
+replacement. Runtime and Vue consumer evidence is regenerated as part of the implementation. Publication remains a
+separate explicit action and is not authorized by this decision.
 
 Alternatives considered:
 

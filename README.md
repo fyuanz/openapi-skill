@@ -21,8 +21,9 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`openapi-skill-node` 提供待发布的 TypeScript npm 包 `openapi-skill@1.0.0`。它推荐一个前端项目只生成一份接口文档
-Skill，并增加 `operations.jsonl` / `schemas.jsonl`、语义文件名和集中 conventions。多个微服务、每个服务的
+`openapi-skill-node` 当前源码版本为待发布的 `openapi-skill@1.1.0`。它推荐一个前端项目只生成一份接口文档
+Skill，并使用单一 document `context.md` 导航、无冲突纯语义文件名、预计算引用闭包和集中 conventions；
+JSONL 仅保留为机器校验索引。多个微服务、每个服务的
 多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
 `api-docs`，输出到 Vue 项目根目录的 `.agents/skills/api-docs/`。
 
@@ -98,7 +99,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-第一条命令将待发布的 `1.0.0` 安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
+第一条命令将当前 `1.1.0-SNAPSHOT` 源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
 测试会在随机端口验证运行时 ZIP 接口，详见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
 
 手动体验时启动应用：

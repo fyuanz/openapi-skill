@@ -58,7 +58,7 @@ public final class AggregateSkillGenerator {
                 throw new IllegalArgumentException(id + ": " + error.getMessage(), error);
             }
         }
-        var source = mapper.createObjectNode().put("generatorVersion", "openapi-skill-core/1")
+        var source = mapper.createObjectNode().put("generatorVersion", "openapi-skill-core/2")
                 .put("kind", "aggregate").put("serviceId", aggregateId).put("skillName", skillName);
         source.set("services", members);
         source.set("documents", documents);
@@ -71,10 +71,11 @@ public final class AggregateSkillGenerator {
                 ---
 
                 When a user names an interface source file, read it first and extract its HTTP method/path.
-                Search only `references/services/*/references/operations.jsonl`, then open the matched operation
-                and only its referenced Schema closure. Do not enumerate all catalogs, operations or Schemas.
-                Use the [service catalog](references/catalog.md) only when the service or document is unknown.
-                Each service's context describes its documented servers and authentication schemes.
+                Use the [service catalog](references/catalog.md) to select the service and document, then read that
+                document's `context.md` as its complete interface directory. Match method/path first, then follow the
+                operation's direct Markdown link. Each operation contains a generator-computed Complete referenced
+                contracts section; open only the contracts needed for the task.
+                Each document context describes documented servers and security facts.
                 Operations include effective parameters, servers and security after overrides.
                 Read the selected service's `references/conventions.md` when absent, null or empty values matter.
                 A null `security` and an absent `required` list are unstated facts, not definite claims.

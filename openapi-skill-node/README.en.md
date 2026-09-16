@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-Generate one self-contained Codex Skill from OpenAPI 3.1.0 JSON endpoints exposed by one or more services. The prepared, unpublished `1.0.0` package defaults to one API-documentation Skill per project and adds compact machine indexes for LLM retrieval. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
+Generate one self-contained Codex Skill from OpenAPI 3.1.0 JSON endpoints exposed by one or more services. The current, unpublished `1.1.0` source defaults to one API-documentation Skill per project and adds context-first LLM navigation. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
 
 ## Install
 
@@ -63,7 +63,14 @@ The configuration levels have distinct roles:
 
 Service and document boundaries remain intact: OpenAPI objects are not merged, `$ref` values are not resolved across documents, and gateway prefixes are not inferred. The output has one root `SKILL.md`; every service is physically included below `references/services/<serviceId>/` and reached through relative Markdown links. These are not filesystem symbolic links, so the complete `api-docs` directory remains portable.
 
-Each service reference root contains compact `operations.jsonl`, `schemas.jsonl`, and `conventions.md` files. Operation identities use service, document, HTTP method, and path rather than the optional or duplicate-prone SpringDoc `operationId`; the latter remains a searchable `sourceOperationId` alias. Contract filenames combine a readable slug with a six-character digest, such as `get-users-by-id--e0e194.md`, and extend the digest only when a rare collision is detected. `catalog.md` contains only service and document summaries. For a named interface source file, extract its method/path first, search `operations.jsonl`, and then open only the matched operation and its `$ref` Schema closure.
+Each service reference root uses `openapi-skill-core/2`. Every document has exactly one `context.md` listing all
+operations with method/path, summary, tags, configured keywords, and direct Markdown links. LLM navigation starts there
+and never requires reading or searching JSONL. Compact `operations.jsonl` and `schemas.jsonl` files remain as machine
+validation indexes. Operation identities use service, document, HTTP method, and path rather than the optional or
+duplicate-prone SpringDoc `operationId`; the latter remains a navigation alias. Operation and Schema files use clean
+semantic names such as `get-users-by-id.md` when unique; a short digest appears only for a case-insensitive collision or
+filesystem-safety fallback. Each operation also contains a generator-computed direct/transitive reference list and
+recursive edges, so the LLM does not have to derive the `$ref` closure.
 
 ## Run and atomic updates
 
@@ -87,7 +94,7 @@ Each URL must use HTTP(S), return JSON successfully, and declare exact `openapi:
 
 ## Legacy single-service compatibility
 
-Existing configurations do not need an immediate migration. Version `1.0.0` still accepts the original single-service shape and its explicit Skill name:
+Existing configurations do not need an immediate migration. Version `1.1.0` still accepts the original single-service shape and its explicit Skill name:
 
 ```json
 {

@@ -2,6 +2,18 @@
 
 本文件记录 2026-09-14 第一次「真实前端消费端」闭环测试的结果与发现。它是**测试证据**，不是产品文档。
 
+## 2026-09-16 P13 core/2 context-first 补充验证
+
+- 安装本地未发布的 `openapi-skill@1.1.0` tarball（24 个文件，26.0 kB；shasum
+  `2a2837a61ce3ddf5bb752f4620df12d0eaa3041c`），Node 30 项测试及 Vue 严格类型/生产构建通过。
+- 从两个真实 SpringDoc 分组重新生成 `openapi-skill-core/2` project Skill。每个 document 只有一份完整且不拆分的
+  `context.md`，其中每个 operation 恰好出现一次并有直接 Markdown 链接；可信 `SKILL.md` 不再要求搜索 JSONL。
+- 普通 operation/schema 路径使用无摘要的纯语义文件名；只有真实大小写冲突或文件系统安全回退才追加短摘要。
+- operation 页面包含生成器预计算、排序去重的直接/传递引用闭包和递归边。JSONL 仍保留为机器校验索引。
+- 输出共 21 个文件、2 个 context、0 个普通摘要后缀契约、0 个断链。重复生成整树 SHA-256 均为
+  `253e8c9d13c750817d9370f069a5375d3fe8baeff97eaf3bf6fb477f31b0f1e8`；本次只验证本地源码和消费链路，
+  未发布 npm/Maven 包。
+
 ## 2026-09-16 openapi-skill 改名补充验证
 
 - 安装本地 `openapi-skill@1.0.0` tarball（24 个条目，23,408 bytes），`npm run build` 成功。
@@ -153,3 +165,27 @@ skill:generate`），变化在生成产物与配置形态。
 
 一处需人工处理的残留：项目模式把 Skill 名默认成 `api-docs`，因此从旧的单服务 `springdoc-multi-package-api`
 切换过来时，旧目录不会被自动删除——整树替换保证只在同一 Skill 名内生效。本 testbed 已手工删除该旧目录。
+
+## 更新（2026-09-16，P13 独立复验）
+
+上一节（P13 补充验证）的记录脚本不在仓库内，其整树哈希无法复现。本节用**固定算法**重做一遍，并补齐两处更正。
+
+| 步骤 | 命令 / 方法 | 结果 |
+| --- | --- | --- |
+| Java 干净构建 | `mvn -B clean install` | BUILD SUCCESS，70 测试（68 core + 2 Starter） |
+| JAR 纯净度 | `jar tf` 统计包名 | 17 个 `io/github/fyuanz` class，0 个旧 `com/smartdoc`（非 clean 构建会混入后者） |
+| Node 测试 | `node --test "test/*.test.mjs"` | 30 通过 |
+| dist 新鲜度 | `tsc` 重编译后比对 md5 | 与已安装 dist 逐字节一致 |
+| 打包一致性 | `npm pack` 重新打包比对 | shasum `2a2837a61ce3ddf5bb752f4620df12d0eaa3041c`，与磁盘上的 `openapi-skill-1.1.0.tgz` 完全相同 |
+| 生成 | `openapi-skill`（`:18080` 实时服务） | 21 文件；2 份 context；0 个摘要后缀契约；32 条相对链接全通；4 个 operation 均含精确安全语义；可信导航 0 处 JSONL 引用 |
+| 确定性 | 连续两次生成 | 整树哈希恒为 `99547bf1a8b8…` |
+| 实时一致性 | 重新拉取两个端点 | `3a5bbf4e…` / `45f43c83…`，与 `source.json` 完全一致 |
+| 构建 | `npm run build` | `vue-tsc` + `vite build` 通过，71.74 kB JS / 1.43 kB CSS |
+
+**整树哈希算法**（此前只记了裸哈希，脚本已随 `target/` 清理丢失，故此处钉死定义）：取树内所有文件，按 POSIX 相对
+路径排序，对每条生成 `相对路径 + "\0" + sha256(文件内容)`，以 `\n` 连接后整体再做 sha256。按此定义，当前
+21 文件树的值为 `99547bf1a8b8…`；上节的 `253e8c9d…` 无法用已知归一化复现，仅作历史记录保留。
+
+**摘要更正**：本文件 2026-09-14 / 2026-09-15 两节记录的 `686c1b8b…` / `ae7e7d84…` 属于**改名之前**的文档字节。
+改名提交 `50a96c7` 修改了 testbed 的 OpenAPI 身份（`OpenAPI Skill 多包测试服务` 等），实时文档因此合法地变为
+`3a5bbf4e…` / `45f43c83…`。旧值不是缺陷，但**不能当作当前值**引用。

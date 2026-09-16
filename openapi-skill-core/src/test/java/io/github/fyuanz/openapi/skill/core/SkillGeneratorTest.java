@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,18 +49,15 @@ class SkillGeneratorTest {
             }
         }
         JsonNode source = mapper.readTree(files.get("references/source.json"));
-        assertEquals("openapi-skill-core/1", source.path("generatorVersion").asText());
+        assertEquals("openapi-skill-core/2", source.path("generatorVersion").asText());
         assertEquals(2, source.path("documents").size());
         assertTrue(source.path("documents").findValuesAsText("apiVersion").stream().allMatch("1.0.0"::equals));
         checkLinks(files);
         assertEquals(files, generator.generate("springdoc-multi-package", "springdoc-multi-package-api", docs));
         // Reviewable fixture output only; this is not production publication or a compile hook.
-        Path out = Path.of("target/openapi-skill/springdoc-multi-package-api");
-        for (var file : files.entrySet()) {
-            Path target = out.resolve(file.getKey());
-            Files.createDirectories(target.getParent());
-            Files.writeString(target, file.getValue());
-        }
+        var result = new ServiceSkillUpdater().update("springdoc-multi-package", "springdoc-multi-package-api",
+                Path.of("target/openapi-skill"), Duration.ofSeconds(5), () -> files);
+        assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, result.outcome(), result.message());
     }
 
     @Test void rejectsMissingRequiredInputAndUnsafeIdentities() {

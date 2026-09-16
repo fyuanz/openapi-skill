@@ -42,6 +42,24 @@ class ServiceSkillUpdaterTest {
     }
 
     @Test
+    void replacesAnOwnedCore1TreeWithCore2Atomically() throws Exception {
+        Path output = temporary.resolve("skills");
+        var core1 = new TreeMap<>(skill("orders", "orders-api", "old"));
+        core1.put("references/source.json", core1.get("references/source.json")
+                .replace("openapi-skill-core/2", "openapi-skill-core/1"));
+
+        assertEquals(ServiceSkillUpdater.Outcome.SUCCESS,
+                updater.update("orders", "orders-api", output, Duration.ofSeconds(2), () -> core1).outcome());
+        var result = updater.update("orders", "orders-api", output, Duration.ofSeconds(2),
+                () -> skill("orders", "orders-api", "new"));
+
+        assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, result.outcome(), result.message());
+        assertEquals("openapi-skill-core/2", mapper.readTree(Files.readString(
+                output.resolve("orders-api/references/source.json"))).path("generatorVersion").asText());
+        assertTrue(Files.readString(operation(output.resolve("orders-api"))).contains("new"));
+    }
+
+    @Test
     void generationFailureRetainsThePreviousTreeAndWritesExternalStatus() throws Exception {
         Path output = temporary.resolve("skills");
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS,

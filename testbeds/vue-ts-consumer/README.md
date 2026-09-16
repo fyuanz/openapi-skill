@@ -58,10 +58,10 @@ npm run skill:generate
 `openapi-skill.config.json` declares one `springdoc-multi-package` service and
 maps its account/business document IDs to the two live endpoints. It also
 demonstrates project-, service-, and document-level keywords. Because `skillName`
-is omitted, the output is `.agents/skills/api-docs/` (21 files:
-`openapi-skill-core/1`, `kind=project`, one root `SKILL.md` with per-service
-`operations.jsonl`/`schemas.jsonl`, readable six-character-suffix contract paths, and the service
-tree physically embedded under `references/services/<serviceId>/`). All services
+is omitted, the output is `.agents/skills/api-docs/`:
+`openapi-skill-core/2`, `kind=project`, one root `SKILL.md`, one complete unsplit `context.md` per document, clean
+semantic contract paths, precomputed operation reference closures, and the service tree physically embedded under
+`references/services/<serviceId>/`. JSONL indexes remain machine validation artifacts. All services
 and documents are downloaded and validated before the complete project Skill is
 replaced, so a failed download never damages a previously generated Skill or
 publishes a partial service set.

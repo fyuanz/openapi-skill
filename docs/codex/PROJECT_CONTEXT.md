@@ -31,15 +31,17 @@ and is not a delivery gate.
    document aborts the whole project update.
 4. The generator creates one self-contained Skill, named `api-docs` by default, with service trees physically included
    under `references/services/<serviceId>/references/` and connected through relative Markdown links.
-   Each tree exposes compact JSONL operation/schema indexes and readable short paths for targeted retrieval.
+   Each tree exposes one complete context per document, clean semantic paths and precomputed reference closures. Compact
+   JSONL operation/schema indexes remain machine-only artifacts.
 5. The publisher validates and stages the complete tree before replacing `.agents/skills/<skillName>` atomically. It
    does not create filesystem symbolic links or publish a partial mix of old and new services.
 
 ## Current Status
 
-- Java artifacts are prepared as `io.github.fyuanz:openapi-skill*:1.0.0` with package namespace
-  `io.github.fyuanz.openapi.skill`; the new coordinates are not yet published to Maven Central.
-- Node package `openapi-skill@1.0.0` is published and was verified end to end in the real Vue consumer.
+- Java P13 source uses `io.github.fyuanz:openapi-skill*:1.1.0-SNAPSHOT` with package namespace
+  `io.github.fyuanz.openapi.skill`; this change is not published.
+- Node P13 source is `openapi-skill@1.1.0`; it is locally packed and verified end to end in the real Vue consumer, but
+  this version is not published.
 - `openapi-skill-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/openapi-skill/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
@@ -50,24 +52,23 @@ and is not a delivery gate.
   sample APIs, and a real random-port ZIP download.
 - The Java reactor contains only parent, core, and Starter modules. Maven build-time compatibility and its integration
   testbed were removed by explicit product decision.
-- `openapi-skill-node` is prepared as `1.0.0`. Preferred `services` configuration
+- `openapi-skill-node` source is `1.1.0`. Preferred `services` configuration
   generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
   services plus project/service/document keywords, and publishes the complete service set atomically. The legacy
-  `serviceId` + `documents` configuration remains compatible, while new output uses `openapi-skill-core/1`.
-- Node verification currently passes 29 tests across configuration, generation, semantic indexes, provenance, downloading, project-tree
+  `serviceId` + `documents` configuration remains compatible, while new output uses `openapi-skill-core/2`.
+- Node verification currently passes 30 tests across configuration, generation, context navigation, semantic indexes, provenance, downloading, project-tree
   validation, project-wide document/byte budgets, atomic legacy/project migration, stale service removal, package
-  metadata, and compatibility behavior. The locally packed `1.0.0` tarball was installed into
-  `testbeds/vue-ts-consumer`; it builds and generated a 21-file core/1 `api-docs` project Skill from the running testbed.
+  metadata, and compatibility behavior. The locally packed `1.1.0` tarball was installed into
+  `testbeds/vue-ts-consumer`; it builds and generates a core/2 `api-docs` project Skill from the running testbed.
 - `testbeds/vue-ts-consumer` closes the consumer loop: a real Vue 3 + TypeScript project generates the Skill from the
   running SpringDoc testbed and calls all five documented operations through a dev-server proxy. An independent read-only
   audit of that Skill found it sufficient to write a correct typed client, plus three readability gaps recorded in its
   `CLOSURE-REPORT.md` and since addressed by core/1 targeted lookup and centralized OpenAPI conventions.
 - Generated Skills describe themselves with a bilingual action-triggered sentence (task verbs, catalog navigation, a
   verification checklist, and generate-or-modify frontend request code) so LLM consumers can discover them by task.
-- P13 is a proposed, not yet implemented, navigation revision awaiting user confirmation. It would make one unsplit
-  `context.md` per document the LLM-facing interface directory, remove JSONL search from trusted instructions, use
-  hash-free semantic filenames in the normal case with collision-only fallback, and precompute each operation's
-  document-local reference closure. Current core/1 output remains unchanged until approval.
+- P13 is implemented: one unsplit `context.md` per document is the LLM-facing interface directory, trusted instructions
+  contain no JSONL search, normal filenames are hash-free with collision/safety-only fallback, and every operation carries
+  its precomputed document-local direct/transitive closure plus recursive edges.
 - Historical releases remain available under the old `smart-doc-agent` / `smartdoc-agent-*` Maven coordinates and
   `smartdoc-agent` npm name. The new `openapi-skill` npm package starts at `1.0.0` and is published; the parent, core,
   and Starter Maven coordinates await manual publication.
@@ -75,11 +76,14 @@ and is not a delivery gate.
 ## Commands
 
 ```text
-mvn -B install
+mvn -B clean install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 cd openapi-skill-node && npm test
 ```
+
+Always run `clean` before a build whose output is inspected, compared, or released: a non-clean build after the product
+rename packaged stale `com.smartdoc.agent.*` classes into the core JAR.
 
 Consumer loop (generate the Skill, then build and run a real frontend):
 

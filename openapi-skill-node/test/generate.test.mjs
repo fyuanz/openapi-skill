@@ -13,11 +13,17 @@ test('generates one deterministic navigable skill from multiple documents', asyn
   assert.equal([...first.keys()].filter((path) => path.includes('/operations/')).length, 4);
   assert.equal([...first.keys()].filter((path) => path.includes('/schemas/')).length, 7);
   const source = JSON.parse(first.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'openapi-skill-core/1');
+  assert.equal(source.generatorVersion, 'openapi-skill-core/2');
   assert.equal(source.sourceType, undefined, 'legacy generator metadata must remain byte-compatible in shape');
   assert.equal(source.keywords, undefined, 'legacy generator metadata must not gain empty keyword fields');
   assert.deepEqual(source.documents.map(({ documentId }) => documentId), ['account', 'business']);
   assert.match(first.get('SKILL.md'), /references\/catalog\.md/);
+  assert.doesNotMatch(first.get('SKILL.md'), /operations\.jsonl|schemas\.jsonl/);
+  for (const id of ['account', 'business']) {
+    const context = first.get(`references/documents/${id}/context.md`);
+    assert.match(context, /## Interfaces/);
+    assert.match(context, /Defined security schemes/);
+  }
 });
 
 test('explains OpenAPI default semantics and carries Chinese triggers', async () => {
@@ -135,7 +141,7 @@ test('generates one self-contained project Skill with logical service navigation
   assert.match(files.get('SKILL.md'), /订单/);
   assert.doesNotMatch(files.get('SKILL.md'), /下单/);
   const source = JSON.parse(files.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'openapi-skill-core/1');
+  assert.equal(source.generatorVersion, 'openapi-skill-core/2');
   assert.equal(source.kind, 'project');
   assert.equal(source.skillName, 'api-docs');
   assert.deepEqual(source.services.map(({ serviceId }) => serviceId), ['orders', 'shipping']);

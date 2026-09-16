@@ -5,43 +5,45 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SkillGeneratorIndexTest {
-    private static final Pattern LONG_HASH_FILE = Pattern.compile("(?:^|-)[0-9a-f]{64}\\.md$");
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Test void emitsSemanticKeysShortReadablePathsAndMachineIndexes() throws Exception {
+    @Test void emitsCore2ContextNavigationCleanPathsAndMachineIndexes() throws Exception {
         String document = """
                 {"openapi":"3.1.0","paths":{
                   "/users/{id}":{"get":{"operationId":"duplicate","summary":"Get user","tags":["users"],"responses":{"200":{"description":"ok","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserView"}}}}}}},
                   "/users":{"post":{"operationId":"duplicate","summary":"Create user","responses":{"201":{"description":"created"}}}}
-                },"components":{"schemas":{"UserView":{"type":"object"},"user-view":{"type":"string"}}}}
+                },"components":{"schemas":{"UserView":{"type":"object"},"user-view":{"type":"string"},"Payload":{"type":"object"}}}}
                 """;
         Map<String, String> files = new SkillGenerator().generate("svc", "svc-api",
                 Map.of("public", document.getBytes(StandardCharsets.UTF_8)));
 
-        assertEquals("openapi-skill-core/1",
+        assertEquals("openapi-skill-core/2",
                 mapper.readTree(files.get("references/source.json")).path("generatorVersion").asText());
         assertTrue(files.containsKey("references/operations.jsonl"));
         assertTrue(files.containsKey("references/schemas.jsonl"));
         assertTrue(files.containsKey("references/conventions.md"));
-        assertTrue(files.keySet().stream().anyMatch(path -> path.matches(
-                ".*/operations/get-users-by-id--[0-9a-f]{6}\\.md")));
-        assertTrue(files.keySet().stream().anyMatch(path -> path.matches(
-                ".*/operations/post-users--[0-9a-f]{6}\\.md")));
-        assertTrue(files.keySet().stream().anyMatch(path -> path.matches(
-                ".*/schemas/user-view--[0-9a-f]{6}\\.md")));
-        assertTrue(files.keySet().stream().noneMatch(path -> LONG_HASH_FILE.matcher(Path.of(path).getFileName().toString()).find()));
+        assertTrue(files.containsKey("references/documents/public/operations/get-users-by-id.md"));
+        assertTrue(files.containsKey("references/documents/public/operations/post-users.md"));
+        assertTrue(files.containsKey("references/documents/public/schemas/payload.md"));
+        assertEquals(2, files.keySet().stream().filter(path -> path.matches(
+                ".*/schemas/user-view--[0-9a-f]{6}\\.md")).count());
+
+        String context = files.get("references/documents/public/context.md");
+        assertTrue(context.contains("## Interfaces"));
+        assertTrue(context.contains("[Get user](operations/get-users-by-id.md)"));
+        assertTrue(context.contains("`GET /users/&#123;id&#125;`"));
+        assertTrue(context.contains("Tags: users"));
+        assertFalse(files.get("SKILL.md").contains("operations.jsonl"));
+        assertFalse(files.get("SKILL.md").contains("schemas.jsonl"));
+        assertTrue(files.get("SKILL.md").contains("context.md"));
 
         List<JsonNode> operations = jsonLines(files.get("references/operations.jsonl"));
         assertEquals(2, operations.size());
@@ -54,6 +56,7 @@ class SkillGeneratorIndexTest {
 
         List<JsonNode> schemas = jsonLines(files.get("references/schemas.jsonl"));
         assertEquals(List.of(
+                        "schema:svc:public:#/components/schemas/Payload",
                         "schema:svc:public:#/components/schemas/UserView",
                         "schema:svc:public:#/components/schemas/user-view"),
                 schemas.stream().map(row -> row.path("id").asText()).toList());
@@ -84,11 +87,16 @@ class SkillGeneratorIndexTest {
         assertEquals(1, files.values().stream().filter(value -> value.contains("## OpenAPI interpretation conventions")).count());
     }
 
-    @Test void extendsTheShortSuffixOnlyWhenAFileNameCollides() {
-        String first = SemanticNames.file("UserView", "first");
-        String extended = SemanticNames.file("UserView", "first", Set.of(first.toLowerCase(Locale.ROOT)));
-        assertTrue(first.matches("user-view--[0-9a-f]{6}\\.md"));
-        assertTrue(extended.matches("user-view--[0-9a-f]{10}\\.md"));
+    @Test void usesCleanNamesAndSuffixesEveryMemberOfARealCollisionGroup() {
+        assertEquals("user-view.md", SemanticNames.files(Map.of("first", "UserView")).get("first"));
+        Map<String, String> colliding = SemanticNames.files(Map.of("first", "UserView", "second", "user-view"));
+        assertTrue(colliding.get("first").matches("user-view--[0-9a-f]{6}\\.md"));
+        assertTrue(colliding.get("second").matches("user-view--[0-9a-f]{6}\\.md"));
+        assertNotEquals(colliding.get("first"), colliding.get("second"));
+        assertTrue(SemanticNames.files(Map.of("unicode", "航线任务")).get("unicode")
+                .matches("item--[0-9a-f]{6}\\.md"));
+        assertTrue(SemanticNames.files(Map.of("reserved", "CON")).get("reserved")
+                .matches("con--[0-9a-f]{6}\\.md"));
     }
 
     @Test void validatorRejectsMissingOrDriftingIndexes() {
@@ -105,6 +113,17 @@ class SkillGeneratorIndexTest {
                 drifting.get("references/operations.jsonl").replace("documents/public/operations/", "documents/public/missing/"));
         assertThrows(IllegalArgumentException.class,
                 () -> new GeneratedSkillValidator().validate(drifting, "svc", "svc-api"));
+
+        var missingContext = new TreeMap<>(valid);
+        missingContext.remove("references/documents/public/context.md");
+        assertThrows(IllegalArgumentException.class,
+                () -> new GeneratedSkillValidator().validate(missingContext, "svc", "svc-api"));
+
+        var missingClosure = new TreeMap<>(valid);
+        String operation = "references/documents/public/operations/get-x.md";
+        missingClosure.put(operation, missingClosure.get(operation).replace("## Complete referenced contracts", "## References"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new GeneratedSkillValidator().validate(missingClosure, "svc", "svc-api"));
     }
 
     private List<JsonNode> jsonLines(String content) throws Exception {

@@ -41,7 +41,7 @@
 |   |-- README.md
 |   `-- src/                # runtime auto-configuration, SpringDoc collection, ZIP endpoint and tests
 |-- openapi-skill-node/
-|   |-- package.json        # unscoped openapi-skill 1.0.0 source and CLI; packed, not yet published
+|   |-- package.json        # unscoped openapi-skill 1.1.0 source and CLI; locally packed, not published
 |   |-- README.md           # default Chinese Node package guide
 |   |-- README.en.md        # equivalent English Node package guide with reciprocal link
 |   |-- src/                # service/project generators, keyword/config rules, downloader and safe publisher
@@ -55,7 +55,7 @@
 | --- | --- |
 | `AGENTS.md` | First-read, test-first development, and documentation rules |
 | `README.md` / `README.en.md` | Runtime/Node onboarding, Skill usage and verification |
-| `docs/openapi-skill-design.md` | v3.9 runtime, project-Skill and semantic-index architecture |
+| `docs/openapi-skill-design.md` | v4.0 runtime and context-first project-Skill architecture |
 | `pom.xml` | Java 17 Maven parent; aggregates core and runtime Starter |
 | `LICENSE` | User-selected MIT license |
 | `docs/maven-central.md` | Maven Central release and Starter-consumption instructions |
@@ -63,8 +63,9 @@
 
 P0-P6 historically produced the core, safe publisher, Maven compatibility plugin, and aggregate output. The compatibility
 module was later removed by product decision. v3.7 added a runtime Starter
-and removed build-time startup/capture/generation from the SpringDoc testbed. v3.8 added Node project mode; v3.9 adds
-core/1 semantic indexes, compact catalogs and centralized reading conventions. Legacy IR remains deleted.
+and removed build-time startup/capture/generation from the SpringDoc testbed. v3.8 added Node project mode; v3.9 added
+semantic indexes and centralized conventions; v4.0 adds core/2 context-first navigation, clean paths and precomputed
+reference closures. Legacy IR remains deleted.
 
 ## Implementation Locations
 
@@ -80,7 +81,7 @@ Core and runtime entry points now exist:
 - `openapi-skill-node/src/config.ts` accepts the preferred top-level `services` model, defaults its `skillName` to
   `api-docs`, validates source types and project/service/document keywords, and normalizes the earlier single-service
   configuration without changing that legacy contract.
-- `openapi-skill-node/src/project-generator.ts` generates one `openapi-skill-core/1`, `kind=project` tree. It builds
+- `openapi-skill-node/src/project-generator.ts` generates one `openapi-skill-core/2`, `kind=project` tree. It builds
   each service through the core-compatible service generator, omits nested `SKILL.md` files, physically relocates the
   complete reference trees beneath `references/services/<serviceId>/references/`, and creates the root catalog,
   provenance, and trusted entrypoint.
@@ -88,7 +89,8 @@ Core and runtime entry points now exist:
   sorting, count/length/control-character checks, and bounded frontmatter discovery text.
 - `openapi-skill-node/src/index.ts` downloads the complete project input and routes legacy configuration to the
   service generator or `services` configuration to the project generator. `publisher.ts` validates
-  `openapi-skill-core/1` indexes before staged replacement.
+  `openapi-skill-core/2` contexts, closures and machine indexes before staged replacement; owned core/1 trees are
+  recognized only as replacement inputs.
 - The Node CLI defaults output to the consuming project's `.agents/skills/`; an explicit relative or absolute output
   parent remains supported.
 

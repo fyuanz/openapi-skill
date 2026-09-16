@@ -22,8 +22,9 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The new TypeScript package `openapi-skill@1.0.0` defaults to one self-contained API Skill per
-frontend project and adds `operations.jsonl` / `schemas.jsonl`, semantic filenames, and centralized conventions.
+The current source prepares the unreleased TypeScript package `openapi-skill@1.1.0`. It defaults to one self-contained
+API Skill per frontend project and adds one document-level `context.md` directory, clean semantic filenames,
+generator-computed reference closures, and centralized conventions. JSONL remains a machine validation artifact.
 Multiple microservices, multiple documents within each service, and third-party providers are
 organized below one `.agents/skills/api-docs/` directory; `skillName` can override the `api-docs` default.
 
@@ -92,7 +93,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-The first command installs the prepared `1.0.0` artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
+The first command installs the current `1.1.0-SNAPSHOT` source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
 start/stop, OpenAPI capture, or generated files. Tests verify the runtime ZIP on a random port.
 
 For a manual check, start the application:

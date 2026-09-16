@@ -48,8 +48,9 @@ final class GeneratedSkillValidator {
         }
         validateEntrypoint(files.get("SKILL.md"), skillName);
         JsonNode source = validateSource(files.get("references/source.json"), serviceId, skillName);
-        if ("openapi-skill-core/1".equals(source.path("generatorVersion").asText()) && !source.has("kind"))
-            validateIndexes(files, source);
+        String version = source.path("generatorVersion").asText();
+        if (("openapi-skill-core/1".equals(version) || "openapi-skill-core/2".equals(version)) && !source.has("kind"))
+            validateIndexes(files, source, "openapi-skill-core/2".equals(version));
         validateLinks(files, normalized);
     }
 
@@ -96,7 +97,7 @@ final class GeneratedSkillValidator {
         return source;
     }
 
-    private void validateIndexes(Map<String, String> files, JsonNode source) {
+    private void validateIndexes(Map<String, String> files, JsonNode source, boolean contextNavigation) {
         if (!files.containsKey("references/conventions.md")) throw invalid("references/conventions.md is missing");
         int operations = 0;
         int schemas = 0;
@@ -104,14 +105,16 @@ final class GeneratedSkillValidator {
             operations += document.path("operations").asInt();
             schemas += document.path("schemas").asInt();
         }
-        validateIndex(files, "references/operations.jsonl", "operation:", operations);
+        var operationRows = validateIndex(files, "references/operations.jsonl", "operation:", operations);
         validateIndex(files, "references/schemas.jsonl", "schema:", schemas);
+        if (contextNavigation) validateContextsAndClosures(files, source, operationRows);
     }
 
-    private void validateIndex(Map<String, String> files, String path, String prefix, int expectedCount) {
+    private java.util.List<JsonNode> validateIndex(Map<String, String> files, String path, String prefix, int expectedCount) {
         String content = files.get(path);
         if (content == null) throw invalid(path + " is missing");
         var ids = new HashSet<String>();
+        var rows = new java.util.ArrayList<JsonNode>();
         String previous = null;
         int count = 0;
         for (String line : content.split("\\R", -1)) {
@@ -128,8 +131,62 @@ final class GeneratedSkillValidator {
                 throw invalid(path + " points to a missing contract file");
             previous = id;
             count++;
+            rows.add(row);
         }
         if (count != expectedCount) throw invalid(path + " count does not match source metadata");
+        return java.util.List.copyOf(rows);
+    }
+
+    private void validateContextsAndClosures(Map<String, String> files, JsonNode source,
+                                             java.util.List<JsonNode> operationRows) {
+        var expectedContexts = new HashSet<String>();
+        for (JsonNode document : source.path("documents")) {
+            String documentId = document.path("documentId").asText();
+            String contextPath = "references/documents/" + documentId + "/context.md";
+            expectedContexts.add(contextPath);
+            String context = files.get(contextPath);
+            if (context == null) throw invalid(contextPath + " is missing");
+            if (!context.contains("## Interfaces")) throw invalid(contextPath + " has no interface directory");
+            long expected = operationRows.stream().filter(row -> documentId.equals(row.path("documentId").asText())).count();
+            long linked = operationRows.stream().filter(row -> documentId.equals(row.path("documentId").asText()))
+                    .filter(row -> occurrences(context,
+                            "](operations/" + Path.of(row.path("file").asText()).getFileName() + ")") == 1)
+                    .count();
+            if (linked != expected) throw invalid(contextPath + " does not link every operation exactly once");
+        }
+        var actualContexts = files.keySet().stream()
+                .filter(path -> path.startsWith("references/documents/") && path.endsWith("/context.md"))
+                .collect(java.util.stream.Collectors.toSet());
+        if (!actualContexts.equals(expectedContexts)) throw invalid("document contexts do not match source metadata");
+        for (JsonNode row : operationRows) {
+            String operationPath = "references/" + row.path("file").asText();
+            String operation = files.get(operationPath);
+            if (operation == null || !operation.contains("## Complete referenced contracts"))
+                throw invalid(operationPath + " has no complete reference closure");
+            if (!row.path("closureFiles").isArray() || !row.path("recursiveEdges").isArray())
+                throw invalid("references/operations.jsonl closure metadata is missing");
+            var closure = new HashSet<String>();
+            String previous = null;
+            for (JsonNode target : row.path("closureFiles")) {
+                if (!target.isTextual() || !closure.add(target.asText()))
+                    throw invalid("references/operations.jsonl closure contains an invalid or duplicate file");
+                if (previous != null && previous.compareTo(target.asText()) >= 0)
+                    throw invalid("references/operations.jsonl closure files are not sorted");
+                String targetPath = "references/" + target.asText();
+                if (!files.containsKey(targetPath)) throw invalid(operationPath + " closure points to a missing contract");
+                String relative = Path.of(operationPath).getParent().relativize(Path.of(targetPath))
+                        .toString().replace('\\', '/');
+                if (!operation.contains("](" + relative + ")"))
+                    throw invalid(operationPath + " omits a declared closure link");
+                previous = target.asText();
+            }
+        }
+    }
+
+    private int occurrences(String content, String target) {
+        int count = 0;
+        for (int offset = 0; (offset = content.indexOf(target, offset)) >= 0; offset += target.length()) count++;
+        return count;
     }
 
     private void validateLinks(Map<String, String> files, Set<String> paths) {

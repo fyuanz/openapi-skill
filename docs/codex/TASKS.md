@@ -2,14 +2,15 @@
 
 ## Current Scope
 
-Product design v3.9.0 keeps the embedded Spring Boot runtime endpoint as the primary SpringDoc workflow. The application
+Product design v4.0.0 keeps the embedded Spring Boot runtime endpoint as the primary SpringDoc workflow. The application
 generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no OpenAPI Skill build
 executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-Maven build-time compatibility has been removed by explicit user decision. Renamed Node `1.0.0` builds on project mode
+Maven build-time compatibility has been removed by explicit user decision. Node `1.1.0` source builds on project mode
 that downloads explicitly configured documents for multiple internal or third-party services and installs one
-self-contained `openapi-skill-core/1` project Skill with compact machine indexes and semantic paths. The new npm and
-Maven packages are prepared but not published.
+self-contained `openapi-skill-core/2` project Skill with one complete document context, clean semantic paths and
+precomputed reference closures. JSONL is retained only as a compact machine index. The 1.1.0 npm and Maven changes are
+implemented in source but not published.
 Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
 artifact coordination remain outside scope.
 
@@ -29,15 +30,15 @@ artifact coordination remain outside scope.
 | P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | Complete; 23 Node tests pass, the packed tarball is verified end to end in the real Vue consumer, and `smartdoc-agent@1.4.0` is published on npm |
 | P11 | core/3 compact catalog, semantic IDs/filenames, JSONL lookup indexes, and centralized conventions | Complete in Java and Node source; current reactor has 69 tests after compatibility removal |
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
-| P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Planned; awaiting user confirmation, no implementation started |
+| P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Complete in Java and Node; runtime/Vue evidence verified, publication not requested |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Release | npm release | `smartdoc-agent@1.5.0` manually published 2026-09-15 and verified as current `latest` |
-| Documentation | Chinese-default README, English guide and v3.9 design | Updated for runtime and core/3 retrieval layout |
+| Documentation | Chinese-default README, English guide and v4.0 design | Updated for context-first core/2 navigation |
 
-## Proposed P13 Work Plan - Awaiting User Confirmation
+## P13 Implementation Plan - Completed
 
-This plan records the reviewed direction only. Do not modify generators, validators, generated layouts, tests, package
-versions, or release artifacts until the user explicitly confirms implementation.
+The user approved this reviewed plan on 2026-09-16. All slices were implemented without splitting a document-level
+`context.md`; registry publication remains outside the approved scope.
 
 ### Target Contract
 
@@ -86,23 +87,22 @@ versions, or release artifacts until the user explicitly confirms implementation
 - Generated security statements match explicit OpenAPI inheritance/override semantics and preserve unknowns.
 - Java and Node emit the same navigation/path semantics, all local links validate, repeated generation is byte-stable,
   and failed generation/publication retains the previous complete Skill.
-- P13 remains `Planned` until the user confirms this contract. Confirmation starts P13.1; it does not authorize package
-  registry publication.
+- P13 is complete in source and verified. This work does not authorize package registry publication.
 
 ## Current Implementation
 
-- New output uses `openapi-skill-core/1`. `catalog.md` is a compact human entry point; sorted
-  `operations.jsonl`/`schemas.jsonl` provide direct machine lookup, and `conventions.md` holds shared OpenAPI reading
-  defaults once per service tree.
-- Operation/schema IDs are semantic and independent of SpringDoc `operationId`. Contract filenames use readable slugs
-  with a six-hex discriminator, extending only when a case-insensitive collision is detected. Full source SHA-256 stays
-  in provenance.
-- Trusted Skill guidance now directs an LLM to identify method/path from the target source file, search the operation
-  index, and open only the matched operation and linked reference closure. Tag files are removed; tags remain in context
-  and operation-index rows.
+- New output uses `openapi-skill-core/2`. `catalog.md` selects a service/document; every document has exactly one complete,
+  unsplit `context.md` that lists each operation once with a direct link. Sorted `operations.jsonl`/`schemas.jsonl` remain
+  machine/validator artifacts, while `conventions.md` holds shared OpenAPI reading defaults once per service tree.
+- Operation/schema IDs are semantic and independent of SpringDoc `operationId`. Unique safe contracts use clean names;
+  deterministic short suffixes are limited to real case-insensitive collisions and filesystem-safety fallbacks. Full
+  source SHA-256 stays in provenance.
+- Trusted Skill guidance navigates through context and operation Markdown. Each operation includes the generator-computed
+  direct/transitive document-local reference closure and recursive edges, so no JSONL search or LLM graph derivation is
+  required.
 
 - `testbeds/vue-ts-consumer` is a real Vue 3 + TypeScript + Vite consumer. It installs the packed
-  `openapi-skill@1.0.0` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
+  local `openapi-skill@1.1.0` package, generates one Skill from the two live grouped endpoints of the running SpringDoc
   testbed into its own `.agents/skills/`, and calls all five documented operations through a Vite dev-server proxy.
 - `openapi-skill-spring-boot-starter` auto-configures `GET /openapi-skill/skill.zip` for Servlet/WebMVC applications.
 - It derives service identity from `spring.application.name`; enabled/path/serviceId/skillName are optional overrides.
@@ -113,15 +113,56 @@ versions, or release artifacts until the user explicitly confirms implementation
   The hidden endpoint does not enter generated OpenAPI.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or OpenAPI Skill Maven goal.
 - `openapi-skill-node` provides unscoped `openapi-skill`: preferred `services` configuration generates one
-  self-contained `openapi-skill-core/1`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
+  self-contained `openapi-skill-core/2`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
   configured internal or third-party services. It accepts project/service/document keywords, keeps service/document
   contracts separate beneath `references/services/<serviceId>/references/`, and safely replaces the whole project tree.
 - The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible as configuration.
-- Java artifacts use `io.github.fyuanz:openapi-skill*:1.0.0`; Java packages use
-  `io.github.fyuanz.openapi.skill.*`. The Node package `openapi-skill@1.0.0` is manually published; Maven publication
-  remains pending.
+- Java source artifacts use `io.github.fyuanz:openapi-skill*:1.1.0-SNAPSHOT`; Java packages use
+  `io.github.fyuanz.openapi.skill.*`. Node source is `openapi-skill@1.1.0`. No P13 package was published.
 
 ## Verified
+
+## 2026-09-16 - P13 Independent Re-Verification And Clean-Build Artifact Purity
+
+- Context: the P13 session was interrupted by a quota limit with all P13 work still uncommitted in the working tree.
+  This entry records an independent re-run of the full verification against that exact state, before the delivery
+  commit.
+- Java: `mvn -B clean install` is BUILD SUCCESS with 70 tests (68 core + 2 Starter). The earlier non-clean
+  `mvn -B install` had packaged pre-rename `com.smartdoc.agent.*` classes, left in `target/classes` by the rename, into
+  `openapi-skill-core-1.1.0-SNAPSHOT.jar`; the clean artifact contains 17 `io.github.fyuanz.*` classes and no legacy
+  entry. The standing rule is recorded in DECISIONS.
+- Node: 30 tests pass. Recompiling `dist` from source is byte-identical to the installed build, and a fresh `npm pack`
+  reproduces the on-disk `openapi-skill-1.1.0.tgz` exactly (24 entries, shasum
+  `2a2837a61ce3ddf5bb752f4620df12d0eaa3041c`). The consumer package therefore already carried the exact security
+  wording instead of retaining it only in the TypeScript source.
+- Consumer: two consecutive generations against the running SpringDoc testbed produced an identical 21-file project
+  Skill with 2 document contexts, 0 digest-suffixed contract filenames, 32 resolving relative Markdown links, no nested
+  `SKILL.md`, 0 JSONL references in trusted navigation, and the exact security wording on all 4 operation pages. The
+  whole-tree SHA-256 is `99547bf1a8b8…` under the algorithm pinned in DECISIONS.
+- Provenance: the generated `source.json` digests (`3a5bbf4e…`, `45f43c83…`) equal the live endpoints re-fetched during
+  this run, so the Skill is a faithful snapshot. These supersede the `686c1b8b…` / `ae7e7d84…` values recorded on
+  2026-09-14 and 2026-09-15, which describe the pre-rename testbed identity rather than a generator defect.
+- `npm run build` in the Vue consumer passes `vue-tsc` and reproduces the unchanged 71.74 kB JS / 1.43 kB CSS bundle.
+- Documentation correction: the bare whole-tree hash `253e8c9d…` in the entry below was produced by a script that was
+  not retained, so it cannot be checked against a later run. The reproducible value for the same tree is recorded above
+  with its algorithm.
+
+## 2026-09-16 - P13 Context-First Core/2 Navigation Implemented
+
+- Added failing Java and Node contract tests first for clean names, collision fallback, one context per document,
+  context-only LLM navigation, exact security wording, complete multi-hop/recursive closures and core/1 replacement.
+- `mvn -B install` passes 68 core tests plus 2 Starter tests; `npm test` passes 30 tests. The standalone SpringDoc
+  testbed's known Windows/JDK compiler-resource error occurred once for main and once for test compilation after writing
+  their classes; the next unchanged `mvn -B verify` passed all 6 runtime tests.
+- The final local `openapi-skill@1.1.0` tarball has 24 files (26.0 kB packed, 94.2 kB unpacked; shasum
+  `2a2837a61ce3ddf5bb752f4620df12d0eaa3041c`). The real Vue consumer installs it, generates a 21-file project Skill,
+  and passes `vue-tsc` plus the Vite production build.
+- Normal fixtures use clean operation/schema paths. Deliberate case-insensitive collisions and unsafe Unicode/Windows
+  names receive deterministic suffixes. All generated Markdown links validate and repeated generation is byte-stable.
+- Each document keeps one unsplit `context.md`; JSONL remains available to validators but is absent from trusted LLM
+  navigation instructions. The generated fixture has 2 contexts, 0 routine digest-suffix contracts and 0 broken links;
+  two consecutive whole-tree generations both hash to
+  `253e8c9d13c750817d9370f069a5375d3fe8baeff97eaf3bf6fb477f31b0f1e8`. No npm or Maven publication was performed.
 
 ## 2026-09-16 - Maven Build-Time Compatibility Removed
 
@@ -353,8 +394,9 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-16 (`openapi-skill` rename verified across the 84-test Java reactor, 29-test Node suite,
-six-test SpringDoc testbed, final npm tarball, and real Vue consumer; npm and Maven publication remain manual).
+2026-09-16 (P13 context-first `openapi-skill-core/2` independently re-verified: clean-build 70-test Java reactor, 30-test
+Node suite, byte-identical tarball, deterministic 21-file project Skill with a pinned whole-tree hash, live-digest
+equivalence, and the unchanged Vue build; no P13 npm or Maven publication was performed).
 
 ## 2026-09-14 - Node Consumer Committed And Pushed
 

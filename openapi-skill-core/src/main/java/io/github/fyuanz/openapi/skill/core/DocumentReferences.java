@@ -21,6 +21,14 @@ final class DocumentReferences {
     private final Set<String> exampleOnlyTargets = new HashSet<>();
     private final Set<String> regularTargets = new HashSet<>();
 
+    record ReferenceClosure(List<String> direct, List<String> transitive, List<String> recursiveEdges) {
+        List<String> all() {
+            var result = new ArrayList<String>(direct);
+            result.addAll(transitive);
+            return List.copyOf(result);
+        }
+    }
+
     DocumentReferences(String id, JsonNode root) {
         this.root = root;
         base = "references/documents/" + id + "/";
@@ -29,15 +37,32 @@ final class DocumentReferences {
         root.path("components").path("schemas").fieldNames().forEachRemaining(names::add);
         names.forEach(name -> {
             String pointer = "/components/schemas/" + name.replace("~", "~0").replace("/", "~1");
-            Set<String> used = new HashSet<>();
-            targets.values().stream().filter(path -> path.startsWith(base + "schemas/"))
-                    .map(path -> Path.of(path).getFileName().toString().toLowerCase(Locale.ROOT)).forEach(used::add);
-            targets.put(pointer, base + "schemas/" + SemanticNames.file(name, pointer, used));
             schemaNames.put(pointer, name);
             regularTargets.add(pointer);
         });
-        if (targets.size() > 5000) throw new IllegalArgumentException("LIMIT: schema files exceeded");
+        if (schemaNames.size() > 5000) throw new IllegalArgumentException("LIMIT: schema files exceeded");
         scan(root, new LinkedHashSet<>(), 0);
+        allocateTargets();
+    }
+
+    private void allocateTargets() {
+        var schemas = new TreeMap<String, String>();
+        schemaNames.forEach(schemas::put);
+        SemanticNames.files(schemas).forEach((pointer, filename) ->
+                targets.put(pointer, base + "schemas/" + filename));
+
+        var references = new TreeMap<String, String>();
+        var pointers = new TreeSet<String>();
+        pointers.addAll(regularTargets);
+        pointers.addAll(exampleOnlyTargets);
+        pointers.removeAll(schemaNames.keySet());
+        for (String pointer : pointers) {
+            String readable = pointer.isEmpty() ? "root" : pointer.replace("~1", "/").replace("~0", "~");
+            references.put(pointer, readable);
+        }
+        SemanticNames.files(references).forEach((pointer, filename) ->
+                targets.put(pointer, base + "refs/" + filename));
+        if (targets.size() > 5000) throw new IllegalArgumentException("LIMIT: reference files exceeded");
     }
 
     private void scan(JsonNode node, Set<String> edges, int depth) {
@@ -80,18 +105,13 @@ final class DocumentReferences {
         if (!ref.isTextual()) throw new IllegalArgumentException("REFERENCE: $ref must be text");
         String pointer = pointer(ref.asText());
         edges.add(pointer);
-        if (!targets.containsKey(pointer)) {
-            Set<String> used = new HashSet<>();
-            targets.values().stream().filter(path -> path.startsWith(base + "refs/"))
-                    .map(path -> Path.of(path).getFileName().toString().toLowerCase(Locale.ROOT)).forEach(used::add);
-            targets.put(pointer, base + "refs/" + SemanticNames.pointerFile(pointer, used));
-        }
         if (exampleOnly && !regularTargets.contains(pointer)) exampleOnlyTargets.add(pointer);
         else {
             regularTargets.add(pointer);
             exampleOnlyTargets.remove(pointer);
         }
-        if (targets.size() > 5000) throw new IllegalArgumentException("LIMIT: reference files exceeded");
+        if (regularTargets.size() + exampleOnlyTargets.size() > 5000)
+            throw new IllegalArgumentException("LIMIT: reference files exceeded");
     }
 
     JsonNode resolvePathItem(JsonNode pathItem) {
@@ -193,17 +213,77 @@ final class DocumentReferences {
         return render(title, contract, filename, false, true, semantics);
     }
 
+    String renderOperation(String title, JsonNode contract, String filename, List<String> semantics,
+                           ReferenceClosure closure) {
+        return render(title, contract, filename, false, true, semantics, closure);
+    }
+
+    ReferenceClosure closure(JsonNode contract) {
+        var direct = edges(contract, false);
+        var all = new TreeSet<String>(direct);
+        var recursive = new TreeSet<String>();
+        var expanded = new HashSet<String>();
+        for (String pointer : direct)
+            expand(pointer, new LinkedHashSet<>(), expanded, all, recursive);
+        var transitive = new TreeSet<String>(all);
+        transitive.removeAll(direct);
+        return new ReferenceClosure(List.copyOf(direct), List.copyOf(transitive), List.copyOf(recursive));
+    }
+
+    private void expand(String pointer, LinkedHashSet<String> stack, Set<String> expanded,
+                        Set<String> all, Set<String> recursive) {
+        if (!stack.add(pointer)) return;
+        if (!expanded.add(pointer)) {
+            stack.remove(pointer);
+            return;
+        }
+        boolean exampleObject = exampleOnlyTargets.contains(pointer) && !regularTargets.contains(pointer);
+        for (String child : edges(root.at(pointer), exampleObject)) {
+            all.add(child);
+            if (stack.contains(child)) recursive.add("#" + pointer + " -> #" + child);
+            else expand(child, stack, expanded, all, recursive);
+        }
+        stack.remove(pointer);
+    }
+
+    private TreeSet<String> edges(JsonNode contract, boolean exampleObject) {
+        var result = new TreeSet<String>();
+        if (exampleObject) scanExampleObject(contract, result, 0);
+        else scan(contract, result, 0);
+        return result;
+    }
+
+    String target(String pointer) {
+        String target = targets.get(pointer);
+        if (target == null) throw new IllegalArgumentException("REFERENCE: missing generated target #" + pointer);
+        return target;
+    }
+
     List<String> semantics(JsonNode contract) {
         var notes = new ArrayList<String>();
+        JsonNode operation = contract.path("operation");
         JsonNode security = contract.path("security");
-        if (security.isArray() && security.isEmpty())
-            notes.add("This operation declares an explicit empty `security`, so it is documented as requiring no "
-                    + "authentication.");
+        if (operation.has("security")) {
+            if (security.isArray() && security.isEmpty())
+                notes.add("This operation declares an explicit empty `security`, so it is documented as requiring no "
+                        + "authentication.");
+            else notes.add("This operation declares an explicit `security` override; use the effective value above.");
+        } else if (security.isNull()) {
+            notes.add("Neither this operation nor the document declares a security requirement; this is an unstated "
+                    + "fact, not a claim that authentication is unnecessary.");
+        } else {
+            notes.add("This operation inherits the document-level security requirement shown above.");
+        }
         return List.copyOf(notes);
     }
 
     private String render(String title, JsonNode contract, String filename, boolean exampleObject,
                           boolean conventions, List<String> semantics) {
+        return render(title, contract, filename, exampleObject, conventions, semantics, null);
+    }
+
+    private String render(String title, JsonNode contract, String filename, boolean exampleObject,
+                          boolean conventions, List<String> semantics, ReferenceClosure closure) {
         var edges = new LinkedHashSet<String>();
         if (exampleObject) scanExampleObject(contract, edges, 0);
         else scan(contract, edges, 0);
@@ -220,11 +300,28 @@ final class DocumentReferences {
             result.append("\nOperation-specific interpretation:\n\n");
             for (String note : semantics) result.append("- ").append(note).append("\n");
         }
-        for (String edge : edges) {
-            String relative = Path.of(filename).getParent().relativize(Path.of(targets.get(edge))).toString().replace('\\', '/');
-            result.append("\n- [").append(label("#" + edge)).append("](").append(relative).append(")\n");
+        if (closure != null) {
+            result.append("\n## Complete referenced contracts\n\n");
+            if (closure.all().isEmpty()) result.append("No document-local references.\n");
+            for (String edge : closure.direct()) appendReference(result, filename, edge, "direct");
+            for (String edge : closure.transitive()) appendReference(result, filename, edge, "transitive");
+            if (!closure.recursiveEdges().isEmpty()) {
+                result.append("\n## Recursive reference edges\n\n");
+                for (String edge : closure.recursiveEdges()) result.append("- `").append(label(edge)).append("`\n");
+            }
+        } else if (!edges.isEmpty()) {
+            result.append("\n## Referenced contracts\n");
+            for (String edge : new TreeSet<>(edges)) appendReference(result, filename, edge, null);
         }
         return result.toString();
+    }
+
+    private void appendReference(StringBuilder result, String filename, String edge, String kind) {
+        String relative = Path.of(filename).getParent().relativize(Path.of(target(edge)))
+                .toString().replace('\\', '/');
+        result.append("\n- [").append(label("#" + edge)).append("](").append(relative).append(")");
+        if (kind != null) result.append(" — ").append(kind);
+        result.append("\n");
     }
 
     private void scanExampleObject(JsonNode example, Set<String> edges, int depth) {

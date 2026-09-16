@@ -5,6 +5,12 @@ import { asObject, isObject, JsonObject, own } from './input.js';
 const DATA = new Set(['example', 'default', 'enum', 'const']);
 const CONTAINERS = ['schemas', 'responses', 'parameters', 'examples', 'requestBodies', 'headers', 'securitySchemes', 'links', 'callbacks', 'pathItems'];
 
+export interface ReferenceClosure {
+  direct: string[];
+  transitive: string[];
+  recursiveEdges: string[];
+}
+
 export class DocumentReferences {
   private readonly base: string;
   private readonly targets = new Map<string, string>();
@@ -16,21 +22,80 @@ export class DocumentReferences {
     this.base = `references/documents/${id}/`;
     this.validateContainers();
     const schemas = asObject(asObject(root.components)?.schemas) ?? {};
-    const usedSchemaFiles = new Set<string>();
     for (const name of Object.keys(schemas).sort(compareText)) {
       const pointer = `/components/schemas/${name.replaceAll('~', '~0').replaceAll('/', '~1')}`;
-      const filename = semanticFile(name, pointer, usedSchemaFiles);
-      usedSchemaFiles.add(filename.toLowerCase());
-      this.targets.set(pointer, `${this.base}schemas/${filename}`);
       this.schemaNames.set(pointer, name);
       this.regular.add(pointer);
     }
-    if (this.targets.size > 5000) throw new Error('LIMIT: schema files exceeded');
+    if (this.schemaNames.size > 5000) throw new Error('LIMIT: schema files exceeded');
     this.scan(root, new Set(), 0);
+    this.allocateTargets();
+  }
+
+  private allocateTargets(): void {
+    for (const [pointer, filename] of semanticFiles(this.schemaNames))
+      this.targets.set(pointer, `${this.base}schemas/${filename}`);
+    const references = new Map<string, string>();
+    const pointers = new Set([...this.regular, ...this.exampleOnly]);
+    for (const pointer of [...pointers].sort(compareText)) {
+      if (this.schemaNames.has(pointer)) continue;
+      references.set(pointer, pointer === '' ? 'root' : pointer.replaceAll('~1', '/').replaceAll('~0', '~'));
+    }
+    for (const [pointer, filename] of semanticFiles(references))
+      this.targets.set(pointer, `${this.base}refs/${filename}`);
+    if (this.targets.size > 5000) throw new Error('LIMIT: reference files exceeded');
   }
 
   render(title: string, contract: unknown, filename: string, exampleObject = false,
     semantics: string[] = [], conventions = false): string {
+    return this.renderWithClosure(title, contract, filename, exampleObject, semantics, conventions);
+  }
+
+  renderOperation(title: string, contract: unknown, filename: string, semantics: string[], closure: ReferenceClosure): string {
+    return this.renderWithClosure(title, contract, filename, false, semantics, true, closure);
+  }
+
+  closure(contract: unknown): ReferenceClosure {
+    const direct = [...this.edges(contract, false)].sort(compareText);
+    const all = new Set(direct);
+    const recursive = new Set<string>();
+    const expanded = new Set<string>();
+    for (const pointer of direct) this.expand(pointer, new Set(), expanded, all, recursive);
+    return {
+      direct,
+      transitive: [...all].filter((pointer) => !direct.includes(pointer)).sort(compareText),
+      recursiveEdges: [...recursive].sort(compareText)
+    };
+  }
+
+  target(pointer: string): string {
+    const target = this.targets.get(pointer);
+    if (!target) throw new Error(`REFERENCE: missing generated target #${pointer}`);
+    return target;
+  }
+
+  private expand(pointer: string, stack: Set<string>, expanded: Set<string>, all: Set<string>, recursive: Set<string>): void {
+    if (stack.has(pointer)) return;
+    stack.add(pointer);
+    if (expanded.has(pointer)) { stack.delete(pointer); return; }
+    expanded.add(pointer);
+    const exampleObject = this.exampleOnly.has(pointer) && !this.regular.has(pointer);
+    for (const child of this.edges(at(this.root, pointer), exampleObject)) {
+      all.add(child);
+      if (stack.has(child)) recursive.add(`#${pointer} -> #${child}`);
+      else this.expand(child, stack, expanded, all, recursive);
+    }
+    stack.delete(pointer);
+  }
+
+  private edges(contract: unknown, exampleObject: boolean): Set<string> {
+    const edges = new Set<string>();
+    if (exampleObject) this.scanExampleObject(contract, edges, 0); else this.scan(contract, edges, 0);
+    return edges;
+  }
+
+  private renderWithClosure(title: string, contract: unknown, filename: string, exampleObject: boolean,
+    semantics: string[], conventions: boolean, closure?: ReferenceClosure): string {
     const edges = new Set<string>();
     if (exampleObject) this.scanExampleObject(contract, edges, 0); else this.scan(contract, edges, 0);
     const safe = JSON.stringify(contract, null, 2).replaceAll('`', '\\u0060').replaceAll('<', '\\u003c');
@@ -43,8 +108,24 @@ export class DocumentReferences {
       result += '\nOperation-specific interpretation:\n\n';
       for (const note of semantics) result += `- ${note}\n`;
     }
-    for (const edge of edges) result += `\n- [${label(`#${edge}`)}](${posix.relative(posix.dirname(filename), this.targets.get(edge)!)})\n`;
+    if (closure) {
+      result += '\n## Complete referenced contracts\n\n';
+      if (closure.direct.length + closure.transitive.length === 0) result += 'No document-local references.\n';
+      for (const edge of closure.direct) result += this.referenceLine(filename, edge, 'direct');
+      for (const edge of closure.transitive) result += this.referenceLine(filename, edge, 'transitive');
+      if (closure.recursiveEdges.length) {
+        result += '\n## Recursive reference edges\n\n';
+        for (const edge of closure.recursiveEdges) result += `- \`${label(edge)}\`\n`;
+      }
+    } else if (edges.size) {
+      result += '\n## Referenced contracts\n';
+      for (const edge of [...edges].sort(compareText)) result += this.referenceLine(filename, edge);
+    }
     return result;
+  }
+
+  private referenceLine(filename: string, edge: string, kind?: string): string {
+    return `\n- [${label(`#${edge}`)}](${posix.relative(posix.dirname(filename), this.target(edge))})${kind ? ` — ${kind}` : ''}\n`;
   }
 
   /**
@@ -52,11 +133,20 @@ export class DocumentReferences {
    * Kept identical to the Java core so both generators emit the same guidance.
    */
   static semantics(contract: unknown): string[] {
-    const notes = [
-    ];
-    if (isObject(contract) && Array.isArray(contract.security) && contract.security.length === 0)
-      notes.push('This operation declares an explicit empty `security`, so it is documented as requiring no '
-        + 'authentication.');
+    const notes: string[] = [];
+    if (!isObject(contract)) return notes;
+    const operation = isObject(contract.operation) ? contract.operation : {};
+    if (own(operation, 'security')) {
+      if (Array.isArray(contract.security) && contract.security.length === 0)
+        notes.push('This operation declares an explicit empty `security`, so it is documented as requiring no '
+          + 'authentication.');
+      else notes.push('This operation declares an explicit `security` override; use the effective value above.');
+    } else if (contract.security === null) {
+      notes.push('Neither this operation nor the document declares a security requirement; this is an unstated '
+        + 'fact, not a claim that authentication is unnecessary.');
+    } else {
+      notes.push('This operation inherits the document-level security requirement shown above.');
+    }
     return notes;
   }
 
@@ -169,14 +259,8 @@ export class DocumentReferences {
   private addReference(ref: unknown, edges: Set<string>, exampleOnly: boolean): void {
     if (typeof ref !== 'string') throw new Error('REFERENCE: $ref must be text');
     const pointer = this.pointer(ref); edges.add(pointer);
-    if (!this.targets.has(pointer)) {
-      const used = new Set([...this.targets.values()]
-        .filter((path) => path.startsWith(`${this.base}refs/`))
-        .map((path) => posix.basename(path).toLowerCase()));
-      this.targets.set(pointer, `${this.base}refs/${semanticPointerFile(pointer, used)}`);
-    }
     if (exampleOnly && !this.regular.has(pointer)) this.exampleOnly.add(pointer); else { this.regular.add(pointer); this.exampleOnly.delete(pointer); }
-    if (this.targets.size > 5000) throw new Error('LIMIT: reference files exceeded');
+    if (this.regular.size + this.exampleOnly.size > 5000) throw new Error('LIMIT: reference files exceeded');
   }
 
   private pointer(ref: unknown): string {
@@ -206,26 +290,59 @@ export function digest(bytes: Uint8Array): string { return createHash('sha256').
 export function label(text: string): string { return [...text].map((char) => /[\p{L}\p{N} /_-]/u.test(char) ? char : `&#${char.codePointAt(0)};`).join(''); }
 export function sorted<V>(map: ReadonlyMap<string, V>): [string, V][] { return [...map.entries()].sort(([a], [b]) => compareText(a, b)); }
 
-export function operationFile(method: string, path: string, used = new Set<string>()): string {
-  const readable = `${method} ${path.replace(/\{([^{}]+)\}/g, ' by $1 ')}`;
-  return semanticFile(readable, `${method}\0${path}`, used);
+export function operationIdentity(method: string, path: string): string { return `${method}\0${path}`; }
+
+export function operationFiles(operations: ReadonlyArray<readonly [string, string]>): Map<string, string> {
+  const readable = new Map<string, string>();
+  for (const [method, path] of operations)
+    readable.set(operationIdentity(method, path), `${method} ${path.replace(/\{([^{}]+)\}/g, ' by $1 ')}`);
+  return semanticFiles(readable);
 }
 
-export function semanticFile(readable: string, identity: string, used = new Set<string>()): string {
-  const stem = slug(readable);
-  const hash = digest(new TextEncoder().encode(identity));
-  for (let length = 6; ;) {
-    const candidate = `${stem}--${hash.slice(0, length)}.md`;
-    if (!used.has(candidate.toLowerCase())) return candidate;
-    if (length === hash.length) break;
-    length = Math.min(length + 4, hash.length);
+export function semanticFiles(readableByIdentity: ReadonlyMap<string, string>): Map<string, string> {
+  const groups = new Map<string, string[]>();
+  const stems = new Map<string, string>();
+  for (const [identity, readable] of sorted(readableByIdentity)) {
+    const stem = slug(readable);
+    stems.set(identity, stem);
+    const key = stem.toLowerCase();
+    groups.set(key, [...(groups.get(key) ?? []), identity]);
   }
-  throw new Error('IDENTITY: cannot allocate a unique semantic file name');
+  const result = new Map<string, string>();
+  const used = new Set<string>();
+  for (const identities of groups.values()) {
+    if (identities.length !== 1) continue;
+    const identity = identities[0]!;
+    if (needsFallback(readableByIdentity.get(identity), stems.get(identity)!)) continue;
+    const candidate = `${stems.get(identity)!}.md`;
+    result.set(identity, candidate);
+    used.add(candidate.toLowerCase());
+  }
+  for (const identities of groups.values()) {
+    if (identities.length === 1 && !needsFallback(readableByIdentity.get(identities[0]!), stems.get(identities[0]!)!)) continue;
+    for (const identity of identities.sort(compareText)) {
+      const hash = digest(new TextEncoder().encode(identity));
+      let allocated = false;
+      for (let length = 6; ;) {
+        const candidate = `${stems.get(identity)!}--${hash.slice(0, length)}.md`;
+        if (!used.has(candidate.toLowerCase())) {
+          used.add(candidate.toLowerCase());
+          result.set(identity, candidate);
+          allocated = true;
+          break;
+        }
+        if (length === hash.length) break;
+        length = Math.min(length + 4, hash.length);
+      }
+      if (!allocated) throw new Error('IDENTITY: cannot allocate a unique semantic file name');
+    }
+  }
+  return new Map(sorted(result));
 }
 
-function semanticPointerFile(pointer: string, used: Set<string>): string {
-  const readable = pointer === '' ? 'root' : pointer.replaceAll('~1', '/').replaceAll('~0', '~');
-  return semanticFile(readable, pointer, used);
+function needsFallback(readable: string | undefined, stem: string): boolean {
+  const hasAscii = /[A-Za-z0-9]/.test(readable ?? '');
+  return (!hasAscii && stem === 'item') || /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i.test(stem);
 }
 
 function slug(value: string): string {

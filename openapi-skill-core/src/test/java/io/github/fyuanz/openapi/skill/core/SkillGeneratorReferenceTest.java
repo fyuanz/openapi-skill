@@ -16,7 +16,7 @@ class SkillGeneratorReferenceTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    void keepsReusableComponentsNavigableAndTreatsExamplesAndExtensionsAsData() {
+    void keepsReusableComponentsNavigableAndTreatsExamplesAndExtensionsAsData() throws Exception {
         String source = """
                 {
                   "openapi":"3.1.0",
@@ -61,6 +61,15 @@ class SkillGeneratorReferenceTest {
         assertTrue(files.get("references/operations.jsonl").contains("\"tags\":[\"orders\",\"writes\"]"));
         assertTrue(files.get("references/documents/public/context.md").contains("Order APIs"));
         assertTrue(files.keySet().stream().anyMatch(path -> path.contains("/refs/")));
+        String operationPage = files.entrySet().stream()
+                .filter(entry -> entry.getKey().contains("/operations/"))
+                .map(Map.Entry::getValue).findFirst().orElseThrow();
+        assertTrue(operationPage.contains("## Complete referenced contracts"));
+        assertTrue(operationPage.contains("— direct"));
+        assertTrue(operationPage.contains("— transitive"));
+        assertTrue(operationPage.contains("## Recursive reference edges"));
+        JsonNode operationIndex = mapper.readTree(files.get("references/operations.jsonl").lines().findFirst().orElseThrow());
+        assertTrue(operationIndex.path("closureFiles").size() >= 6);
         assertAllLinksResolve(files);
     }
 
