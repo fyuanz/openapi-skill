@@ -64,6 +64,10 @@ and is not a delivery gate.
   `CLOSURE-REPORT.md` and since addressed by core/1 targeted lookup and centralized OpenAPI conventions.
 - Generated Skills describe themselves with a bilingual action-triggered sentence (task verbs, catalog navigation, a
   verification checklist, and generate-or-modify frontend request code) so LLM consumers can discover them by task.
+- P13 is a proposed, not yet implemented, navigation revision awaiting user confirmation. It would make one unsplit
+  `context.md` per document the LLM-facing interface directory, remove JSONL search from trusted instructions, use
+  hash-free semantic filenames in the normal case with collision-only fallback, and precompute each operation's
+  document-local reference closure. Current core/1 output remains unchanged until approval.
 - Historical releases remain available under the old `smart-doc-agent` / `smartdoc-agent-*` Maven coordinates and
   `smartdoc-agent` npm name. The new `openapi-skill` npm package starts at `1.0.0` and is published; the parent, core,
   and Starter Maven coordinates await manual publication.

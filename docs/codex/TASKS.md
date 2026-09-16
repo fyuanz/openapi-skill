@@ -29,9 +29,65 @@ artifact coordination remain outside scope.
 | P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | Complete; 23 Node tests pass, the packed tarball is verified end to end in the real Vue consumer, and `smartdoc-agent@1.4.0` is published on npm |
 | P11 | core/3 compact catalog, semantic IDs/filenames, JSONL lookup indexes, and centralized conventions | Complete in Java and Node source; current reactor has 69 tests after compatibility removal |
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
+| P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Planned; awaiting user confirmation, no implementation started |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Release | npm release | `smartdoc-agent@1.5.0` manually published 2026-09-15 and verified as current `latest` |
 | Documentation | Chinese-default README, English guide and v3.9 design | Updated for runtime and core/3 retrieval layout |
+
+## Proposed P13 Work Plan - Awaiting User Confirmation
+
+This plan records the reviewed direction only. Do not modify generators, validators, generated layouts, tests, package
+versions, or release artifacts until the user explicitly confirms implementation.
+
+### Target Contract
+
+- Make each document's existing `context.md` the LLM-facing interface directory. One document produces exactly one
+  `context.md`; pagination, sharding, and size-based splitting are explicitly out of scope because a document-level
+  context is accepted as bounded.
+- Each document context retains its document description and explicitly documented server/security metadata, then lists
+  every operation exactly once with a direct relative link, HTTP method/path, source summary, tags, and configured
+  document keywords when present. OpenAPI free text remains untrusted reference data.
+- Change trusted `SKILL.md` guidance to start at the appropriate `context.md` and follow Markdown links. It must not tell
+  an LLM to search or open a complete `operations.jsonl` or `schemas.jsonl` file.
+- Keep JSONL indexes as deterministic machine/validator artifacts for compatibility in this slice, but remove them from
+  the LLM navigation path and human-facing context instructions.
+- Use a clean semantic operation/schema filename when that name is unique within its service/document directory. Compute
+  names in two passes and add a deterministic short suffix only to a real case-insensitive collision group or when safe
+  encoding/path-length constraints require a fallback. Keep full input digests only in provenance.
+- Precompute each operation's complete document-local Schema/reference closure. Render a sorted, de-duplicated link list
+  on the operation page, distinguish direct from transitive dependencies, terminate recursion with a visited set, and
+  report recursive edges without asking the LLM to derive the closure itself. Do not duplicate Schema bodies.
+- Describe security precisely: distinguish a defined security scheme, an explicitly declared document default, an
+  operation override, and an unstated fact. Never promote a scheme definition or a configured keyword into a global
+  authentication requirement.
+- Treat the layout and required-navigation change as `openapi-skill-core/2`. New generation emits core/2; publishers may
+  recognize an owned core/1 tree only so it can be safely and atomically replaced. Registry publication is not part of
+  P13 unless separately requested.
+
+### Test-First Implementation Sequence
+
+| Slice | Work | Verification gate |
+| --- | --- | --- |
+| P13.1 | Add mirrored Java and Node contract tests before implementation | Tests fail for clean filenames, document navigation, context-first instructions, closure manifests, collision fallback, and exact security wording |
+| P13.2 | Replace unconditional filename digests with deterministic two-pass semantic allocation | Unique operations/schemas have clean names; case, normalization, unsafe-name, truncation, and same-slug collisions remain unique and deterministic on Windows-compatible paths |
+| P13.3 | Turn document `context.md` into the complete interface directory and update root/service navigation plus `SKILL.md` | Every operation appears once with a valid direct link and method/path; one and only one context exists per document; no LLM instruction requires JSONL search |
+| P13.4 | Build and render the precomputed operation reference closure | Direct, multi-hop, shared, recursive, root, and escaped local references are complete, sorted, de-duplicated, and link-valid without duplicating contract bodies |
+| P13.5 | Update provenance, core/2 validators, Java/Node project assembly, and safe replacement compatibility | Validators reject missing/drifting contexts, collision errors, incomplete closures, broken links, and project/service metadata drift; a valid core/1 output can be replaced atomically |
+| P13.6 | Regenerate the runtime and Vue consumer examples and update active documentation | Java reactor, Node suite, SpringDoc runtime ZIP tests, real project-Skill generation, Vue build, deterministic whole-tree comparison, and link validation pass |
+
+### Acceptance Criteria
+
+- The normal generated fixture contains `get-users-by-id.md` and `user-view.md`, without a routine digest suffix.
+- Deliberately colliding names receive deterministic suffixes and never overwrite one another on a case-insensitive
+  filesystem.
+- A reader can start from `context.md`, select an operation, and reach every required contract through generated links
+  without reading either JSONL index or computing a `$ref` closure.
+- Each document has one complete `context.md`; no context pagination or splitting is introduced.
+- Generated security statements match explicit OpenAPI inheritance/override semantics and preserve unknowns.
+- Java and Node emit the same navigation/path semantics, all local links validate, repeated generation is byte-stable,
+  and failed generation/publication retains the previous complete Skill.
+- P13 remains `Planned` until the user confirms this contract. Confirmation starts P13.1; it does not authorize package
+  registry publication.
 
 ## Current Implementation
 

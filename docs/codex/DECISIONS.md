@@ -1,5 +1,53 @@
 # Decisions
 
+## 2026-09-16 - Make Document Context The LLM Navigation Surface
+
+Status: Proposed; recorded for user confirmation, not implemented
+
+Replace the current LLM-facing JSONL-search workflow with deterministic Markdown navigation. Each OpenAPI document keeps
+exactly one `context.md`, and that page becomes its complete interface directory: document description, explicitly
+documented server and security facts, configured document keywords, and one direct link per operation with method/path,
+summary, and tags. A document-level context is accepted as bounded, so pagination, sharding, and size-based splitting are
+not proposed. Root and project catalogs continue to select a service/document and then link into its context.
+
+Trusted `SKILL.md` instructions start from context and follow operation links. They do not require an LLM host to provide
+`grep`, `jq`, JSONL parsing, or targeted file search, and they do not direct the model to open a complete
+`operations.jsonl` or `schemas.jsonl`. Retain both JSONL files in this slice as deterministic machine/validator artifacts
+and compatibility data, not as the human or LLM navigation contract.
+
+Remove the routine digest suffix from operation and Schema filenames. ServiceId and documentId already isolate services
+and documents. Allocate filenames in two deterministic passes within each directory: a unique safe semantic slug uses a
+clean `.md` name; only a real case-insensitive collision group or a safe-encoding/path-length fallback receives a short
+deterministic suffix. Keep full source digests in provenance. Do not use optional or duplicate-prone `operationId` as the
+primary identity.
+
+Precompute the complete document-local Schema/reference closure for every operation. The operation page lists direct and
+transitive contract links in stable order, de-duplicates shared targets, terminates recursion with a visited set, and
+records recursive edges. Schema bodies remain authoritative separate files and are not copied into every operation.
+This removes multi-hop closure derivation from the LLM while retaining document-local reference semantics.
+
+Security navigation must distinguish a defined security scheme from an explicitly declared document default, an
+operation override, and an unstated fact. A scheme definition alone is not rendered as a global requirement. OpenAPI
+summaries, descriptions, tags, examples, and configured navigation labels remain reference data and never become trusted
+instructions or authorization to invoke an API.
+
+If accepted for implementation, treat the changed required layout and navigation contract as
+`openapi-skill-core/2`. Implement it test-first in both Java and Node, update validators and project assembly, accept an
+owned core/1 tree only for safe atomic replacement, regenerate the runtime and Vue consumer evidence, and update active
+documentation. Publication remains a separate explicit action. Until the user confirms the plan, core/1 behavior and
+all generated artifacts remain unchanged.
+
+Alternatives considered:
+
+- Delete JSONL immediately. Deferred because it still provides compact deterministic machine validation and a
+  compatibility surface without needing to remain in the LLM workflow.
+- Remove every digest with no fallback. Rejected because normalization, truncation, Unicode, and case-insensitive
+  filesystems can map distinct identities to the same path.
+- Split a large document context into pages. Rejected for this proposal because the user explicitly accepts one
+  document-level context as sufficiently bounded.
+- Ask the LLM to traverse direct `$ref` links recursively. Rejected because multi-hop, shared, and cyclic graphs create
+  avoidable omission and hallucination risk that the deterministic generator can remove.
+
 ## 2026-09-16 - Remove Maven Build-Time Compatibility Completely
 
 Status: Accepted and implemented
