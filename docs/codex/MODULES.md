@@ -4,7 +4,7 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.0.0-SNAPSHOT`; parent, core and Starter reactor |
+| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.0.0`; parent, core and Starter reactor |
 | `openapi-skill-core` | Per-service conversion, context-first navigation, aggregate assembly, validation and safe filesystem publication | 69 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
 | `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | local `openapi-skill@2.0.0` source passes 41 tests; `1.0.0`/`1.1.0` published, `2.0.0` not published |
@@ -14,7 +14,7 @@
 ## Parent Project
 
 Coordinates are `io.github.fyuanz:openapi-skill`, `openapi-skill-core`, and
-`openapi-skill-spring-boot-starter`; current source is `2.0.0-SNAPSHOT` after the published `1.0.0`. Java packages use
+`openapi-skill-spring-boot-starter`; current source is `2.0.0` after the published `1.0.0`. Java packages use
 `io.github.fyuanz.openapi.skill`; no `2.0.0` Central publication was requested.
 
 ## Core

@@ -32,7 +32,7 @@ artifact coordination remain outside scope.
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
 | P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Complete in Java and Node; runtime/Vue evidence verified, publication not requested |
 | P14 | Tag-grouped navigation: one readable file per first OpenAPI tag, slim group-index context, catalog-owned server/security facts, 72-character names, breaking 2.0.0 release | Complete in Java and Node; runtime/Vue/cross-implementation evidence verified, publication not requested |
-| Release | Maven Central releases | `1.0.0` for the `openapi-skill*` coordinates published 2026-09-16; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
+| Release | Maven Central releases | `1.0.0` for the `openapi-skill*` coordinates published 2026-09-16; the breaking `2.0.0` is prepared in source but not published; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
 | Release | npm release | `openapi-skill@1.0.0` and `1.1.0` published 2026-09-16 (`latest = 1.1.0`); `2.0.0` is prepared but not published |
 | Documentation | Chinese-default README, English guide and v4.0 design | Updated for tag-grouped core/3 navigation |
 
@@ -123,7 +123,7 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   contracts separate beneath `references/services/<serviceId>/references/`, and safely replaces the whole project tree.
 - The earlier top-level `serviceId` + `skillName` + `documents` configuration remains accepted as configuration, but it
   also emits the core/3 layout; the former core/1 and core/2 trees are recognised only so an owned tree can be replaced.
-- Java source artifacts use `io.github.fyuanz:openapi-skill*:2.0.0-SNAPSHOT`; Java packages use
+- Java source artifacts use `io.github.fyuanz:openapi-skill*:2.0.0`; Java packages use
   `io.github.fyuanz.openapi.skill.*`. Node source is `openapi-skill@2.0.0`. No `2.0.0` package was published.
 
 ## Verified
@@ -135,9 +135,9 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   group inside a document (not across documents), split by the OpenAPI 3.1 `tags` with Chinese names allowed, and
   breaking changes permitted with no compatibility requirement.
 - Node `openapi-skill@2.0.0` passes `npm test` with 41 tests (40 before this slice; the new one publishes a tree whose
-  group files carry Chinese tag names). Java `2.0.0-SNAPSHOT` passes `mvn -B clean install` with 71 tests (69 core +
-  2 Starter) and produces `openapi-skill-core-2.0.0-SNAPSHOT.jar` and
-  `openapi-skill-spring-boot-starter-2.0.0-SNAPSHOT.jar`. The standalone SpringDoc testbed passes 6 tests.
+  group files carry Chinese tag names). Java `2.0.0` passes `mvn -B clean install` with 71 tests (69 core +
+  2 Starter) and produces `openapi-skill-core-2.0.0.jar` and
+  `openapi-skill-spring-boot-starter-2.0.0.jar`. The standalone SpringDoc testbed passes 6 tests.
 - Red first: the new Node test failed with
   `OUTPUT: unsafe generated path references/documents/uav/groups/Terra重建管理.md`, the identical error the real Vue
   consumer hit, before the publisher's ASCII-only path allowlist accepted Unicode. Java's validator and Node's

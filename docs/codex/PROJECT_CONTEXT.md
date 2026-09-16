@@ -39,7 +39,7 @@ and is not a delivery gate.
 
 ## Current Status
 
-- Java source uses `io.github.fyuanz:openapi-skill*:2.0.0-SNAPSHOT` with package namespace
+- Java source uses `io.github.fyuanz:openapi-skill*:2.0.0` with package namespace
   `io.github.fyuanz.openapi.skill`; the `1.0.0` coordinates are published, `2.0.0` is not.
 - Node source is `openapi-skill@2.0.0`; it is locally packed and verified end to end in the real Vue consumer, but
   `2.0.0` is not published. The published npm versions are `1.0.0` and `1.1.0` (`latest`).

@@ -103,7 +103,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-第一条命令将当前 `2.0.0-SNAPSHOT` 源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
+第一条命令将当前 `2.0.0` 源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
 测试会在随机端口验证运行时 ZIP 接口，详见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
 
 手动体验时启动应用：

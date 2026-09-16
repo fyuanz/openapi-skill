@@ -32,7 +32,7 @@ every CJK tag to the same `item` stem (19 tags produced 3 distinct stems), so ta
 across scripts, normalizes to NFC, and still applies the collision and reserved-name fallbacks.
 
 The changed required layout is `openapi-skill-core/3`. Because this breaks the generated tree that the published
-artifacts produce, advance the npm package to `2.0.0` and the Maven reactor to `2.0.0-SNAPSHOT`. Registry state at the
+artifacts produce, advance the npm package to `2.0.0` and the Maven reactor to `2.0.0`. Registry state at the
 time of the decision, read directly rather than assumed: npm `openapi-skill` has `1.0.0` and `1.1.0` (`latest`),
 Maven Central `io.github.fyuanz:openapi-skill{,-core,-spring-boot-starter}` has `1.0.0`, and the npm `1.1.0` tarball
 shasum `2a2837a61ce3ddf5bb752f4620df12d0eaa3041c` equals the local file. The `1.1.0` Maven and npm numbers that were

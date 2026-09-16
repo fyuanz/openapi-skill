@@ -253,7 +253,7 @@ Spring Boot 服务使用运行时 Starter；前端或其他 Node.js 项目使用
 | `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 6 项测试通过 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x
-兼容性变化不会污染转换逻辑。当前 Java 源码为 `2.0.0-SNAPSHOT`，npm 源码为 `2.0.0`；本轮未发布，
+兼容性变化不会污染转换逻辑。当前 Java 与 npm 源码均为 `2.0.0`，尚未发布，
 此前已发布版本（Maven `openapi-skill*:1.0.0`、npm `openapi-skill@1.0.0`/`1.1.0`）保持不可变。
 
 ## 11. 暂不实现

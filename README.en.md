@@ -97,7 +97,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-The first command installs the current `2.0.0-SNAPSHOT` source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
+The first command installs the current `2.0.0` source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
 start/stop, OpenAPI capture, or generated files. Tests verify the runtime ZIP on a random port.
 
 For a manual check, start the application:
