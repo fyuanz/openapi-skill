@@ -12,43 +12,15 @@
 | --- | --- |
 | `io.github.fyuanz:openapi-skill:1.0.0` | 父 POM，提供公共版本和发布元数据 |
 | `io.github.fyuanz:openapi-skill-core:1.0.0` | 离线 OpenAPI 转 Skill、汇总装配与安全发布 |
-| `io.github.fyuanz:openapi-skill-maven-plugin:1.0.0` | Maven `generate-skill` 目标（含单服务/汇总/共存） |
 | `io.github.fyuanz:openapi-skill-spring-boot-starter:1.0.0` | 运行时 Skill ZIP |
 
-## 使用准备发布的 Maven 插件（兼容入口）
-
-发布到 Central 后无需添加额外仓库。将插件配置在服务的唯一生成责任模块；下面沿用本仓库
-SpringDoc 测试项目的身份和目录。实际服务应调整身份、路径和 phase。
-
-```xml
-<plugin>
-    <groupId>io.github.fyuanz</groupId>
-    <artifactId>openapi-skill-maven-plugin</artifactId>
-    <version>1.0.0</version>
-    <inherited>false</inherited>
-    <executions>
-        <execution>
-            <id>update-generated-skill</id>
-            <phase>verify</phase>
-            <goals><goal>generate-skill</goal></goals>
-        </execution>
-    </executions>
-    <configuration>
-        <serviceId>springdoc-multi-package</serviceId>
-        <skillName>springdoc-multi-package-api</skillName>
-        <documentsDirectory>${project.build.directory}/generated-openapi</documentsDirectory>
-        <requireCurrentBuildDocuments>true</requireCurrentBuildDocuments>
-    </configuration>
-</plugin>
-```
-
-该片段消费已有本地 JSON，适合静态权威契约或显式跨服务汇总。新的 SpringDoc 应用优先使用
-`1.0.0` 运行时 Starter；它不需要 Maven phase 或文档目录。见
-[运行时说明](../openapi-skill-spring-boot-starter/README.md)。
+项目不再提供 Maven 构建期兼容插件。SpringDoc 应用使用 `1.0.0` 运行时 Starter；它不需要 Maven phase
+或文档目录。见[运行时说明](../openapi-skill-spring-boot-starter/README.md)。跨服务项目 Skill 由已发布的
+`openapi-skill` npm CLI 生成。
 
 ## 维护者发布
 
-正式发布包含根 reactor 的父 POM、core、Maven plugin 和 Spring Boot Starter。测试项目保持独立，
+正式发布包含根 reactor 的父 POM、core 和 Spring Boot Starter。测试项目保持独立，
 不能部署到 Central。后续版本未经用户明确授权不执行发布。
 普通构建不激活发布 profile：
 

@@ -2,7 +2,7 @@
 
 > 版本：3.9.0
 > 日期：2026-09-15
-> 状态：运行时 Starter 主链路已验证；`openapi-skill-core/1` 语义索引布局已在 Java 与 Node 实现；Node 1.0.0 通过 29 项测试并已打包，npm 与 Maven Central 均待维护者手动发布
+> 状态：运行时 Starter 主链路已验证；`openapi-skill-core/1` 语义索引布局已在 Java 与 Node 实现；Node 1.0.0 通过 29 项测试并已发布，Maven Central 待维护者手动发布
 
 本版保留运行时下载主链路，并为前端/Node 项目增加一个自包含 API 文档 Skill：显式配置多个内部或第三方
 服务及其文档，完整下载、生成并原子安装到项目。历史范围和被取代的构建期决策保留在
@@ -208,8 +208,7 @@ Node project 模式解决的是不同边界：项目所有者显式列出允许�
 OpenAPI 语义、servers、安全定义、同名 Schema 和 `$ref` 始终按 serviceId/documentId 隔离。内部服务和第三方
 服务使用同一生成逻辑，`sourceType` 只记录来源边界和导航语义。
 
-Maven 插件的显式本地 JSON `aggregate` / `both` 能力继续作为兼容入口；它与 Node project 模式拥有
-不同的配置、采集和发布生命周期。
+跨服务汇总仅由 Node project 模式提供。Java 侧不再提供 Maven 构建期插件、静态 JSON goal 或兼容测试床。
 
 ## 8. 安全与运行边界
 
@@ -223,15 +222,11 @@ Maven 插件的显式本地 JSON `aggregate` / `both` 能力继续作为兼容�
 - 当前将完整 Skill 和 ZIP 保存在单次请求内存中，适合 core 已有 64 MiB 输出上限；不提供包仓库或长期缓存。
 - 当前适配 Servlet/WebMVC；WebFlux、独立 management port 文档资源和不同 SpringDoc 主版本需要单独验证。
 
-## 9. Maven 插件兼容边界
+## 9. 无 Maven 构建期兼容入口
 
-`openapi-skill-maven-plugin` 不删除，继续服务两类已有场景：
-
-1. 版本控制的静态权威 OpenAPI JSON，需要离线生成目录。
-2. 显式协调的跨服务 `aggregate` / `both`，成员 JSON 已安全准备到本地。
-
-它不再是 SpringDoc 运行时应用的推荐接入。旧测试继续验证安全发布、失败保留、并行隔离和汇总；新的 SpringDoc
-测试服务已删除 Boot `start/stop`、springdoc Maven capture 和 OpenAPI Skill goal 配置，证明主链路不侵入构建。
+项目不发布 Maven 构建期 goal，也不维护静态 JSON、`aggregate` 或 `both` 兼容模式。
+Spring Boot 服务使用运行时 Starter；前端或其他 Node.js 项目使用 npm CLI。旧名称下已经发布的历史 Maven
+插件制品保持不可变，但不属于新 `openapi-skill` 坐标的支持范围。
 
 ## 10. 工程边界
 
@@ -239,12 +234,11 @@ Maven 插件的显式本地 JSON `aggregate` / `both` 能力继续作为兼容�
 | --- | --- | --- |
 | `openapi-skill-core` | OpenAPI 3.1.0 解析、语义索引、契约/引用渲染、文件集校验和旧目录安全发布 | 67 项测试通过 |
 | `openapi-skill-spring-boot-starter` | Spring Boot 自动配置、SpringDoc 最终文档发现、运行时转换和 ZIP 下载 | 2 项单/多文档测试通过 |
-| `openapi-skill-maven-plugin` | 离线文件输入、构建期兼容、独立/汇总输出 | 15 项测试通过 |
-| `openapi-skill-node` | 显式 URL 下载、兼容配置、core/1 多服务 project Skill 和本地原子发布 | 1.0.0 通过 29 项测试并已打包，待发布 |
+| `openapi-skill-node` | 显式 URL 下载、core/1 多服务 project Skill 和本地原子发布 | 1.0.0 通过 29 项测试并已发布 |
 | `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 6 项测试通过 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x
-兼容性变化不会污染转换逻辑。新 Java 坐标与 npm 包均准备为 `1.0.0`，尚未发布；
+兼容性变化不会污染转换逻辑。新 Java 坐标准备为 `1.0.0`，npm 包 `1.0.0` 已发布；
 旧名称下已经发布的版本保持不可变。
 
 ## 11. 暂不实现

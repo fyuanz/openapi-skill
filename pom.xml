@@ -42,7 +42,6 @@
 
     <modules>
         <module>openapi-skill-core</module>
-        <module>openapi-skill-maven-plugin</module>
         <module>openapi-skill-spring-boot-starter</module>
     </modules>
 

@@ -4,20 +4,18 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:1.0.0` prepared; four-module reactor |
+| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:1.0.0` prepared; parent, core and Starter reactor |
 | `openapi-skill-core` | Per-service conversion, semantic indexes, aggregate assembly, validation and safe filesystem publication | 67 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
-| `openapi-skill-maven-plugin` | Static/local JSON and build-time individual/aggregate compatibility | 15 tests pass; compatibility path |
-| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | `openapi-skill@1.0.0` passes 29 tests and is packed but unpublished |
+| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | `openapi-skill@1.0.0` passes 29 tests and is published |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no OpenAPI Skill build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
-| `testbeds/maven-plugin-integration` | Legacy static multi-service Maven lifecycle verification | Retained and passing at the prior milestone |
 
 ## Parent Project
 
-New release coordinates are `io.github.fyuanz:openapi-skill*` at `1.0.0`. Java packages use
-`io.github.fyuanz.openapi.skill`; the opt-in Central release profile and signing process remain unchanged. The renamed
-artifacts are prepared but not yet published.
+New release coordinates are `io.github.fyuanz:openapi-skill`, `openapi-skill-core`, and
+`openapi-skill-spring-boot-starter` at `1.0.0`. Java packages use `io.github.fyuanz.openapi.skill`; the opt-in Central
+release profile and signing process remain unchanged. The renamed Maven artifacts are prepared but not yet published.
 
 ## Core
 
@@ -31,7 +29,7 @@ description built only from validated identities; `boundedList()` truncates the 
 32-document worst case stays a single YAML-safe line under 1024 characters.
 
 `AggregateSkillGenerator` assembles validated service trees without semantic OpenAPI merging. `GeneratedSkillValidator`
-and `ServiceSkillUpdater` retain safe filesystem publication for Maven compatibility. Core performs no Spring, Maven,
+and `ServiceSkillUpdater` retain generic validated filesystem publication primitives. Core performs no Spring, Maven,
 HTTP, ZIP, UI, LLM, business API, or external-reference actions.
 
 Bounds remain 32 documents, 8 MiB each, 32 MiB aggregate input, 128 reference levels, 5000 reference targets per document,
@@ -57,16 +55,6 @@ calculation stays consistent. A request either returns one fully generated archi
 
 The endpoint follows existing application security. Servlet/WebMVC is the only current adapter. WebFlux, different
 management-port resource layouts, remote service aggregation, caching, and artifact repositories are deferred.
-
-## Maven Plugin Compatibility
-
-`GenerateSkillMojo` still supports single-service and `service|aggregate|both` modes over local JSON directories or
-explicit files. It retains current-build timestamp checks, bounded conversion, safe publication, warning-only Skill
-failures, independent service updates, and complete aggregate membership. No new runtime project should need this plugin
-just to consume its own SpringDoc document.
-
-The Maven integration testbed remains for backward compatibility. It is distinct from the SpringDoc runtime testbed and
-must not be used to justify reintroducing build-time startup/capture into the recommended flow.
 
 ## Node.js Package
 

@@ -33,14 +33,9 @@
 |   |   |-- README.md         # reproducible sequence
 |   |   |-- CLOSURE-REPORT.md # verification evidence and Skill audit findings
 |   |   `-- src/              # App.vue plus the typed client in api/client.ts
-|   `-- maven-plugin-integration/ # static reactor; verify.ps1 and verify-aggregate.ps1
-|       `-- skill-set/          # opt-in aggregate owner depending on both service modules
 |-- openapi-skill-core/
 |   |-- pom.xml
 |   `-- src/                # input validation, Skill generation, safe publication and focused tests
-|-- openapi-skill-maven-plugin/
-|   |-- pom.xml
-|   `-- src/                # legacy/compatibility Maven goal and focused tests
 |-- openapi-skill-spring-boot-starter/
 |   |-- pom.xml
 |   |-- README.md
@@ -59,27 +54,26 @@
 | Path | Purpose |
 | --- | --- |
 | `AGENTS.md` | First-read, test-first development, and documentation rules |
-| `README.md` / `README.en.md` | Runtime-first onboarding, legacy Maven compatibility, Skill usage and verification |
+| `README.md` / `README.en.md` | Runtime/Node onboarding, Skill usage and verification |
 | `docs/openapi-skill-design.md` | v3.9 runtime, project-Skill and semantic-index architecture |
-| `pom.xml` | Java 17 Maven parent; aggregates core, Maven plugin and runtime Starter |
+| `pom.xml` | Java 17 Maven parent; aggregates core and runtime Starter |
 | `LICENSE` | User-selected MIT license |
-| `docs/maven-central.md` | Maven Central release and plugin-consumption instructions |
+| `docs/maven-central.md` | Maven Central release and Starter-consumption instructions |
 | `docs/codex/DECISIONS.md` | Historical and current scope decisions |
 
-P0-P6 produced the core, safe publisher, Maven compatibility plugin, and aggregate output. v3.7 added a runtime Starter
+P0-P6 historically produced the core, safe publisher, Maven compatibility plugin, and aggregate output. The compatibility
+module was later removed by product decision. v3.7 added a runtime Starter
 and removed build-time startup/capture/generation from the SpringDoc testbed. v3.8 added Node project mode; v3.9 adds
 core/1 semantic indexes, compact catalogs and centralized reading conventions. Legacy IR remains deleted.
 
 ## Implementation Locations
 
-Core, runtime entry point, and Maven compatibility entry point now exist:
+Core and runtime entry points now exist:
 
-- `openapi-skill-core/src/main/java/com/openapi-skill/agent/core/`: OpenApiInput.java (version/JSON boundary), SkillGenerator.java (service assembly and indexes), SemanticNames.java (readable collision-safe paths), DocumentReferences.java (local graph, contract rendering and links), GeneratedSkillValidator.java (complete-tree/index checks), and ServiceSkillUpdater.java (bounded generation, locking, staged replacement, recovery, and external status).
+- `openapi-skill-core/src/main/java/io/github/fyuanz/openapi/skill/core/`: OpenApiInput.java (version/JSON boundary), SkillGenerator.java (service assembly and indexes), SemanticNames.java (readable collision-safe paths), DocumentReferences.java (local graph, contract rendering and links), GeneratedSkillValidator.java (complete-tree/index checks), and ServiceSkillUpdater.java (bounded generation, locking, staged replacement, recovery, and external status).
 - `AggregateSkillGenerator.java` assembles validated service reference trees with a single trusted entrypoint, service catalog and provenance. Trusted templates reside in `SkillGenerator.java` and `AggregateSkillGenerator.java`.
-- Plugin `MultiServiceGeneration.java` coordinates modes, required membership and independent/aggregate publication. `ServiceSource.java` holds member identities and input sources.
 - `openapi-skill-core/src/test/`: sanitized OpenAPI fixture, small boundary inputs, and meaningful semantic tests.
-- `openapi-skill-maven-plugin/src/main/java/com/openapi-skill/agent/maven/`: `GenerateSkillMojo` and its explicit-path `DocumentSource` configuration bean. The Mojo normally discovers top-level JSON files in one configured producer directory, retains explicit file configuration as a fallback, can reject files older than the Maven session, and translates P3 results into Maven info/warning output.
-- `openapi-skill-spring-boot-starter/src/main/java/com/openapi-skill/agent/runtime/`: Boot auto-configuration,
+- `openapi-skill-spring-boot-starter/src/main/java/io/github/fyuanz/openapi/skill/runtime/`: Boot auto-configuration,
   optional runtime properties, safe identity derivation, direct SpringDoc final-resource collection, deterministic in-memory
   ZIP creation, and the hidden `/openapi-skill/skill.zip` controller.
 - `openapi-skill-spring-boot-starter/src/test/`: default-document and multi-group auto-configuration/ZIP tests.
@@ -97,7 +91,6 @@ Core, runtime entry point, and Maven compatibility entry point now exist:
   `openapi-skill-core/1` indexes before staged replacement.
 - The Node CLI defaults output to the consuming project's `.agents/skills/`; an explicit relative or absolute output
   parent remains supported.
-- `testbeds/maven-plugin-integration/`: two valid service-owner modules, an opt-in broken Java module, static OpenAPI inputs, POM examples, and `verify.ps1` for real lifecycle assertions.
 
 Do not add package repositories, unconfigured URL discovery, or cross-service aggregation to the embedded runtime
 Starter. The Node CLI's explicit trusted configuration is the only current remote URL ingestion boundary. The standalone fixture at
@@ -110,7 +103,6 @@ project whose generated Skill, `node_modules/`, and `dist/` are ignored rather t
 
 - Maven `**/target/` output is not source.
 - `openapi-skill-core/target/openapi-skill/springdoc-multi-package-api/` is the verified test-generated Skill. The P3 publisher is verified in temporary directories; no production build invokes it yet.
-- `testbeds/maven-plugin-integration/target/generated-resources/openapi-skill/` is ignored verification output for the Maven goal; it is recreated by the verifier.
 - `testbeds/vue-ts-consumer/` ignores `node_modules/`, `dist/`, `*.tsbuildinfo`, and `.agents/`. The generated Skill is a build artifact produced by `npm run skill:generate` against a running service, so it is regenerated instead of committed.
 - The runtime testbed must not create `target/generated-openapi/` or `target/generated-resources/openapi-skill/`; its explicit
   fixture test still writes asserted snapshots to `target/openapi/` for the separate refresh script.

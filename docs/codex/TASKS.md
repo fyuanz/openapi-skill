@@ -6,7 +6,7 @@ Product design v3.9.0 keeps the embedded Spring Boot runtime endpoint as the pri
 generates and downloads a current Skill ZIP after startup, with automatic local group discovery and no OpenAPI Skill build
 executions, HTTP self-capture, or generated build directories. The user will manually review Skills; this is not a gate.
 
-The v3.6 Maven aggregate and safe publication features remain compatible. Renamed Node `1.0.0` builds on project mode
+Maven build-time compatibility has been removed by explicit user decision. Renamed Node `1.0.0` builds on project mode
 that downloads explicitly configured documents for multiple internal or third-party services and installs one
 self-contained `openapi-skill-core/1` project Skill with compact machine indexes and semantic paths. The new npm and
 Maven packages are prepared but not published.
@@ -21,13 +21,13 @@ artifact coordination remain outside scope.
 | P1 | SpringDoc multi-package/group testbed and current-document contract | Complete within the accepted testbed scope |
 | P2 | Contract-preserving per-service Skill generation | Complete |
 | P3 | Validated complete publication, timeout, locking, recovery and isolation | Complete |
-| P4 | Static multi-service and runtime SpringDoc Maven integration | Complete within the accepted testbed scope |
-| P6 | Configurable individual / aggregate / both Skill outputs | Complete; unit and real Maven verification passed |
+| P4 | Historical Maven build-time integration | Removed from the current product |
+| P6 | Historical Maven individual / aggregate / both outputs | Removed from the current product |
 | P7 | Runtime SpringDoc discovery and deterministic Skill ZIP endpoint | Complete; starter and real HTTP testbed verification passed |
 | P8 | TypeScript npm package for configured single-service multi-URL Skill generation | Complete for the `1.3.0` legacy configuration; renamed to unscoped `smartdoc-agent` with bilingual package docs |
 | P9 | Real Vue 3 + TypeScript consumer loop against the running SpringDoc service | Complete; build plus seven live call scenarios verified |
 | P10 | Node project mode: one Skill for multiple services, source types and hierarchical keywords | Complete; 23 Node tests pass, the packed tarball is verified end to end in the real Vue consumer, and `smartdoc-agent@1.4.0` is published on npm |
-| P11 | core/3 compact catalog, semantic IDs/filenames, JSONL lookup indexes, and centralized conventions | Complete in Java and Node source; 84 reactor tests, 28 Node tests and 6 runtime testbed tests pass |
+| P11 | core/3 compact catalog, semantic IDs/filenames, JSONL lookup indexes, and centralized conventions | Complete in Java and Node source; current reactor has 69 tests after compatibility removal |
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
 | Release | Maven Central releases | 1.0.0, 1.1.0, and runtime Starter release 1.2.0 published 2026-09-14 |
 | Release | npm release | `smartdoc-agent@1.5.0` manually published 2026-09-15 and verified as current `latest` |
@@ -56,16 +56,30 @@ artifact coordination remain outside scope.
 - Each request invokes existing core conversion and returns a sorted, fixed-timestamp ZIP rooted at `<skillName>/`.
   The hidden endpoint does not enter generated OpenAPI.
 - The SpringDoc testbed POM now contains no Boot start/stop, springdoc Maven capture, or OpenAPI Skill Maven goal.
-- `openapi-skill-maven-plugin` remains compatible for static JSON and explicit `service|aggregate|both` workflows.
 - `openapi-skill-node` provides unscoped `openapi-skill`: preferred `services` configuration generates one
   self-contained `openapi-skill-core/1`, `kind=project` Skill, named `api-docs` by default, from multiple explicitly
   configured internal or third-party services. It accepts project/service/document keywords, keeps service/document
   contracts separate beneath `references/services/<serviceId>/references/`, and safely replaces the whole project tree.
 - The earlier top-level `serviceId` + `skillName` + `documents` configuration remains compatible as configuration.
 - Java artifacts use `io.github.fyuanz:openapi-skill*:1.0.0`; Java packages use
-  `io.github.fyuanz.openapi.skill.*`. The Node package is `openapi-skill@1.0.0`. Both ecosystems await manual publication.
+  `io.github.fyuanz.openapi.skill.*`. The Node package `openapi-skill@1.0.0` is manually published; Maven publication
+  remains pending.
 
 ## Verified
+
+## 2026-09-16 - Maven Build-Time Compatibility Removed
+
+- The user explicitly rejected all Maven build-time compatibility under the new `openapi-skill` coordinates.
+- Removed the Maven plugin module and static Maven integration testbed. The root reactor and Central release set now
+  contain only the parent POM, core, and runtime Starter.
+- Spring Boot uses the runtime Starter; cross-service project Skills use the published npm CLI. Historical artifacts
+  under old coordinates remain immutable but are not a supported compatibility promise for the renamed product.
+- Red-to-green structure check first failed on the reactor module, both compatibility directories, and active docs;
+  after removal it passes. `mvn -B clean install` passes 69 tests (67 core + 2 Starter), and `npm test` passes 29 tests.
+- The standalone SpringDoc testbed's clean compile still reports the host's known javac resource-close error after
+  writing classes; a subsequent compile similarly stopped after writing test classes, and the next unchanged `verify`
+  passed all 6 runtime tests. This host condition is independent of the removed plugin and did not affect the clean
+  root reactor build.
 
 ## 2026-09-16 - Repository And Package Rename Prepared
 

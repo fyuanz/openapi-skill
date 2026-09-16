@@ -6,8 +6,9 @@ openapi-skill converts OpenAPI contracts into Codex Skills. A running Spring Boo
 downloadable Skill ZIP, while the TypeScript npm consumer downloads explicitly configured OpenAPI endpoints from one or
 more internal or third-party services and installs one complete project Skill into a Vue 3 or other Node.js project.
 
-The source of truth is `docs/openapi-skill-design.md`. Core conversion, the Maven compatibility plugin, and
-aggregate generation remain available. Web/frontend acceptance is user-reviewed and is not a delivery gate.
+The source of truth is `docs/openapi-skill-design.md`. Core conversion, the runtime Starter, and Node project-Skill
+generation remain available. There is no Maven build-time compatibility plugin. Web/frontend acceptance is user-reviewed
+and is not a delivery gate.
 
 ## Primary Workflow
 
@@ -38,8 +39,7 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 
 - Java artifacts are prepared as `io.github.fyuanz:openapi-skill*:1.0.0` with package namespace
   `io.github.fyuanz.openapi.skill`; the new coordinates are not yet published to Maven Central.
-- Node package `openapi-skill@1.0.0` is packed and verified end to end in the real Vue consumer, but is not yet
-  published to npm.
+- Node package `openapi-skill@1.0.0` is published and was verified end to end in the real Vue consumer.
 - `openapi-skill-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/openapi-skill/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
@@ -48,8 +48,8 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 - The SpringDoc testbed now has no Boot start/stop Maven executions, SpringDoc Maven capture, OpenAPI Skill Maven goal,
   generated OpenAPI directory, or generated Skill directory. Its six tests validate Swagger UI, two OpenAPI groups,
   sample APIs, and a real random-port ZIP download.
-- Core retains 67 tests; Maven plugin retains 15 tests; the Starter retains 2 (84 across the reactor). The latter
-  remains a compatibility path for authoritative static JSON and explicit cross-service `aggregate` / `both` generation.
+- The Java reactor contains only parent, core, and Starter modules. Maven build-time compatibility and its integration
+  testbed were removed by explicit product decision.
 - `openapi-skill-node` is prepared as `1.0.0`. Preferred `services` configuration
   generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
   services plus project/service/document keywords, and publishes the complete service set atomically. The legacy
@@ -65,7 +65,8 @@ aggregate generation remain available. Web/frontend acceptance is user-reviewed 
 - Generated Skills describe themselves with a bilingual action-triggered sentence (task verbs, catalog navigation, a
   verification checklist, and generate-or-modify frontend request code) so LLM consumers can discover them by task.
 - Historical releases remain available under the old `smart-doc-agent` / `smartdoc-agent-*` Maven coordinates and
-  `smartdoc-agent` npm name. The new `openapi-skill` packages start at `1.0.0` and await manual publication.
+  `smartdoc-agent` npm name. The new `openapi-skill` npm package starts at `1.0.0` and is published; the parent, core,
+  and Starter Maven coordinates await manual publication.
 
 ## Commands
 
@@ -93,8 +94,6 @@ mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 GET http://127.0.0.1:18080/openapi-skill/skill.zip
 ```
 
-Legacy Maven compatibility verification remains under `testbeds/maven-plugin-integration/`.
-
 ## Constraints
 
 - Java 17, Spring Boot WebMVC 3.5.x, SpringDoc 2.8.x, and exact OpenAPI 3.1.0 JSON only.
@@ -111,7 +110,7 @@ Legacy Maven compatibility verification remains under `testbeds/maven-plugin-int
 - Cross-service aggregation inside the Node consumer is supported; cross-service aggregation by the embedded runtime
   Starter, WebFlux, management-port variants, external references, YAML,
   Swagger 2.0, package repositories, and automatic installation remain deferred.
-- Maven compatibility code is retained but is no longer the recommended SpringDoc runtime workflow.
+- No Maven build-time plugin or lifecycle compatibility path is supported under the new coordinates.
 
 Milestone delivery follows `AGENTS.md`: test first, update affected project docs, commit the reviewable slice, and push
 normally without force-overwriting remote history.

@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-09-16 - Remove Maven Build-Time Compatibility Completely
+
+Status: Accepted and implemented
+
+The user explicitly chose not to retain Maven build-time compatibility. Remove `openapi-skill-maven-plugin`, its static
+integration testbed, reactor membership, Central release entry, and active documentation. The new Java release contains
+only the parent POM, core, and runtime Spring Boot Starter. Spring Boot applications use the runtime ZIP endpoint;
+cross-service project Skills use the published npm CLI. Historical artifacts under the old product coordinates remain
+immutable, but no Maven `generate-skill`, static-JSON lifecycle, or aggregate/both compatibility is promised under the
+new `openapi-skill` coordinates. This supersedes the compatibility portions of earlier decisions without rewriting
+their historical evidence.
+
 ## 2026-09-16 - Rename The Product And Start New Package Identities At 1.0.0
 
 Status: Accepted and implemented; publication remains manual

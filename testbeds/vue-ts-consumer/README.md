@@ -4,8 +4,7 @@ A real Vue 3 + TypeScript consumer that closes the loop between the
 `openapi-skill` Skill generator, a running Spring Boot service, and a
 frontend project that actually calls that service.
 
-This testbed differs from `testbeds/springdoc-multi-package` and
-`testbeds/maven-plugin-integration`: those verify the *producer*. This one
+This consumer testbed complements `testbeds/springdoc-multi-package`, which verifies the runtime *producer*. This project
 verifies the *consumer* — a real frontend project that installs the generated
 Skill into its own `.agents/skills` directory and whose source code was written
 to match the live OpenAPI contract.
