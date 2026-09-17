@@ -34,6 +34,7 @@ artifact coordination remain outside scope.
 | P14 | Tag-grouped navigation: one readable file per first OpenAPI tag, slim group-index context, catalog-owned server/security facts, 72-character names, breaking 2.0.0 release | Complete in Java and Node; runtime/Vue/cross-implementation evidence verified, publication not requested |
 | Release | Maven Central releases | `1.0.0` and `2.0.0` for the `openapi-skill*` coordinates published; `2.0.0` went live 2026-09-17 via the maintainer-run Central Portal deployment `0a0a1c39-a8ab-4378-b862-9b659a5f5c4f`; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
 | Release | npm release | `openapi-skill@1.0.0`, `1.1.0` and `2.0.0` published; `latest = 2.0.0` since 2026-09-16 |
+| Release | Release tags | `v2.0.0` (annotated, on `c221a3a`) covers both registry lines; one tag per released version is the standing rule recorded in DECISIONS |
 | Documentation | Chinese-default README, English guide and v4.0 design | Updated for tag-grouped core/3 navigation |
 
 ## P13 Implementation Plan - Completed
@@ -177,6 +178,25 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   `signing-fingerprint.txt`. Signature producer is `BCPG v1.81`, the Bouncy Castle signer configured in the
   `central-release` profile. Verification was done by parsing the OpenPGP packet because every gpg subcommand
   including `--verify` hits the same sandbox lockfile block described above.
+- Release tag: annotated `v2.0.0` on `c221a3a` ("chore: cut the 2.0.0 release versions"), the commit that moves the
+  reactor from `2.0.0-SNAPSHOT` to `2.0.0`. It is pushed and confirmed remotely via
+  `git ls-remote --tags` (`refs/tags/v2.0.0` = `5258685626024281d26acce14ec22153cda60d5c`, peeled to `c221a3a`).
+  The Node-prefixed tag namespace used for `smartdoc-agent-node-v1.4.0` is retired by decision, so no npm-only tag
+  was created for `2.0.0`.
+
+## 2026-09-17 - Release Push Unblocked Over SSH
+
+- The HTTPS remote path was unusable from this session: `git push` and `git ls-remote` over
+  `https://github.com/...` both failed with `CONNECT tunnel failed, response 502`, while
+  `repo1.maven.org` and `registry.npmjs.org` stayed reachable, so the failure is specific to the GitHub
+  egress path rather than general connectivity.
+- `ssh -T git@github.com` authenticated successfully, but `git push git@github.com:...` still dialled HTTPS
+  because the user's global config rewrites it:
+  `url.https://github.com/.insteadof = git@github.com:`. The `ssh://git@github.com/fyuanz/openapi-skill.git`
+  form is not matched by that rewrite and pushed normally (`c221a3a..a18d6e1`). Use the `ssh://` form in this
+  environment when the HTTPS path is blocked.
+- Two documentation commits (`610d2c1`, `a18d6e1`) had been left unpushed behind that failure and are now on the
+  remote. Local `HEAD`, the remote branch and the tag all agree.
 
 ## 2026-09-16 - Core/3 Tag-Grouped Navigation Delivered
 
@@ -491,6 +511,9 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
+2026-09-17 (Release closed out: annotated `v2.0.0` created on `c221a3a` and pushed, the two pending documentation
+commits pushed over SSH after the HTTPS GitHub path failed with HTTP 502, and the one-tag-per-version rule recorded
+as a decision. Both registry lines serve 2.0.0 and no tracked work item remains open).
 2026-09-17 (Maven Central 2.0.0 published: the maintainer-run deployment finished with zero errors or warnings,
 all seven artifacts are downloadable from repo1.maven.org at byte sizes matching the local build, all three
 metadata files report `latest = 2.0.0`, and the published signatures carry the expected fingerprint; both registry

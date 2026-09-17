@@ -1,5 +1,28 @@
 # Decisions
 
+## 2026-09-17 - Use A Single Version Tag Per Release Line
+
+The repository had accumulated two tag shapes: `v1.1.0`/`v1.2.0` marking Maven Central release commits and
+`smartdoc-agent-node-v1.4.0` marking an npm release. When `2.0.0` shipped to npm and Maven Central from one source
+revision, there was no agreed rule for how many tags to create.
+
+Use exactly one annotated tag per released version, `v<version>`, placed on the commit that cuts the release version.
+The parallel Node-prefixed namespace is retired; `smartdoc-agent-node-v1.4.0` stays in history as a legacy tag and is
+not moved or deleted. `v2.0.0` sits on `c221a3a` and covers both registry lines.
+
+Rationale: both registries publish the same source revision, so a second tag would encode a distinction the build does
+not have. One tag per version keeps `git describe` unambiguous and avoids guessing which coordinate a tag refers to.
+
+Rejected alternatives:
+
+- Keep a separate Node tag per npm release. Rejected because the Node and Java artifacts are cut from one commit;
+  the prefix only made sense while the two packages versioned independently.
+- Tag the documentation commit that records the release instead of the version-cut commit. Rejected because the tag
+  would then point at prose rather than at the published sources.
+
+Operational note: `git push` does not push tags, so a release is only complete after an explicit
+`git push <remote> v<version>`.
+
 ## 2026-09-16 - Group Document Operations By Their First OpenAPI Tag
 
 Status: Accepted and implemented test-first in Java and Node; unused 1.x numbers were never released
