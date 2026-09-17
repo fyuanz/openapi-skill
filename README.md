@@ -79,16 +79,16 @@ npm install --save-dev openapi-skill
 
 ## 版本与环境
 
-改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布。当前源码为破坏性的
+改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布。当前版本为破坏性的
 `2.0.0`（生成产物布局由已发布版本的 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为
-`openapi-skill-core/3`）：npm 侧 `openapi-skill@2.0.0` 已发布（`latest`），Maven 侧 `2.0.0` 待发布。
+`openapi-skill-core/3`），npm 与 Maven Central 两侧均已发布。
 对于 SpringDoc 应用，推荐使用运行时 Starter。
 
 | 构件 | 用途 |
 | --- | --- |
-| `io.github.fyuanz:openapi-skill:1.0.0` | 父 POM |
-| `io.github.fyuanz:openapi-skill-core:1.0.0` | 离线转换与安全输出 |
-| `io.github.fyuanz:openapi-skill-spring-boot-starter:1.0.0` | 运行时自动发现与 ZIP 下载 |
+| `io.github.fyuanz:openapi-skill:2.0.0` | 父 POM |
+| `io.github.fyuanz:openapi-skill-core:2.0.0` | 离线转换与安全输出 |
+| `io.github.fyuanz:openapi-skill-spring-boot-starter:2.0.0` | 运行时自动发现与 ZIP 下载 |
 
 使用 JDK 17 和 Maven；已验证环境为 Maven 3.9.16 / JDK 17.0.19。仓库集成验证脚本使用 PowerShell。示例服务使用 Spring Boot 3.5.9 和 springdoc 2.8.15。
 

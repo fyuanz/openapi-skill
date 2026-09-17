@@ -10,8 +10,7 @@ Maven build-time compatibility has been removed by explicit user decision. Node 
 that downloads explicitly configured documents for multiple internal or third-party services and installs one
 self-contained `openapi-skill-core/3` project Skill: one slim group-index context per document, one file per first
 OpenAPI tag, clean semantic paths and precomputed reference closures. JSONL is retained only as a compact machine
-index. The 2.0.0 npm package is published; the matching Maven Central 2.0.0 release is prepared in source and
-still pending a maintainer-run, credentialed deployment from a normal terminal.
+index. Both the 2.0.0 npm package and the matching Maven Central 2.0.0 release are published.
 Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
 artifact coordination remain outside scope.
 
@@ -33,7 +32,7 @@ artifact coordination remain outside scope.
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
 | P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Complete in Java and Node; runtime/Vue evidence verified, publication not requested |
 | P14 | Tag-grouped navigation: one readable file per first OpenAPI tag, slim group-index context, catalog-owned server/security facts, 72-character names, breaking 2.0.0 release | Complete in Java and Node; runtime/Vue/cross-implementation evidence verified, publication not requested |
-| Release | Maven Central releases | `1.0.0` for the `openapi-skill*` coordinates published 2026-09-16; the breaking `2.0.0` is prepared and verified in source but not published (the sandboxed session cannot create the gpg lockfiles that artifact signing requires, so the deploy must run from a normal terminal); older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
+| Release | Maven Central releases | `1.0.0` and `2.0.0` for the `openapi-skill*` coordinates published; `2.0.0` went live 2026-09-17 via the maintainer-run Central Portal deployment `0a0a1c39-a8ab-4378-b862-9b659a5f5c4f`; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
 | Release | npm release | `openapi-skill@1.0.0`, `1.1.0` and `2.0.0` published; `latest = 2.0.0` since 2026-09-16 |
 | Documentation | Chinese-default README, English guide and v4.0 design | Updated for tag-grouped core/3 navigation |
 
@@ -126,7 +125,7 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   also emits the core/3 layout; the former core/1 and core/2 trees are recognised only so an owned tree can be replaced.
 - Java source artifacts use `io.github.fyuanz:openapi-skill*:2.0.0`; Java packages use
   `io.github.fyuanz.openapi.skill.*`. Node source is `openapi-skill@2.0.0`, published to npm on 2026-09-16. The
-  Maven Central `2.0.0` artifacts are not published yet.
+  Maven Central `2.0.0` artifacts were published on 2026-09-17, so both registry lines now serve `2.0.0`.
 
 ## Verified
 
@@ -156,7 +155,28 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   blob, then decode the `CryptUnprotectData` output as UTF-16LE.
 - The deploy must therefore run from a normal terminal:
   `powershell -ExecutionPolicy Bypass -File C:\Users\fyuan\.m2\smartdoc-central\invoke-release.ps1 -Phase deploy -Clean`.
-  Nothing in this checkpoint published anything.
+
+## 2026-09-17 - Maven Central 2.0.0 Release Completed
+
+- The maintainer ran the release from a normal terminal. The Maven `deploy` phase itself succeeded inside the
+  script: it signed all seven artifacts, bundled them, and the Central Portal upload returned deploymentId
+  `0a0a1c39-a8ab-4378-b862-9b659a5f5c4f` with `errors: []` and `warnings: null`. The apparent "no response" was
+  the script blocking in its `waitUntil=published` poll, not a failure.
+- Portal state progressed `PUBLISHING` (created `2026-09-17T03:08:12Z`) to `PUBLISHED`
+  (`2026-09-17T03:23:34Z`), i.e. 15 minutes 22 seconds, noticeably longer than the 8-minute 1.0.0 deployment on
+  2026-09-16. The status endpoint `/publisher/status?id=...` returned HTTP 500 throughout while
+  `/publisher/deployments` answered normally, so the deployments list is the reliable probe.
+- Artifacts verified from `repo1.maven.org` rather than from the Portal state alone: the parent POM, both
+  `jar`/`sources.jar`/`javadoc.jar` sets, and the Starter JAR all return HTTP 200. `openapi-skill-core-2.0.0.jar`
+  is 60,492 bytes on Central and locally, the Starter JAR is 19,353 on both, and the sources JAR is 28,672 on both.
+  The Javadoc JAR differs by 7 bytes (103,060 vs 103,067) because Javadoc embeds generation timestamps.
+- All three artifact metadata files advanced to `latest = 2.0.0` / `release = 2.0.0`
+  (`lastUpdated 20260917032331`–`20260917032333`), up from `1.0.0`.
+- Signature ownership verified from the published `.asc` files: the Issuer Fingerprint subpacket
+  (`21 04 <32 bytes>`) decodes to `B8EDC9D7B1AEBDCA56A1DA28FD9316D8966A3116`, matching
+  `signing-fingerprint.txt`. Signature producer is `BCPG v1.81`, the Bouncy Castle signer configured in the
+  `central-release` profile. Verification was done by parsing the OpenPGP packet because every gpg subcommand
+  including `--verify` hits the same sandbox lockfile block described above.
 
 ## 2026-09-16 - Core/3 Tag-Grouped Navigation Delivered
 
@@ -471,9 +491,13 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
+2026-09-17 (Maven Central 2.0.0 published: the maintainer-run deployment finished with zero errors or warnings,
+all seven artifacts are downloadable from repo1.maven.org at byte sizes matching the local build, all three
+metadata files report `latest = 2.0.0`, and the published signatures carry the expected fingerprint; both registry
+lines now serve 2.0.0).
 2026-09-17 (Maven Central 2.0.0 release preflight: registry state read directly, 71-test clean build with a pure
 core JAR, sources/Javadoc attachments verified, and the gpg signing blocker precisely attributed to sandbox
-lockfile interception; the deploy itself must run from a normal terminal and nothing was published).
+lockfile interception).
 2026-09-16 (core/3 tag-grouped navigation delivered in Java and Node: 71-test Java reactor, 41-test Node suite, 6-test
 SpringDoc testbed, a deterministic 24-file project Skill with a pinned whole-tree hash, a 21-file cross-implementation
 agreement with the live runtime ZIP, and Node/Maven advanced to the breaking 2.0.0 line).

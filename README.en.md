@@ -22,8 +22,8 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The current source prepares the unreleased TypeScript package `openapi-skill@2.0.0`; npm currently serves `1.0.0` and
-`1.1.0`. It defaults to one self-contained
+The TypeScript package `openapi-skill@2.0.0` is the current source version; npm serves `1.0.0`, `1.1.0` and `2.0.0`
+as `latest`. It defaults to one self-contained
 API Skill per frontend project and adds a `context.md` group index keyed by the OpenAPI `tags`, one interface file per
 tag under its own readable name (Chinese tag names are kept verbatim), clean semantic filenames,
 generator-computed reference closures, and centralized conventions. JSONL remains a machine validation artifact.
@@ -74,15 +74,16 @@ dependency and see the [Node package guide](openapi-skill-node/README.en.md) for
 ## Release and requirements
 
 The first release under the new name is `1.0.0`, and both the npm package and the Maven Central artifacts have been
-published manually. The source now carries the breaking `2.0.0` line — the generated layout moves from the published
-npm `openapi-skill-core/1` and `openapi-skill-core/2` trees to `openapi-skill-core/3` — which is not published yet.
+published manually. The current version is the breaking `2.0.0` — the generated layout moves from the published
+npm `openapi-skill-core/1` and `openapi-skill-core/2` trees to `openapi-skill-core/3` — and it is published to both
+npm and Maven Central.
 SpringDoc applications should use the runtime Starter.
 
 | Artifact | Purpose |
 | --- | --- |
-| `io.github.fyuanz:openapi-skill:1.0.0` | Parent POM |
-| `io.github.fyuanz:openapi-skill-core:1.0.0` | Offline conversion and safe output publication |
-| `io.github.fyuanz:openapi-skill-spring-boot-starter:1.0.0` | Runtime discovery and ZIP download |
+| `io.github.fyuanz:openapi-skill:2.0.0` | Parent POM |
+| `io.github.fyuanz:openapi-skill-core:2.0.0` | Offline conversion and safe output publication |
+| `io.github.fyuanz:openapi-skill-spring-boot-starter:2.0.0` | Runtime discovery and ZIP download |
 
 Use JDK 17 and Maven. The verified environment is Maven 3.9.16 / JDK 17.0.19. Repository integration scripts require PowerShell. The sample uses Spring Boot 3.5.9 and springdoc 2.8.15.
 
