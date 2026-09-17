@@ -21,7 +21,7 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`openapi-skill-node` 当前源码版本为待发布的 `openapi-skill@2.0.0`；npm 上已发布的是 `1.0.0` 与 `1.1.0`。
+`openapi-skill-node` 当前源码版本为 `openapi-skill@2.0.0`，npm 上已发布 `1.0.0`、`1.1.0` 与 `latest` 的 `2.0.0`。
 它推荐一个前端项目只生成一份接口文档
 Skill，并使用按 OpenAPI `tags` 分组的分组索引 `context.md`、每个 tag 一个可读名称的接口文件（中文 tag 名直接保留）、
 无冲突纯语义文件名、预计算引用闭包和集中 conventions；
@@ -79,9 +79,9 @@ npm install --save-dev openapi-skill
 
 ## 版本与环境
 
-改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布；当前源码已推进到破坏性的
-`2.0.0`（生成产物布局由已发布 npm 版本的 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为
-`openapi-skill-core/3`），尚未发布。
+改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布。当前源码为破坏性的
+`2.0.0`（生成产物布局由已发布版本的 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为
+`openapi-skill-core/3`）：npm 侧 `openapi-skill@2.0.0` 已发布（`latest`），Maven 侧 `2.0.0` 待发布。
 对于 SpringDoc 应用，推荐使用运行时 Starter。
 
 | 构件 | 用途 |
