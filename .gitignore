@@ -45,3 +45,7 @@ replay_pid*
 Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Agent
+.slidep
+docs/share
