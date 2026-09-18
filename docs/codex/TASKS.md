@@ -10,7 +10,9 @@ Maven build-time compatibility has been removed by explicit user decision. Node 
 that downloads explicitly configured documents for multiple internal or third-party services and installs one
 self-contained `openapi-skill-core/3` project Skill: one slim group-index context per document, one file per first
 OpenAPI tag, clean semantic paths and precomputed reference closures. JSONL is retained only as a compact machine
-index. Both the 2.0.0 npm package and the matching Maven Central 2.0.0 release are published.
+index. Both the 2.0.0 npm package and the matching Maven Central 2.0.0 release are published. The accepted input root
+marker is now any `3.0.x` or `3.1.x`; the compiler records the input's own dialect instead of assuming 3.1.0, and real
+3.0 snapshots from the same producer are committed beside the 3.1 ones.
 Cross-service aggregation by the embedded runtime Starter, WebFlux and centralized
 artifact coordination remain outside scope.
 
@@ -18,7 +20,7 @@ artifact coordination remain outside scope.
 
 | Stage | Deliverable | Status |
 | --- | --- | --- |
-| P0 | Buildable Java 17/Maven core and exact OpenAPI 3.1.0 JSON input | Complete |
+| P0 | Buildable Java 17/Maven core and declared OpenAPI JSON input | Complete |
 | P1 | SpringDoc multi-package/group testbed and current-document contract | Complete within the accepted testbed scope |
 | P2 | Contract-preserving per-service Skill generation | Complete |
 | P3 | Validated complete publication, timeout, locking, recovery and isolation | Complete |
@@ -32,6 +34,7 @@ artifact coordination remain outside scope.
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
 | P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Complete in Java and Node; runtime/Vue evidence verified, publication not requested |
 | P14 | Tag-grouped navigation: one readable file per first OpenAPI tag, slim group-index context, catalog-owned server/security facts, 72-character names, breaking 2.0.0 release | Complete in Java and Node; runtime/Vue/cross-implementation evidence verified, publication not requested |
+| P15 | Accept OpenAPI 3.0.x and 3.1.x root markers, record the input's own dialect, and capture real 3.0 snapshots | Complete in Java and Node; 77 core and 43 Node tests pass, the published core/3 tree is byte-identical, publication not requested |
 | Release | Maven Central releases | `1.0.0` and `2.0.0` for the `openapi-skill*` coordinates published; `2.0.0` went live 2026-09-17 via the maintainer-run Central Portal deployment `0a0a1c39-a8ab-4378-b862-9b659a5f5c4f`; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
 | Release | npm release | `openapi-skill@1.0.0`, `1.1.0` and `2.0.0` published; `latest = 2.0.0` since 2026-09-16 |
 | Release | Release tags | `v2.0.0` (annotated, on `c221a3a`) covers both registry lines; one tag per released version is the standing rule recorded in DECISIONS |

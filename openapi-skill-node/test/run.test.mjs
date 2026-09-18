@@ -52,7 +52,7 @@ test('downloads all services into one default api-docs Skill and retains it atom
   const server = createServer((request, response) => {
     if (failShipping && request.url === '/shipping') { response.statusCode = 503; response.end(); return; }
     response.setHeader('content-type', 'application/json');
-    if (invalidShipping && request.url === '/shipping') { response.end('{"openapi":"3.0.0","paths":{}}'); return; }
+    if (invalidShipping && request.url === '/shipping') { response.end('{"openapi":"3.2.0","paths":{}}'); return; }
     response.end(JSON.stringify({ openapi: '3.1.0', info: { version: String(revision) }, paths: {} }));
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));

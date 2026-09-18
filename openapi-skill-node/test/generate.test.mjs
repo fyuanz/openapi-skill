@@ -97,8 +97,32 @@ test('preserves overrides and rejects unsupported inputs', () => {
   assert.deepEqual(contract.security, []);
   assert.equal(contract.parameters[0].required, false);
   assert.throws(() => generateSkill({ serviceId: 'Bad', skillName: 'api', documents: new Map([['public', valid]]) }), /IDENTITY/);
-  assert.throws(() => generateSkill({ serviceId: 'svc', skillName: 'api', documents: new Map([['public', new TextEncoder().encode('{"openapi":"3.0.0","paths":{}}')]]) }), /UNSUPPORTED_VERSION/);
+  assert.throws(() => generateSkill({ serviceId: 'svc', skillName: 'api', documents: new Map([['public', new TextEncoder().encode('{"openapi":"3.2.0","paths":{}}')]]) }), /UNSUPPORTED_VERSION/);
   assert.throws(() => generateSkill({ serviceId: 'svc', skillName: 'api', documents: new Map([['public', new TextEncoder().encode('{"openapi":"3.1.0","paths":{},"paths":{}}')]]) }), /INVALID_JSON/);
+});
+
+test('accepts every declared OpenAPI version and records the actual input version', () => {
+  for (const version of ['3.0.0', '3.0.3', '3.1.0', '3.1.1']) {
+    const bytes = new TextEncoder().encode(JSON.stringify({ openapi: version, info: { version: '1' }, paths: {} }));
+    const files = generateSkill({ serviceId: 'svc', skillName: 'svc-api', documents: new Map([['public', bytes]]) });
+    assert.equal(JSON.parse(files.get('references/source.json')).documents[0].openapi, version);
+  }
+  for (const version of ['3.2.0', '3.2.1', '2.0', '4.0.0', '3.1']) {
+    const bytes = new TextEncoder().encode(JSON.stringify({ openapi: version, paths: {} }));
+    assert.throws(() => generateSkill({ serviceId: 'svc', skillName: 'svc-api', documents: new Map([['public', bytes]]) }),
+      /UNSUPPORTED_VERSION/, `${version} must be rejected`);
+  }
+});
+
+test('compiles the same producer snapshots under the older root marker', async () => {
+  const documents = new Map([['account', await fixture('account-v30')], ['business', await fixture('business-v30')]]);
+  const files = generateSkill({ serviceId: 'springdoc-multi-package', skillName: 'springdoc-multi-package-api', documents });
+  const source = JSON.parse(files.get('references/source.json'));
+  assert.deepEqual(source.documents.map(({ openapi }) => openapi), ['3.0.1', '3.0.1']);
+  assert.equal([...files.keys()].filter((path) => path.includes('/operations/')).length, 4);
+  assert.equal([...files.keys()].filter((path) => path.includes('/schemas/')).length, 7);
+  // The 3.0 producer drops $ref siblings; the compiler copies bytes and must not invent them back.
+  assert.ok(![...files.values()].join('\n').includes('联系地址'), 'a dropped $ref sibling must not reappear');
 });
 
 test('keeps local references navigable and rejects external references', () => {

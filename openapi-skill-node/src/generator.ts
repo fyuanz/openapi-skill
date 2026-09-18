@@ -125,7 +125,7 @@ export function generateSkill(options: GenerateOptions): ReadonlyMap<string, str
       schemaIndex.push(...refs.schemaIndex(options.serviceId, id));
       const schemaCount = Object.keys(asObject(asObject(root.components)?.schemas) ?? {}).length;
       catalog += `${operations.length} operation(s), ${schemaCount} schema(s).\n\n`;
-      const source: JsonObject = { documentId: id, sha256: digest(bytes), openapi: '3.1.0', apiVersion: asObject(root.info)?.version ?? '', operations: operations.length, schemas: schemaCount };
+      const source: JsonObject = { documentId: id, sha256: digest(bytes), openapi: typeof root.openapi === 'string' ? root.openapi : '', apiVersion: asObject(root.info)?.version ?? '', operations: operations.length, schemas: schemaCount };
       if (enriched) source.keywords = keywords;
       sources.push(source);
     } catch (error) { throw new Error(`${id}: ${message(error)}`, { cause: error }); }

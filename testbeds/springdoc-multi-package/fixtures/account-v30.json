@@ -1,0 +1,166 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "description" : "仅用于文档契约验证；全部数据为虚构样例，Bearer 定义仅演示文档元数据。",
+    "title" : "OpenAPI Skill 多包测试服务",
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "http://127.0.0.1:18080",
+    "description" : "本地测试服务默认地址"
+  } ],
+  "paths" : {
+    "/users" : {
+      "get" : {
+        "operationId" : "listUsers",
+        "parameters" : [ {
+          "description" : "按显示名称过滤",
+          "in" : "query",
+          "name" : "keyword",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserView"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "搜索用户",
+        "tags" : [ "用户管理" ]
+      }
+    },
+    "/users/{id}" : {
+      "get" : {
+        "operationId" : "getUser",
+        "parameters" : [ {
+          "description" : "用户编号",
+          "example" : 1,
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "description" : "调用链请求标识",
+          "in" : "header",
+          "name" : "X-Request-Id",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            },
+            "description" : "用户详情"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description" : "用户不存在"
+          }
+        },
+        "summary" : "查询用户",
+        "tags" : [ "用户管理" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "Address" : {
+        "required" : [ "city", "street" ],
+        "type" : "object",
+        "properties" : {
+          "city" : {
+            "minLength" : 1,
+            "type" : "string",
+            "description" : "城市",
+            "example" : "示例市"
+          },
+          "street" : {
+            "minLength" : 1,
+            "type" : "string",
+            "description" : "街道",
+            "example" : "示例路"
+          }
+        },
+        "description" : "用户与订单共用的地址"
+      },
+      "ApiError" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "description" : "错误码",
+            "example" : "NOT_FOUND"
+          },
+          "message" : {
+            "type" : "string",
+            "description" : "错误说明",
+            "example" : "未找到示例资源"
+          }
+        },
+        "description" : "统一错误响应"
+      },
+      "UserView" : {
+        "type" : "object",
+        "properties" : {
+          "address" : {
+            "$ref" : "#/components/schemas/Address"
+          },
+          "children" : {
+            "type" : "array",
+            "description" : "下级用户，允许递归",
+            "items" : {
+              "$ref" : "#/components/schemas/UserView"
+            }
+          },
+          "id" : {
+            "type" : "integer",
+            "description" : "用户编号",
+            "format" : "int64",
+            "example" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "用户显示名称",
+            "example" : "示例用户"
+          }
+        },
+        "description" : "含递归下级关系的用户"
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "bearerFormat" : "JWT",
+        "scheme" : "bearer",
+        "type" : "http"
+      }
+    }
+  }
+}

@@ -145,7 +145,7 @@ public final class SkillGenerator {
                 int schemaCount = root.path("components").path("schemas").size();
                 catalog.append(operations.size()).append(" operation(s), ").append(schemaCount).append(" schema(s).\n\n");
                 sources.addObject().put("documentId", id).put("sha256", DocumentReferences.digest(bytes))
-                        .put("openapi", "3.1.0").put("apiVersion", root.path("info").path("version").asText())
+                        .put("openapi", root.path("openapi").asText()).put("apiVersion", root.path("info").path("version").asText())
                         .put("operations", operations.size()).put("schemas", schemaCount);
             } catch (IllegalArgumentException e) { throw new IllegalArgumentException(id + ": " + e.getMessage(), e); }
         }

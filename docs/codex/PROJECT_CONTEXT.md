@@ -17,7 +17,7 @@ and is not a delivery gate.
 3. The Starter enumerates local `GroupedOpenApi` beans, or selects the default document when no groups exist.
 4. It invokes SpringDoc's final WebMVC resources inside the same JVM. It does not inject the incomplete base `OpenAPI`
    model as the final contract and does not issue an HTTP self-request.
-5. Core parses each exact OpenAPI 3.1.0 JSON document independently, renders one complete service Skill, validates it,
+5. Core parses each OpenAPI 3.0.x or 3.1.x JSON document independently, renders one complete service Skill, validates it,
    and the Starter returns a deterministic ZIP with a `<skillName>/` root.
 6. Generation failure fails only that request. No build output or partial archive is written.
 
@@ -39,10 +39,10 @@ and is not a delivery gate.
 
 ## Current Status
 
-- Java source uses `io.github.fyuanz:openapi-skill*:2.0.0` with package namespace
-  `io.github.fyuanz.openapi.skill`; the `1.0.0` coordinates are published, `2.0.0` is not.
-- Node source is `openapi-skill@2.0.0`; it is locally packed and verified end to end in the real Vue consumer, but
-  `2.0.0` is not published. The published npm versions are `1.0.0` and `1.1.0` (`latest`).
+- Java source uses `io.github.fyuanz:openapi-skill*:2.1.0-SNAPSHOT` with package namespace
+  `io.github.fyuanz.openapi.skill`; the `1.0.0` and `2.0.0` coordinates are published.
+- Node source is `openapi-skill@2.0.0`; it is locally packed and verified end to end in the real Vue consumer, and
+  `2.0.0` is published. The published npm versions are `1.0.0`, `1.1.0` and `2.0.0` (`latest`).
 - `openapi-skill-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/openapi-skill/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
@@ -57,9 +57,9 @@ and is not a delivery gate.
   generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
   services plus project/service/document keywords, and publishes the complete service set atomically. The legacy
   `serviceId` + `documents` configuration is still accepted, while all new output uses `openapi-skill-core/3`.
-- Node verification currently passes 41 tests across configuration, generation, tag grouping, context navigation, semantic indexes, provenance, downloading, project-tree
-  validation, project-wide document/byte budgets, atomic legacy/project migration, stale service removal, package
-  metadata, and compatibility behavior. The locally packed `2.0.0` tarball was installed into
+- Node verification currently passes 43 tests across configuration, generation, tag grouping, context navigation, semantic indexes, provenance, downloading, project-tree
+  validation, project-wide document/byte budgets, legacy/project version acceptance, atomic legacy/project migration,
+  stale service removal, package metadata, and compatibility behavior. The locally packed `2.0.0` tarball was installed into
   `testbeds/vue-ts-consumer`; it builds and generates a core/3 `api-docs` project Skill from the running testbed.
 - `testbeds/vue-ts-consumer` closes the consumer loop: a real Vue 3 + TypeScript project generates the Skill from the
   running SpringDoc testbed and calls all five documented operations through a dev-server proxy. An independent read-only
@@ -108,7 +108,8 @@ GET http://127.0.0.1:18080/openapi-skill/skill.zip
 
 ## Constraints
 
-- Java 17, Spring Boot WebMVC 3.5.x, SpringDoc 2.8.x, and exact OpenAPI 3.1.0 JSON only.
+- Java 17, Spring Boot WebMVC 3.5.x, SpringDoc 2.8.x, and OpenAPI 3.0.x/3.1.x JSON only. The accepted set is defined by
+  the root marker; every other version, including 3.2.x, stays rejected.
 - Core stays independent of Spring Boot, SpringDoc, Maven, HTTP, and ZIP packaging.
 - Runtime collection uses `OpenApiWebMvcResource` / `MultipleOpenApiWebMvcResource`; `OpenAPI` and `GroupedOpenApi`
   beans alone are not treated as complete generated documents.

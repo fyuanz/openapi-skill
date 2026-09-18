@@ -4,22 +4,22 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.0.0`; parent, core and Starter reactor |
-| `openapi-skill-core` | Per-service conversion, context-first navigation, aggregate assembly, validation and safe filesystem publication | 69 tests pass |
+| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.1.0-SNAPSHOT`; parent, core and Starter reactor |
+| `openapi-skill-core` | Per-service conversion, context-first navigation, aggregate assembly, validation and safe filesystem publication | 77 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
-| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | local `openapi-skill@2.0.0` source passes 41 tests; `1.0.0`/`1.1.0` published, `2.0.0` not published |
-| `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 6 tests pass; no OpenAPI Skill build executions |
+| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | local `openapi-skill@2.0.0` source passes 43 tests; `1.0.0`/`1.1.0`/`2.0.0` published |
+| `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 7 tests pass; no OpenAPI Skill build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 
 ## Parent Project
 
 Coordinates are `io.github.fyuanz:openapi-skill`, `openapi-skill-core`, and
-`openapi-skill-spring-boot-starter`; current source is `2.0.0` after the published `1.0.0`. Java packages use
-`io.github.fyuanz.openapi.skill`; no `2.0.0` Central publication was requested.
+`openapi-skill-spring-boot-starter`; current source is `2.1.0-SNAPSHOT` after the published `1.0.0` and `2.0.0`. Java
+packages use `io.github.fyuanz.openapi.skill`.
 
 ## Core
 
-`SkillGenerator.generate(serviceId, skillName, documents)` converts a complete map of document IDs to exact OpenAPI 3.1.0
+`SkillGenerator.generate(serviceId, skillName, documents)` converts a complete map of document IDs to OpenAPI 3.0.x/3.1.x
 JSON bytes into an immutable map of relative paths to UTF-8 content. It preserves operation/schema JSON plus effective
 parameters, servers, and security, and creates compact catalogs, one group-index document context, one interface file per
 first OpenAPI tag, sorted machine JSONL indexes, and precomputed document-local direct/transitive reference closures.
@@ -86,8 +86,9 @@ Skill. Redirects and external references remain rejected. The default output par
 
 The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains accepted. Project and legacy
 configuration shapes cannot be mixed; every new tree uses core/3, while the publisher recognizes owned core/1 and
-core/2 trees only for safe atomic replacement. The local `2.0.0` implementation passes 41 Node tests; its packed tarball
-generates the project Skill in the real Vue consumer against the running SpringDoc testbed.
+core/2 trees only for safe atomic replacement. The local `2.0.0` implementation passes 43 Node tests; its packed tarball
+generates the project Skill in the real Vue consumer against the running SpringDoc testbed. Accepted input root markers
+are any `3.0.x` or `3.1.x`, and `references/source.json` records the input's own dialect.
 
 ## Testbed
 

@@ -22,6 +22,33 @@ class SkillGeneratorTest {
         return docs;
     }
 
+    @Test void recordsTheActualVersionOfEveryAcceptedInput() throws Exception {
+        var files = generator.generate("docs", "docs-api", Map.of(
+                "legacy", json("{\"openapi\":\"3.0.3\",\"info\":{\"version\":\"1\"},\"paths\":{}}"),
+                "modern", json("{\"openapi\":\"3.1.1\",\"info\":{\"version\":\"2\"},\"paths\":{}}")));
+        var source = mapper.readTree(files.get("references/source.json"));
+        var recorded = new TreeMap<String, String>();
+        for (JsonNode document : source.path("documents"))
+            recorded.put(document.path("documentId").asText(), document.path("openapi").asText());
+        assertEquals(Map.of("legacy", "3.0.3", "modern", "3.1.1"), recorded);
+    }
+
+    @Test void compilesTheOlderDialectSnapshotsFromTheSameProducer() throws Exception {
+        var docs = new TreeMap<String, byte[]>();
+        for (String id : List.of("account", "business"))
+            docs.put(id, Files.readAllBytes(Path.of("../testbeds/springdoc-multi-package/fixtures/" + id + "-v30.json")));
+        var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", docs);
+        var source = mapper.readTree(files.get("references/source.json"));
+        assertEquals(2, source.path("documents").size());
+        for (JsonNode document : source.path("documents"))
+            assertTrue(document.path("openapi").asText().startsWith("3.0."), document.path("openapi").asText());
+        assertEquals(4, files.keySet().stream().filter(path -> path.contains("/operations/")).count());
+        assertEquals(7, files.keySet().stream().filter(path -> path.contains("/schemas/")).count());
+        // The 3.0 producer drops $ref siblings; the compiler copies bytes and must not invent them back.
+        assertFalse(files.values().stream().anyMatch(content -> content.contains("联系地址")));
+        checkLinks(files);
+    }
+
     @Test void generatesOneNavigableSkillWithAllContractFacts() throws Exception {
         var docs = snapshots();
         var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", docs);

@@ -3,8 +3,9 @@
 在 Spring Boot 应用运行期间，从 SpringDoc 的最终文档资源生成当前 API Skill，并通过只读 HTTP 接口下载 ZIP。
 它不启动第二个应用进程、不向本机发送 HTTP 请求，也不在 Maven 生命周期中抓取或生成文件。
 
-改名后的首个版本 `1.0.0` 已发布到 Maven Central；源码已推进到破坏性的 `2.0.0`（生成布局由
-`openapi-skill-core/1` 升级为按 tag 分组的 `openapi-skill-core/3`），尚未发布。当前可用的已发布版本为 `1.0.0`：
+改名后的首个版本 `1.0.0` 与破坏性的 `2.0.0`（生成布局由 `openapi-skill-core/1` 升级为按 tag 分组的
+`openapi-skill-core/3`）均已发布到 Maven Central。源码线当前为 `2.1.0-SNAPSHOT`，新增 OpenAPI 3.0.x 输入支持。
+下面示例固定使用已发布的 `1.0.0`：
 
 ```xml
 <dependency>

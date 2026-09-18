@@ -2,6 +2,20 @@
 
 本文件记录 2026-09-14 第一次「真实前端消费端」闭环测试的结果与发现。它是**测试证据**，不是产品文档。
 
+## 2026-09-18 OpenAPI 3.0.x 接受集复验
+
+- 安装本地打包的 `openapi-skill@2.1.0` tarball（24 个文件，29,108 B；shasum
+  `b155643989b6121e1c1b701affaffb71e7ac4be9`）；`npm ci` 按手工更新的 lock 还原通过，Node 43 项测试通过。
+- 用改动后的源码对同一批 testbed 文档重新生成，与已发布 2.0.0 生成的 24 文件树**逐字节相同**：整树 SHA-256 仍是
+  `745f0e0ec44a9eda52fb0868c00c0600b193307b19e2b39f0966f752721148bc`。放宽根标记接受集并按输入记录方言，
+  不改变任何 3.1.0 输入的产物，`openapi-skill-core/3` 布局与已发布哈希继续有效。
+- 新增真实 3.0 快照 `fixtures/account-v30.json`、`fixtures/business-v30.json`，来自同一 SpringDoc 测试服务在
+  `springdoc.api-docs.version=OPENAPI_3_0` 下的输出（根标记 `3.0.1`；2 operation / 3 schema 与 2 operation /
+  4 schema）。Java core 与 Node 两侧都能生成同一布局（4 operation / 7 schema）。
+- **方言差异属生产端行为**：同一批控制器在 3.0 下，`$ref` 的兄弟节点被生产端丢弃
+  （`UserView.address.description`、`CreateOrder.shippingAddress.description` 在 3.1 存在、在 3.0 不存在）。
+  转换器按字节搬运原文，不补回这些字段。
+
 ## 2026-09-16 core/3 tag 分组补充验证
 
 - 安装本地未发布的 `openapi-skill@2.0.0` tarball（24 个文件，28,419 B；shasum

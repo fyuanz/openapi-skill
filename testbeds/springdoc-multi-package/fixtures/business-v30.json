@@ -1,0 +1,175 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "description" : "仅用于文档契约验证；全部数据为虚构样例，Bearer 定义仅演示文档元数据。",
+    "title" : "OpenAPI Skill 多包测试服务",
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "http://127.0.0.1:18080",
+    "description" : "本地测试服务默认地址"
+  } ],
+  "paths" : {
+    "/files" : {
+      "post" : {
+        "description" : "只返回文件大小，不保存文件。",
+        "operationId" : "uploadFile",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary",
+                    "description" : "待上传文件"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UploadReceipt"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "上传示例文件",
+        "tags" : [ "文件管理" ]
+      }
+    },
+    "/orders" : {
+      "post" : {
+        "description" : "校验后回显请求，不持久化；鉴权仅为文档示例。",
+        "operationId" : "createOrder",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateOrder"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreateOrder"
+                }
+              }
+            },
+            "description" : "订单已创建"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description" : "请求无效"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "创建示例订单",
+        "tags" : [ "订单管理" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "Address" : {
+        "required" : [ "city", "street" ],
+        "type" : "object",
+        "properties" : {
+          "city" : {
+            "minLength" : 1,
+            "type" : "string",
+            "description" : "城市",
+            "example" : "示例市"
+          },
+          "street" : {
+            "minLength" : 1,
+            "type" : "string",
+            "description" : "街道",
+            "example" : "示例路"
+          }
+        },
+        "description" : "用户与订单共用的地址"
+      },
+      "ApiError" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "description" : "错误码",
+            "example" : "NOT_FOUND"
+          },
+          "message" : {
+            "type" : "string",
+            "description" : "错误说明",
+            "example" : "未找到示例资源"
+          }
+        },
+        "description" : "统一错误响应"
+      },
+      "CreateOrder" : {
+        "required" : [ "quantity", "shippingAddress", "userId" ],
+        "type" : "object",
+        "properties" : {
+          "quantity" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "description" : "购买数量",
+            "format" : "int32",
+            "example" : 2
+          },
+          "shippingAddress" : {
+            "$ref" : "#/components/schemas/Address"
+          },
+          "userId" : {
+            "type" : "integer",
+            "description" : "下单用户编号",
+            "format" : "int64",
+            "example" : 1
+          }
+        },
+        "description" : "创建订单请求"
+      },
+      "UploadReceipt" : {
+        "type" : "object",
+        "properties" : {
+          "size" : {
+            "type" : "integer",
+            "description" : "文件字节数",
+            "format" : "int64",
+            "example" : 3
+          }
+        },
+        "description" : "上传结果"
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "bearerFormat" : "JWT",
+        "scheme" : "bearer",
+        "type" : "http"
+      }
+    }
+  }
+}

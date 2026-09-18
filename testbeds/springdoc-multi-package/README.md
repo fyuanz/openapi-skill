@@ -3,7 +3,7 @@
 单服务、四个 Java 包、两个显式 OpenAPI 分组。Java 17，Spring Boot 3.5.9，SpringDoc WebMVC UI
 2.8.15；提供 Swagger UI 和 OpenAPI Skill 运行时 Skill ZIP。无数据库、注册中心、网关或 Knife4j，数据均为虚构。
 
-先在仓库根目录安装当前 `1.2.0`，再启动测试服务：
+先在仓库根目录安装当前 Maven 源码（`mvn -B install`），再启动测试服务：
 
 ```powershell
 mvn -B install
@@ -47,8 +47,10 @@ powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-in
 powershell -NoProfile -File testbeds/springdoc-multi-package/refresh-fixtures.ps1
 ```
 
-`fixtures/account.json`、`fixtures/business.json` 和 `fixtures/metadata.json` 供离线 core 测试使用。
-普通构建不会修改这些已提交文件。
+`fixtures/account.json`、`fixtures/business.json`（OpenAPI 3.1）与 `fixtures/account-v30.json`、
+`fixtures/business-v30.json`（OpenAPI 3.0）连同 `fixtures/metadata.json` 供离线 core 测试使用。两套方言来自同一个
+生产服务、同一批控制器：3.1 由 `OpenApiContractTest` 抓取，3.0 由显式设置
+`springdoc.api-docs.version=OPENAPI_3_0` 的 `OpenApi30ContractTest` 抓取。普通构建不会修改这些已提交文件。
 
 ## 使用 ZIP
 

@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.en.md)
 
-从一个或多个服务的 OpenAPI 3.1.0 JSON 地址生成一份自包含的 Codex Skill。当前未发布的 `2.0.0` 源码默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
+从一个或多个服务的 OpenAPI 3.0.x / 3.1.x JSON 地址生成一份自包含的 Codex Skill。`2.0.0` 已发布，默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
 
 ## 安装
 
@@ -93,7 +93,7 @@ npm run skill:generate
 
 发布前会先下载并校验所有服务的全部配置文档，再生成和校验完整项目 Skill，最后只进行一次目录替换。任一服务下载失败、返回无效契约或生成失败时，已有的整份 Skill 保持不变，不会发布缺少某个服务的部分结果；下一次成功更新会同时清除已经从配置中移除的服务、文档和接口。
 
-每个 URL 必须使用 HTTP(S)、成功返回 JSON，并包含精确的 `openapi: 3.1.0`。重定向和外部 `$ref` 会被拒绝。`output` 可设置为绝对路径或相对于项目根目录的输出父目录；默认是 `.agents/skills`。`timeoutMs` 默认为 `30000`。配置也可以写在 `package.json#openapiSkill` 中，或通过 `openapi-skill --config <path>` 指定文件。
+每个 URL 必须使用 HTTP(S)、成功返回 JSON，并声明受支持的 `openapi: 3.0.x` / `3.1.x`。重定向和外部 `$ref` 会被拒绝。`output` 可设置为绝对路径或相对于项目根目录的输出父目录；默认是 `.agents/skills`。`timeoutMs` 默认为 `30000`。配置也可以写在 `package.json#openapiSkill` 中，或通过 `openapi-skill --config <path>` 指定文件。
 
 ## 旧单服务配置兼容
 

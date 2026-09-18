@@ -1,44 +1,70 @@
 {
-  "serviceId": "springdoc-multi-package",
-  "skillName": "springdoc-multi-package-api",
-  "java": "17",
-  "springBoot": "3.5.9",
-  "springdoc": "2.8.15",
-  "captureCommand": "powershell -NoProfile -File testbeds/springdoc-multi-package/refresh-fixtures.ps1",
-  "capture": "SpringBootTest random loopback port; HTTP connect 5s/request 20s; test 60s; fork 120s; context closed after test",
-  "sanitization": "All data authored as fictional samples; no external API data. Pretty printing only; no semantic rewrite.",
-  "documents": [
-    {
-      "documentId": "account",
-      "endpoint": "/v3/api-docs/account",
-      "file": "account.json",
-      "openapi": "3.1.0",
-      "sha256": "8ab44c8c1cf0addc731f3428c8a2a46d38a925d70adf88a80c514d0c79214261",
-      "operations": 2,
-      "schemas": 3
-    },
-    {
-      "documentId": "business",
-      "endpoint": "/v3/api-docs/business",
-      "file": "business.json",
-      "openapi": "3.1.0",
-      "sha256": "8e27729c420206335f7d169debff8cffcc105dbc7083486cc93958684a51b293",
-      "operations": 2,
-      "schemas": 4
-    }
-  ],
-  "sourceSha256": {
-    "pom.xml": "d6de8953b0570eec80bb58dadb76ecb9eeec9135c223f8fe0af81fad75bc2b02",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/Address.java": "6e40548e0554d7c2e63bd26124a9aecc575aff832829fb3d96ad4b1589f38654",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/ApiError.java": "30ef9916130669fb8092dbb7675e749e6736eac9a6e041ca6696c4f96523efd5",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/OpenApiConfiguration.java": "caeb5e60efab8fb2b5c4744fd6b59d9a91e79cff6dee7a0b25da12d698d16b15",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/ValidationAdvice.java": "bf5366db8c3ca132716241d532bbc8b7af22f3ef469d750da9aaa6c643af7174",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/file/FileController.java": "6a60830691bb9704cd9edf8ef57db935adcad493489990caedb342a24bb2ff69",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/CreateOrder.java": "adf473f13801416d0aa90e7493376952e4a2c42baccf9450a90484978c1d742d",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/OrderController.java": "102b70ca3f6125e396e3270346885d34180a48ac021269fcd40eddef1fc2ffbd",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/TestbedApplication.java": "ee23b076394685db11a15c1e2b2696995a2b6b54b018c35cbf573694a9786b59",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserController.java": "6b12df19837e0e6f564ec60aeefdda6b7e885671a18cd3901dac6dd959d12335",
-    "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserView.java": "fddc2b98bee0e528d7cd6435f08b2407ab26566b65aa574fb9688f1b2c47df1d",
-    "src/main/resources/application.properties": "30c1f2f760131c9b286ed44b21ad13dbb1a89587acfa3ed4ae18fa22072439ff"
-  }
+    "serviceId":  "springdoc-multi-package",
+    "skillName":  "springdoc-multi-package-api",
+    "java":  "17",
+    "springBoot":  "3.5.9",
+    "springdoc":  "2.8.15",
+    "captureCommand":  "powershell -NoProfile -File testbeds/springdoc-multi-package/refresh-fixtures.ps1",
+    "capture":  "SpringBootTest random loopback port; HTTP connect 5s/request 20s; test 60s; fork 120s; context closed after test",
+    "dialects":  {
+                     "3.1":  "OpenApiContractTest; springdoc.api-docs.version defaults to OPENAPI_3_1",
+                     "3.0":  "OpenApi30ContractTest; property springdoc.api-docs.version=OPENAPI_3_0"
+                 },
+    "sanitization":  "All data authored as fictional samples; no external API data. Pretty printing only; no semantic rewrite.",
+    "documents":  [
+                      {
+                          "documentId":  "account",
+                          "dialect":  "3.1",
+                          "endpoint":  "/v3/api-docs/account",
+                          "file":  "account.json",
+                          "openapi":  "3.1.0",
+                          "sha256":  "8ab44c8c1cf0addc731f3428c8a2a46d38a925d70adf88a80c514d0c79214261",
+                          "operations":  2,
+                          "schemas":  3
+                      },
+                      {
+                          "documentId":  "business",
+                          "dialect":  "3.1",
+                          "endpoint":  "/v3/api-docs/business",
+                          "file":  "business.json",
+                          "openapi":  "3.1.0",
+                          "sha256":  "8e27729c420206335f7d169debff8cffcc105dbc7083486cc93958684a51b293",
+                          "operations":  2,
+                          "schemas":  4
+                      },
+                      {
+                          "documentId":  "account-v30",
+                          "dialect":  "3.0",
+                          "endpoint":  "/v3/api-docs/account",
+                          "file":  "account-v30.json",
+                          "openapi":  "3.0.1",
+                          "sha256":  "abe48023abc3ae24f12469adb4cc26d5d336c81fe94270bad5adbbf581487069",
+                          "operations":  2,
+                          "schemas":  3
+                      },
+                      {
+                          "documentId":  "business-v30",
+                          "dialect":  "3.0",
+                          "endpoint":  "/v3/api-docs/business",
+                          "file":  "business-v30.json",
+                          "openapi":  "3.0.1",
+                          "sha256":  "44caebee15fd7fce48ff7c2c694d75e5a1866546234f3a122d3cc0903423da68",
+                          "operations":  2,
+                          "schemas":  4
+                      }
+                  ],
+    "sourceSha256":  {
+                         "pom.xml":  "d05457997196443cde9f61e55e74496d7dd0e1513d3ff04a97ea030abfab4b17",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/Address.java":  "6e40548e0554d7c2e63bd26124a9aecc575aff832829fb3d96ad4b1589f38654",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/ApiError.java":  "30ef9916130669fb8092dbb7675e749e6736eac9a6e041ca6696c4f96523efd5",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/OpenApiConfiguration.java":  "caeb5e60efab8fb2b5c4744fd6b59d9a91e79cff6dee7a0b25da12d698d16b15",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/ValidationAdvice.java":  "bf5366db8c3ca132716241d532bbc8b7af22f3ef469d750da9aaa6c643af7174",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/file/FileController.java":  "6a60830691bb9704cd9edf8ef57db935adcad493489990caedb342a24bb2ff69",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/CreateOrder.java":  "adf473f13801416d0aa90e7493376952e4a2c42baccf9450a90484978c1d742d",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/OrderController.java":  "102b70ca3f6125e396e3270346885d34180a48ac021269fcd40eddef1fc2ffbd",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/TestbedApplication.java":  "ee23b076394685db11a15c1e2b2696995a2b6b54b018c35cbf573694a9786b59",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserController.java":  "6b12df19837e0e6f564ec60aeefdda6b7e885671a18cd3901dac6dd959d12335",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserView.java":  "fddc2b98bee0e528d7cd6435f08b2407ab26566b65aa574fb9688f1b2c47df1d",
+                         "src/main/resources/application.properties":  "30c1f2f760131c9b286ed44b21ad13dbb1a89587acfa3ed4ae18fa22072439ff"
+                     }
 }

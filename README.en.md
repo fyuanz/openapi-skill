@@ -14,7 +14,7 @@ needs Maven phases, a second application process, HTTP capture of `/v3/api-docs`
 - **Contract preservation**: parameters, request bodies, responses, media types, authentication definitions, and Schema data, with semantic operation IDs, machine indexes, and local-reference navigation.
 - **No filesystem side effects**: validates a complete result and creates a deterministic ZIP in memory; unchanged contracts produce identical bytes.
 - **Local conversion**: the core does not call LLMs, business APIs, or external reference URLs. Source free text stays separate from trusted Skill instructions.
-- **Explicit input**: only JSON declaring `openapi: 3.1.0` is accepted. Production documents come from SpringDoc / NextDoc4j; those producers own Java package scanning and document export.
+- **Explicit input**: JSON declaring `openapi: 3.0.x` or `3.1.x` is accepted; any other root marker is rejected. Production documents come from SpringDoc / NextDoc4j; those producers own Java package scanning and document export.
 
 YAML, Swagger 2.0, other OpenAPI versions, external references, full OpenAPI validation, automatic cross-project
 installation/synchronization, WebFlux, cross-service runtime aggregation, and package repositories are outside
@@ -22,7 +22,7 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The TypeScript package `openapi-skill@2.0.0` is the current source version; npm serves `1.0.0`, `1.1.0` and `2.0.0`
+The TypeScript package `openapi-skill@2.1.0` is the current source version; npm serves `1.0.0`, `1.1.0` and `2.0.0`
 as `latest`. It defaults to one self-contained
 API Skill per frontend project and adds a `context.md` group index keyed by the OpenAPI `tags`, one interface file per
 tag under its own readable name (Chinese tag names are kept verbatim), clean semantic filenames,
@@ -74,9 +74,9 @@ dependency and see the [Node package guide](openapi-skill-node/README.en.md) for
 ## Release and requirements
 
 The first release under the new name is `1.0.0`, and both the npm package and the Maven Central artifacts have been
-published manually. The current version is the breaking `2.0.0` — the generated layout moves from the published
-npm `openapi-skill-core/1` and `openapi-skill-core/2` trees to `openapi-skill-core/3` — and it is published to both
-npm and Maven Central.
+published manually. The published `2.0.0` moved the generated layout from the `openapi-skill-core/1` and
+`openapi-skill-core/2` trees to `openapi-skill-core/3`, on npm and Maven Central both. The Maven source line is now
+`2.1.0-SNAPSHOT`, which adds OpenAPI 3.0.x input support without changing any existing 3.1 output.
 SpringDoc applications should use the runtime Starter.
 
 | Artifact | Purpose |
@@ -98,7 +98,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-The first command installs the current `2.0.0` source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
+The first command installs the current source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
 start/stop, OpenAPI capture, or generated files. Tests verify the runtime ZIP on a random port.
 
 For a manual check, start the application:
@@ -112,7 +112,7 @@ and 7 document-local Schemas.
 
 ## Recommended: add the runtime starter
 
-For a Spring Boot WebMVC service whose SpringDoc output is exact OpenAPI 3.1.0, add one dependency:
+For a Spring Boot WebMVC service whose SpringDoc output is OpenAPI 3.0.x or 3.1.x, add one dependency:
 
 ```xml
 <dependency>
@@ -183,7 +183,7 @@ After an API change, download again and replace the complete old Skill so delete
 | Observation | What to check |
 | --- | --- |
 | Download endpoint returns 404 | Ensure the starter is on the runtime classpath and `openapi.skill.runtime.enabled` is not `false` |
-| Download endpoint returns 500 | Check that SpringDoc is enabled, the final JSON is exact OpenAPI 3.1.0, and local `$ref` targets are complete |
+| Download endpoint returns 500 | Check that SpringDoc is enabled, the final JSON is OpenAPI 3.0.x or 3.1.x, and local `$ref` targets are complete |
 | Unexpected ZIP name | Set `spring.application.name`, or override `openapi.skill.runtime.service-id` / `skill-name` |
 | 401/403 with Spring Security | Authorize the download path according to project policy; do not expose restricted API contracts just for download |
 

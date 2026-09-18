@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-Generate one self-contained Codex Skill from OpenAPI 3.1.0 JSON endpoints exposed by one or more services. The current, unpublished `2.0.0` source defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
+Generate one self-contained Codex Skill from OpenAPI 3.0.x / 3.1.x JSON endpoints exposed by one or more services. The published `2.0.0` release defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
 
 ## Install
 
@@ -95,7 +95,7 @@ npm run skill:generate
 
 Before publication, OpenAPI Skill downloads and validates every configured document from every service, generates and validates the complete project Skill, and then performs one directory replacement. If any service cannot be downloaded, contains an invalid contract, or fails generation, the complete previous Skill remains unchanged; OpenAPI Skill never publishes a subset that silently omits a service. A later successful replacement also removes services, documents, and operations no longer present in the configuration.
 
-Each URL must use HTTP(S), return JSON successfully, and declare exact `openapi: 3.1.0`. Redirects and external `$ref` values are rejected. Set `output` to an absolute path or a path relative to the project root to change the output parent; the default is `.agents/skills`. `timeoutMs` defaults to `30000`. Configuration may instead be placed under `package.json#openapiSkill` or selected with `openapi-skill --config <path>`.
+Each URL must use HTTP(S), return JSON successfully, and declare a supported `openapi: 3.0.x` or `3.1.x`. Redirects and external `$ref` values are rejected. Set `output` to an absolute path or a path relative to the project root to change the output parent; the default is `.agents/skills`. `timeoutMs` defaults to `30000`. Configuration may instead be placed under `package.json#openapiSkill` or selected with `openapi-skill --config <path>`.
 
 ## Legacy single-service compatibility
 

@@ -2,7 +2,7 @@
 
 > 版本：4.0.0
 > 日期：2026-09-16
-> 状态：运行时 Starter 主链路已验证；`openapi-skill-core/3` tag 分组布局已在 Java 与 Node 实现；本地 Node 2.0.0 通过 41 项测试、Java reactor 通过 71 项测试，npm/Maven 的 2.0.0 未发布（已发布版本为 npm 1.0.0/1.1.0、Maven 1.0.0）
+> 状态：运行时 Starter 主链路已验证；`openapi-skill-core/3` tag 分组布局已在 Java 与 Node 实现，输入接受 OpenAPI 3.0.x / 3.1.x；Node 通过 43 项测试、Java core 通过 77 项测试；npm 已发布 1.0.0/1.1.0/2.0.0（latest 2.0.0），Maven 已发布 1.0.0/2.0.0，Maven 源码线为 2.1.0-SNAPSHOT
 
 本版保留运行时下载主链路，并为前端/Node 项目增加一个自包含 API 文档 Skill：显式配置多个内部或第三方
 服务及其文档，完整下载、生成并原子安装到项目。历史范围和被取代的构建期决策保留在
@@ -19,7 +19,7 @@ Vue 3 或其他 Node.js 项目可使用 `openapi-skill` CLI/库，显式配置�
 Skill，也不使用文件系统符号链接。
 
 运行时链路支持 Java 17、Spring Boot WebMVC 3.5.x、SpringDoc 2.8.x；Node 包要求 Node.js 20+。两条链路
-都只接受精确 `openapi: 3.1.0` JSON。转换过程不调用 LLM、业务接口或外部 `$ref`，不解析 Swagger UI HTML。
+都只接受 `openapi: 3.0.x` / `3.1.x` JSON。转换过程不调用 LLM、业务接口或外部 `$ref`，不解析 Swagger UI HTML。
 
 ## 2. 运行时主流程
 
@@ -80,7 +80,7 @@ GET /openapi-skill/skill.zip
 ```text
 读取并校验完整配置
   → 在一个共享超时和 32 MiB 项目预算内下载全部文档
-  → 按 serviceId/documentId 独立解析 OpenAPI 3.1.0
+  → 按 serviceId/documentId 独立解析 OpenAPI 3.0.x / 3.1.x
   → 生成一个完整 project Skill 到 staging
   → 校验 provenance、路径、链接、边界和唯一根 SKILL.md
   → 原子替换 .agents/skills/<skillName>
@@ -231,7 +231,7 @@ OpenAPI 语义、servers、安全定义、同名 Schema 和 `$ref` 始终按 ser
 - Starter 只调用同一应用上下文中的 SpringDoc 资源，不接受请求参数形式的任意 URL，因而不引入 SSRF 入口。
 - Node CLI 只访问项目配置中逐项声明的 HTTP(S) URL，拒绝重定向；配置文件属于受信项目配置，不提供网页
   请求参数、Swagger UI URL 清单或注册中心驱动的任意抓取。
-- API 文档必须由应用明确启用；最终 JSON 不是精确 3.1.0、含悬空/外部引用或超过上限时请求失败。
+- API 文档必须由应用明确启用；最终 JSON 不是受支持的 `3.0.x` / `3.1.x`、含悬空/外部引用或超过上限时请求失败。
 - Node project Skill 在内存和 staging 中都校验路径、大小写碰撞、链接、provenance、唯一入口和文件上限；
   读取已有输出时拒绝符号链接及其他特殊文件。用户关键词经过独立的字符、长度和数量约束。
 - 当前将完整 Skill 和 ZIP 保存在单次请求内存中，适合 core 已有 64 MiB 输出上限；不提供包仓库或长期缓存。
@@ -247,14 +247,14 @@ Spring Boot 服务使用运行时 Starter；前端或其他 Node.js 项目使用
 
 | 模块 | 职责 | 当前状态 |
 | --- | --- | --- |
-| `openapi-skill-core` | OpenAPI 3.1.0 解析、分组 context/闭包渲染、文件集校验和旧目录安全发布 | 69 项测试通过 |
+| `openapi-skill-core` | OpenAPI 3.0.x/3.1.x 解析、分组 context/闭包渲染、文件集校验和旧目录安全发布 | 77 项测试通过 |
 | `openapi-skill-spring-boot-starter` | Spring Boot 自动配置、SpringDoc 最终文档发现、运行时转换和 ZIP 下载 | 2 项单/多文档测试通过 |
-| `openapi-skill-node` | 显式 URL 下载、core/3 多服务 project Skill 和本地原子发布 | 本地 2.0.0 通过 41 项测试；已发布 1.0.0/1.1.0，2.0.0 未发布 |
-| `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 6 项测试通过 |
+| `openapi-skill-node` | 显式 URL 下载、core/3 多服务 project Skill 和本地原子发布 | 本地源码通过 43 项测试；已发布 1.0.0/1.1.0/2.0.0 |
+| `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 7 项测试通过；含 3.1 与 3.0 两套方言快照 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x
-兼容性变化不会污染转换逻辑。当前 Java 与 npm 源码均为 `2.0.0`，尚未发布，
-此前已发布版本（Maven `openapi-skill*:1.0.0`、npm `openapi-skill@1.0.0`/`1.1.0`）保持不可变。
+兼容性变化不会污染转换逻辑。当前 Maven 源码为 `2.1.0-SNAPSHOT`、npm 源码为 `2.1.0`；
+已发布版本（Maven `openapi-skill*:1.0.0`/`2.0.0`、npm `openapi-skill@1.0.0`/`1.1.0`/`2.0.0`）保持不可变。
 
 ## 11. 暂不实现
 

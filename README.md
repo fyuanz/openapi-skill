@@ -14,14 +14,14 @@
 - **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供语义化接口 ID、机器索引和本地引用导航。
 - **无磁盘副作用**：生成结果先完整校验，再确定性地内存打包；相同契约得到相同 ZIP 字节。
 - **本地转换**：核心不调用 LLM、业务接口或外部引用地址；源文档自由文本与可信 Skill 指令分离。
-- **明确输入**：当前仅接受 `openapi: 3.1.0` 的 JSON；生产文档来源限定为 SpringDoc / NextDoc4j。Java 包扫描和文档导出由文档生产工具负责。
+- **明确输入**：接受 `openapi: 3.0.x` 与 `3.1.x` 的 JSON（根标记写成其他版本一律拒绝）；生产文档来源限定为 SpringDoc / NextDoc4j。Java 包扫描和文档导出由文档生产工具负责。
 
 当前不支持 YAML、Swagger 2.0、其他 OpenAPI 版本、外部引用、全量 OpenAPI 规范校验、自动跨项目安装/同步、
 WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 SpringDoc WebMVC 测试服务。
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`openapi-skill-node` 当前源码版本为 `openapi-skill@2.0.0`，npm 上已发布 `1.0.0`、`1.1.0` 与 `latest` 的 `2.0.0`。
+`openapi-skill-node` 当前源码版本为 `openapi-skill@2.1.0`，npm 上已发布 `1.0.0`、`1.1.0` 与 `latest` 的 `2.0.0`。
 它推荐一个前端项目只生成一份接口文档
 Skill，并使用按 OpenAPI `tags` 分组的分组索引 `context.md`、每个 tag 一个可读名称的接口文件（中文 tag 名直接保留）、
 无冲突纯语义文件名、预计算引用闭包和集中 conventions；
@@ -79,9 +79,9 @@ npm install --save-dev openapi-skill
 
 ## 版本与环境
 
-改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布。当前版本为破坏性的
-`2.0.0`（生成产物布局由已发布版本的 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为
-`openapi-skill-core/3`），npm 与 Maven Central 两侧均已发布。
+改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布。已发布的 `2.0.0` 把生成产物布局
+从 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为 `openapi-skill-core/3`，npm 与 Maven Central 两侧均已上线。
+Maven 源码线当前为 `2.1.0-SNAPSHOT`，新增 OpenAPI 3.0.x 输入支持；该改动不改变现有 3.1 输入的产物。
 对于 SpringDoc 应用，推荐使用运行时 Starter。
 
 | 构件 | 用途 |
@@ -103,7 +103,7 @@ mvn -B install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-第一条命令将当前 `2.0.0` 源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
+第一条命令将当前源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
 测试会在随机端口验证运行时 ZIP 接口，详见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
 
 手动体验时启动应用：
@@ -117,7 +117,7 @@ mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 
 ## 推荐：接入运行时 Starter
 
-目标 Spring Boot WebMVC 服务已有 SpringDoc 且输出精确 OpenAPI 3.1.0 时，只增加依赖：
+目标 Spring Boot WebMVC 服务已有 SpringDoc 且输出受支持的 OpenAPI `3.0.x` / `3.1.x` 时，只增加依赖：
 
 ```xml
 <dependency>
@@ -186,7 +186,7 @@ openapi.skill.runtime.skill-name=my-service-api
 | 现象 | 检查方式 |
 | --- | --- |
 | 下载接口 404 | 确认 Starter 依赖已进入运行时 classpath，且 `openapi.skill.runtime.enabled` 未设为 `false` |
-| 下载接口 500 | 检查 SpringDoc 是否启用、最终 JSON 是否为精确 OpenAPI 3.1.0，以及本地 `$ref` 是否完整 |
+| 下载接口 500 | 检查 SpringDoc 是否启用、最终 JSON 是否为受支持的 OpenAPI `3.0.x` / `3.1.x`，以及本地 `$ref` 是否完整 |
 | ZIP 名称不符合预期 | 设置 `spring.application.name`，或覆盖 `openapi.skill.runtime.service-id` / `skill-name` |
 | 有 Spring Security 时 401/403 | 按项目安全策略授权下载路径；不要为了下载公开受限 API 文档 |
 

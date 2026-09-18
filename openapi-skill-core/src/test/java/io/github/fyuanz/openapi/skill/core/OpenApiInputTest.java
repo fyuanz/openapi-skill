@@ -16,10 +16,16 @@ class OpenApiInputTest {
         }
     }
 
+    @ParameterizedTest @ValueSource(strings = {"\"3.0.0\"", "\"3.0.3\"", "\"3.1.0\"", "\"3.1.1\""})
+    void acceptsDeclaredVersions(String version) {
+        var json = ("{\"openapi\":" + version + ",\"info\":{\"title\":\"Example\"}}").getBytes(StandardCharsets.UTF_8);
+        assertEquals("Example", input.parse(json).path("info").path("title").asText());
+    }
+
     @ParameterizedTest @ValueSource(strings = {"{}", "{\"openapi\":null}"})
     void reportsMissingVersion(String json) { rejects(json, "MISSING_VERSION"); }
 
-    @ParameterizedTest @ValueSource(strings = {"\"3.0.3\"", "\"3.1.1\"", "\"3.1\"", "\" 3.1.0\"", "3.1", "true", "[]", "\"\""})
+    @ParameterizedTest @ValueSource(strings = {"\"3.2.0\"", "\"3.2.1\"", "\"2.0\"", "\"4.0.0\"", "\"3.1\"", "\" 3.1.0\"", "3.1", "true", "[]", "\"\""})
     void reportsUnsupportedVersion(String version) { rejects("{\"openapi\":" + version + "}", "UNSUPPORTED_VERSION"); }
 
     @ParameterizedTest @ValueSource(strings = {"", "{", "null", "[]", "true", "{\"openapi\":\"3.1.0\"} {}", "{\"openapi\":\"3.1.0\",\"openapi\":\"3.0.0\"}", "{\"openapi\":\"3.1.0\",}"})

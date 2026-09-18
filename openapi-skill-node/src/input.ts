@@ -1,5 +1,8 @@
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
+/** Accepted dialects: every declared 3.0.x and 3.1.x patch, and nothing else. */
+const SUPPORTED_VERSION = /^3\.[01]\.\d+$/;
+
 export type JsonObject = Record<string, unknown>;
 
 export function parseOpenApi(bytes: Uint8Array): JsonObject {
@@ -13,7 +16,8 @@ export function parseOpenApi(bytes: Uint8Array): JsonObject {
   catch (error) { throw new Error('INVALID_JSON: expected a single JSON object', { cause: error }); }
   if (!isObject(value)) throw new Error('INVALID_JSON: expected a single JSON object');
   if (!Object.hasOwn(value, 'openapi') || value.openapi === null) throw new Error('MISSING_VERSION: root openapi is required');
-  if (value.openapi !== '3.1.0') throw new Error('UNSUPPORTED_VERSION: expected exact OpenAPI 3.1.0');
+  if (typeof value.openapi !== 'string' || !SUPPORTED_VERSION.test(value.openapi))
+    throw new Error('UNSUPPORTED_VERSION: expected OpenAPI 3.0.x or 3.1.x');
   return value;
 }
 

@@ -1,5 +1,62 @@
 # Decisions
 
+## 2026-09-18 - Accept OpenAPI 3.0.x And 3.1.x Root Markers
+
+Status: Accepted and implemented test-first in Java and Node
+
+Context:
+
+- The compiler accepted one exact root marker, `openapi: 3.1.0`. Every other marker failed with
+  `UNSUPPORTED_VERSION` before a single document byte was fetched.
+- SpringDoc 2.8.15 defaults to OpenAPI 3.1, but the Node CLI is producer-agnostic. NestJS (`@nestjs/swagger`),
+  .NET Swashbuckle, swaggo, and hand-exported specifications emit `3.0.x`, so a real consumer project was rejected on
+  its root marker alone.
+- The earlier decisions deferred OpenAPI 3.0 and "other OpenAPI 3.1 patch versions" rather than rejecting them on
+  technical grounds.
+- The compiler does not interpret JSON Schema semantics. `DocumentReferences` copies source nodes verbatim and links
+  document-local JSON Pointers; it reads semantics in only three places — the root version marker, `security`/`servers`
+  inheritance, and first-tag grouping — and those are identical in 3.0 and 3.1.
+
+Decision:
+
+- Accept any textual `openapi` value matching `3.[01].<digits>`. Reject everything else, including `3.2.x`, `2.0`, and
+  the unsuffixed `3.1`, with `UNSUPPORTED_VERSION`.
+- Record the input's own root marker in `references/source.json` instead of the previous hard-coded `3.1.0`. Provenance
+  that misreports the dialect would make the snapshot's claim false.
+- Capture real 3.0 snapshots from the existing testbed producer (`OpenApi30ContractTest`, property
+  `springdoc.api-docs.version=OPENAPI_3_0`) beside the existing 3.1 snapshots, and consume both from core and Node tests.
+- Leave `references/conventions.md` unchanged. It states absent/null/empty semantics only and contains no version claim,
+  so every byte of existing 3.1 output stays identical.
+
+Evidence:
+
+- springdoc 2.8.15 emits `3.0.1`, not `3.0.0`. An exact-`3.0.0` gate would have rejected the very producer the fixture
+  comes from, so the patch range is a measured requirement rather than convenience.
+- Rebuilding the Vue consumer tree with the changed source produces a byte-identical 24-file tree, whole-tree SHA-256
+  `745f0e0ec44a9eda52fb0868c00c0600b193307b19e2b39f0966f752721148bc`, unchanged from the tree the published `2.0.0`
+  generated. The `openapi-skill-core/3` layout and its published hash remain valid.
+- The same producer under 3.0 drops siblings of `$ref`: `UserView.address.description` and
+  `CreateOrder.shippingAddress.description` are present under 3.1 and absent under 3.0. The compiler copies bytes and
+  must not invent them back; both dialects' snapshots record this.
+- Java passes 77 core tests and Node passes 43. Both suites compile the 3.0 snapshots and assert the recorded marker.
+
+Consequences:
+
+- Both dialects share one code path. No dialect-specific adapter, normalization step, or second pipeline was added.
+- OpenAPI 3.0 `nullable`, boolean `exclusiveMinimum`/`exclusiveMaximum`, and `$ref` sibling semantics pass through as
+  source text; the compiler claims nothing about them beyond copying bytes.
+- Swagger 2.0, YAML, `3.2.x`, and cross-service aggregation remain deferred.
+
+Alternatives considered:
+
+- Accept only the exact `3.0.0` marker. Rejected because springdoc emits `3.0.1` and swagger-core emits `3.0.3`; a
+  patch-exact gate rejects real producers.
+- Accept every `3.x`. Rejected because 3.2 changes the document model and no fixture exists for it.
+- Normalize 3.0 input into 3.1 before compiling. Rejected because it would rewrite source bytes, invalidate the recorded
+  digest, and invent semantics the producer never emitted.
+- Add a 3.0 section to `references/conventions.md`. Rejected because that shared file would change every tree and
+  invalidate the published core/3 hash for no reader benefit.
+
 ## 2026-09-17 - Use A Single Version Tag Per Release Line
 
 The repository had accumulated two tag shapes: `v1.1.0`/`v1.2.0` marking Maven Central release commits and
