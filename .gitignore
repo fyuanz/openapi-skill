@@ -6,6 +6,12 @@ target/
 **/node_modules/
 openapi-skill-node/dist/
 openapi-skill-node/*.tgz
+# Exception: the consumer testbed pins one packed tarball in its lockfile. That
+# tarball must exist in a fresh clone or `npm ci` fails (reported misleadingly as
+# "tarball data ... seems to be corrupted", then ENOENT). `npm pack` is only
+# byte-reproducible from an LF checkout, so the pinned artifact is committed
+# rather than rebuilt. Update this path when the pinned version changes.
+!openapi-skill-node/openapi-skill-2.1.0.tgz
 
 # Java compiler and crash output
 *.class
@@ -49,3 +55,4 @@ $RECYCLE.BIN/
 # Agent
 .slidep
 docs/share
+ppt/

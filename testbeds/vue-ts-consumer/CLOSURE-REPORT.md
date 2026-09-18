@@ -2,6 +2,57 @@
 
 本文件记录 2026-09-14 第一次「真实前端消费端」闭环测试的结果与发现。它是**测试证据**，不是产品文档。
 
+## 2026-09-18 复现性缺口：被 pin 的 tarball 与行尾
+
+一次干净 clone 的验收暴露两个独立缺陷，本次一并修复。
+
+**缺口 1 — 被 lock 引用的 tarball 不在版本控制里。**
+`.gitignore:8` 忽略 `openapi-skill-node/*.tgz`，`git ls-files "*.tgz"` 返回空，而 `package.json`
+与 `package-lock.json` 引用 `file:../../openapi-skill-node/openapi-skill-2.1.0.tgz`。
+在**空 cacache** 的干净 clone 上实测，`npm ci` 失败：
+
+```
+npm warn tarball tarball data for openapi-skill@file:...openapi-skill-2.1.0.tgz ... seems to be corrupted. Trying again.
+npm error code ENOENT  path F:\...\openapi-skill-node\openapi-skill-2.1.0.tgz
+```
+
+报错文案是 **"corrupted"**，真实原因却是**文件不存在**——这个误导会让人去查包内容而不是查路径。
+更隐蔽的是**本机不暴露**：这台机器的 cacache 已有该 tarball，npm 按 lock 的 integrity 从缓存还原，
+`npm ci` 静默通过。即**有缓存的机器全绿、新机器与 CI 全红**。
+
+**缺口 2 — `npm pack` 不是跨行尾可复现的，根因是 `core.autocrlf=true`。**
+从源码重建 tarball（`npm ci && npm run build && npm pack`，24 个条目）后比对：
+
+| 来源 | 字节 | sha1 |
+| --- | --- | --- |
+| 仓库里被 lock 引用的 | 29,108 | `b155643989b6121e1c1b701affaffb71e7ac4be9` |
+| 干净 clone 重建（默认 Git 设置） | 29,289 | `fc8762657b6e1f8b7fb4941c872f00ccedac60dc` |
+
+解包逐文件 `cmp` 定位到差异**全部来自行尾**：`LICENSE`、`README.md`、`README.en.md`、
+`dist/generator.js`（内嵌多行 `CONVENTIONS` 模板）、`package.json` 共 5 个文件，仓库侧 `\n`、
+重建侧 `\r\n`；其余 19 个文件逐字节相同，181 B 的字节差恰是这些文件的行数之和。
+
+根因链：`core.autocrlf=true`（来自 `C:/Program Files/Git/etc/gitconfig`，Git for Windows 的 system 级
+默认）把 index 里的 LF 检出成 CRLF → `tsc` 输出保留 CRLF → `npm pack` 打包 CRLF → sha512 与 lock 不符。
+`git ls-files --eol` 可确认：index 是 `i/lf`，主工作区恰好是 `w/lf`（这些文件由工具以 LF 写入，绕过了
+git 的 CRLF 检出），而**任何真正 clone 出来的人拿到的是 CRLF**。在 CRLF 检出下按步骤诚实重建，
+`npm ci` 报：
+
+```
+npm error code EINTEGRITY
+npm error ... wanted sha512-OxRsp/7J... but got sha512-2kGADGxCWvR... (29289 bytes)
+```
+
+同一份源码、两个检出状态、两个不同的包。对照实验：`git clone -c core.autocrlf=false` 后重建，
+tarball 与仓库里那个**逐字节相同**（29,108 B / `b1556439…`），证明 `npm pack` 本身是确定性的，
+唯一的不可复现源是行尾。
+
+**处置**：把被 pin 的 tarball 纳入版本控制（根 `.gitignore` 增加
+`!openapi-skill-node/openapi-skill-2.1.0.tgz` 例外），fresh clone 直接 `npm ci` 可用。
+**没有**改用 `.gitattributes` 强制 `eol=lf`：`fixtures/*.json` 的 sha256 是按 CRLF 字节记录在
+`metadata.json` 里的（本次复算四条全部吻合），强制 LF 会连带作废这些快照记录与测试输入字节，
+超出本次修复范围。行尾问题按上述证据留作独立切片。
+
 ## 2026-09-18 OpenAPI 3.0.x 接受集复验
 
 - 安装本地打包的 `openapi-skill@2.1.0` tarball（24 个文件，29,108 B；shasum

@@ -1,5 +1,50 @@
 # Decisions
 
+## 2026-09-18 - Commit The One Tarball The Consumer Lockfile Pins
+
+Status: Accepted and implemented
+
+Context:
+
+- `testbeds/vue-ts-consumer/package.json` and its lockfile reference
+  `file:../../openapi-skill-node/openapi-skill-2.1.0.tgz`, but `.gitignore` ignored
+  `openapi-skill-node/*.tgz`, so no tarball was ever tracked and a fresh clone could not install.
+- On a clone with an empty npm cache, `npm ci` fails with `ENOENT` after first reporting
+  `tarball data ... seems to be corrupted`. The message points at package contents rather than the
+  real cause, the missing path.
+- The failure is invisible on a machine whose npm cache already holds that tarball: npm restores it
+  from cacache by the lockfile integrity, so `npm ci` passes locally while failing on every new
+  machine and in CI.
+- Repacking from source does not fix it. `npm pack` is deterministic only for a fixed line-ending
+  checkout. `core.autocrlf=true` (the Git for Windows system default) checks out CRLF, `tsc` emits
+  CRLF into `dist/`, and the packed sha512 then differs from the lockfile integrity, producing
+  `EINTEGRITY`. Measured: 29,108 bytes / shasum `b155643989b6121e1c1b701affaffb71e7ac4be9` from an LF
+  checkout versus 29,289 bytes / shasum `fc8762657b6e1f8b7fb4941c872f00ccedac60dc` from a default
+  CRLF clone; the difference is exactly the line endings of the five files holding multi-line text.
+
+Decision:
+
+- Track exactly one tarball, the version the consumer lockfile pins, through a negated `.gitignore`
+  exception (`!openapi-skill-node/openapi-skill-2.1.0.tgz`). Every other `openapi-skill-node/*.tgz`
+  stays ignored, so packing remains a local build step that does not otherwise enter the repository.
+- Keep the consumer on the packed tarball instead of switching to a directory dependency, so the
+  package `files` whitelist and the compiled output keep being exercised exactly as published.
+- Whenever the pinned version changes, update the exception path, the `package.json` reference, and
+  the lockfile `resolved`/`integrity` together.
+- Do not add a repository-wide `.gitattributes` with `eol=lf` in this change: the fixture snapshots
+  in `testbeds/springdoc-multi-package/fixtures/` carry sha256 values in `metadata.json` computed over
+  their CRLF bytes, so forcing LF would invalidate those records and change test input bytes. The
+  line-ending reproducibility problem is recorded as its own slice.
+
+Evidence:
+
+- Fresh clone with an empty npm cache: `npm ci` failed with `ENOENT` and the misleading
+  "seems to be corrupted" warning before this change, and passes after it.
+- `git clone -c core.autocrlf=false`, then `npm ci && npm run build && npm pack`, reproduces 29,108
+  bytes / shasum `b155643989b6121e1c1b701affaffb71e7ac4be9`, byte-identical to the committed tarball
+  the lockfile pins — so the tarball is verifiable, not merely present.
+- Full measurements and the failing npm output are in `testbeds/vue-ts-consumer/CLOSURE-REPORT.md`.
+
 ## 2026-09-18 - Accept OpenAPI 3.0.x And 3.1.x Root Markers
 
 Status: Accepted and implemented test-first in Java and Node

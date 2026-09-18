@@ -49,11 +49,30 @@ curl http://127.0.0.1:18080/v3/api-docs/business
 
 ## 2. Install and generate the Skill
 
+The consumer deliberately installs the **packed** tarball instead of the source directory, so the
+package's `files` whitelist and compiled `dist/` output are exercised exactly as published. That
+tarball is committed at `openapi-skill-node/openapi-skill-2.1.0.tgz` (29,108 bytes, shasum
+`b155643989b6121e1c1b701affaffb71e7ac4be9`), because `npm pack` is not byte-reproducible across
+line-ending settings: a checkout that hands out CRLF compiles to a different tarball and `npm ci`
+then fails with `EINTEGRITY` rather than a clear "missing file". A fresh clone already contains the
+pinned tarball, so no packaging step is needed.
+
 ```shell
 cd testbeds/vue-ts-consumer
 npm install
 npm run skill:generate
 ```
+
+When the Node package version changes, repack and re-pin:
+
+```shell
+cd openapi-skill-node
+npm ci && npm run build && npm pack
+```
+
+Copy the produced tarball to the pinned path, update the `openapi-skill` entry in
+`testbeds/vue-ts-consumer/package.json` plus the matching `resolved` and `integrity` in its
+`package-lock.json`, and bump the exception line in the repository-root `.gitignore`.
 
 `openapi-skill.config.json` declares one `springdoc-multi-package` service and
 maps its account/business document IDs to the two live endpoints. It also
@@ -126,5 +145,7 @@ the sample service, not of the generated Skill.
 
 ## Generated artifacts are not committed
 
-`node_modules/`, `dist/`, and `.agents/` are ignored. Regenerate the Skill with
-`npm run skill:generate` after starting the backend.
+`node_modules/`, `dist/`, and `.agents/` are ignored. The single committed exception is the pinned
+tarball `openapi-skill-node/openapi-skill-2.1.0.tgz`, which this project's lockfile references and
+which must be present for `npm ci` to succeed. Regenerate the Skill with `npm run skill:generate`
+after starting the backend.
