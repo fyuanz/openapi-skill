@@ -1,5 +1,56 @@
 # Decisions
 
+## 2026-09-20 - Make OpenSpec The Single Workflow Source
+
+Status: Accepted and implemented
+
+Context:
+
+- OpenSpec adoption initially added a detailed workflow section to root `AGENTS.md`, including per-tool command names,
+  CLI references, directory meanings, and lifecycle rules.
+- Those rules are also provided by `openspec/config.yaml`, the files under `openspec/`, and the generated OpenSpec
+  skills. Keeping a copied manual in `AGENTS.md` creates two sources that can drift after an OpenSpec CLI or workflow
+  upgrade.
+- Root `AGENTS.md` still contains project-specific rules that OpenSpec does not own, including the mandatory codex
+  document first-read, red-to-green testing, documentation synchronization, verification, and normal push delivery.
+
+Decision:
+
+- OpenSpec is the single workflow source of truth for spec-driven development, change lifecycle, and agreed behavior.
+  Agents must invoke the applicable OpenSpec workflow for nontrivial features, refactors, and architectural changes.
+- Root `AGENTS.md` is retained but narrowed to repository-specific engineering rules. It must not duplicate OpenSpec
+  command tables, CLI references, artifact language settings, directory explanations, or lifecycle instructions.
+- `openspec/` remains the tracked source for OpenSpec configuration, current specs, active changes, and archived
+  history. The generated `.agents/`, `.claude/`, and `.codebuddy/` trees remain ignored and refreshable through
+  `openspec update`; they are not hand-maintained source.
+- `docs/codex/` continues to record product context, module responsibilities, task status, and durable ADR history.
+  It must describe the governance boundary without becoming a replacement for current OpenSpec specs.
+
+This supersedes the 2026-09-20 OpenSpec adoption decision's instruction to record the CLI surface and per-tool command
+spelling in `AGENTS.md`. That record moved into generated OpenSpec skills, which are refreshed with the installed CLI.
+
+Alternatives considered:
+
+- Keep a complete OpenSpec command table in `AGENTS.md`. Rejected because it creates a second manual that drifts when
+  generated skills or CLI behavior change.
+- Delete `AGENTS.md` entirely. Rejected because it would discard repository-specific engineering and delivery rules
+  that are not owned by OpenSpec.
+- Move the full repository rulebook into `openspec/config.yaml` context. Rejected because that context is attached to
+  planning artifacts and is not the right home for commit, first-read, and verification policy.
+
+Consequences:
+
+- New agents can find concrete OpenSpec invocation through the applicable generated OpenSpec skills; root instructions
+  only establish precedence and project engineering constraints.
+- Future OpenSpec command or skill wording changes should be absorbed by regenerating skills rather than editing
+  `AGENTS.md`.
+- Product code, generated output, dependencies, and release behavior are unchanged; this is a governance and
+  documentation decision.
+
+Evidence: the change `streamline-agent-governance` is a `skip_specs: true` documentation/governance change. Root
+`AGENTS.md` was reduced to governance precedence plus repository engineering rules, and `openspec validate` accepts the
+zero product-spec delta. The generated agent trees remain outside tracked edits.
+
 ## 2026-09-20 - Read A Value Domain Where The Document States It
 
 Status: Accepted and implemented
@@ -71,9 +122,9 @@ Decision:
 - Keep `docs/codex/` as-is. OpenSpec owns *what is being built and what is agreed*; `docs/codex/`
   keeps owning *stages, ADR history, module responsibilities, and build context*. OpenSpec's
   `openspec/specs/` is synchronized by the change itself, not by hand-copied text.
-- Record the CLI surface and per-tool command spelling in `AGENTS.md`, since the invocation differs
-  by assistant (`/opsx:propose` for CodeBuddy and Claude, `$openspec-propose` for Codex,
-  `/openspec-propose` for the universal tree).
+- Originally recorded the CLI surface and per-tool command spelling in `AGENTS.md`; superseded later
+  on 2026-09-20 by "Make OpenSpec The Single Workflow Source", which leaves command spelling to
+  generated OpenSpec skills and narrows `AGENTS.md` to repository engineering rules.
 
 Consequences:
 

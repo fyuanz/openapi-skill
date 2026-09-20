@@ -53,7 +53,7 @@
 
 | Path | Purpose |
 | --- | --- |
-| `AGENTS.md` | First-read, test-first development, and documentation rules |
+| `AGENTS.md` | Repository-specific first-read, test-first, documentation, verification, and delivery rules; it does not duplicate OpenSpec workflow instructions |
 | `README.md` / `README.en.md` | Runtime/Node onboarding, Skill usage and verification |
 | `docs/openapi-skill-design.md` | v4.0 runtime and context-first project-Skill architecture |
 | `pom.xml` | Java 17 Maven parent; aggregates core and runtime Starter |
@@ -118,10 +118,12 @@ project whose generated Skill, `node_modules/`, and `dist/` are ignored rather t
   provenance are `references/catalog.md` and `references/source.json`; every physical member tree is under
   `references/services/<serviceId>/references/`. Relative Markdown links provide navigation, not filesystem symlinks.
   Node staging and backup attempts stay beside the output under `.openapi-skill/staging/` and `.openapi-skill/backups/`.
-- OpenSpec splits by lifetime, not by tool. `openspec/` is tracked source: `config.yaml`, `specs/` for agreed current
-  behavior, `changes/<name>/` for in-flight proposals, and `changes/archive/<date>-<name>/` for history. The generated
-  agent instruction trees `.agents/`, `.claude/`, and `.codebuddy/` are ignored because `openspec update` rewrites them
-  from the installed CLI version; they are output, not reviewable source.
+- OpenSpec splits by lifetime, not by tool. `openspec/` is the tracked workflow and specification source:
+  `config.yaml`, `specs/` for agreed current behavior, `changes/<name>/` for in-flight proposals, and
+  `changes/archive/<date>-<name>/` for history. The generated agent instruction trees `.agents/`, `.claude/`, and
+  `.codebuddy/` are ignored because `openspec update` rewrites them from the installed CLI version; they are output,
+  not reviewable source. Root `AGENTS.md` is separate reviewable project guidance for repository engineering rules
+  only; it must not become a second copy of OpenSpec command or lifecycle instructions.
 - Preserve safe local ignore rules for IDE files, secrets, logs, and temporary files.
 - Generated restricted API documentation must not be committed as a substitute for sanitized fixtures.
 

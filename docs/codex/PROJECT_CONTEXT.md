@@ -76,9 +76,11 @@ and is not a delivery gate.
   `smartdoc-agent` npm name. Under the current identities, npm `openapi-skill` has `1.0.0` and `1.1.0` published
   (`latest = 1.1.0`) and Maven Central has `io.github.fyuanz:openapi-skill{,-core,-spring-boot-starter}:1.0.0`; the
   source now carries the breaking `2.0.0` line, which awaits manual publication.
-- Development follows OpenSpec (`@fission-ai/openspec@1.13.1`). `openspec/specs/` holds agreed current behavior and
+- Development follows OpenSpec (`@fission-ai/openspec@1.13.1`) as the single workflow source for spec-driven
+  development, change lifecycle, and agreed behavior. `openspec/specs/` holds agreed current behavior and
   `openspec/changes/<name>/` holds in-flight proposals; both are tracked. The generated agent instruction trees
-  (`.agents/`, `.claude/`, `.codebuddy/`) are ignored and refreshed by `openspec update`.
+  (`.agents/`, `.claude/`, `.codebuddy/`) are ignored and refreshed by `openspec update`, while root `AGENTS.md`
+  only records repository-specific engineering rules and does not duplicate OpenSpec instructions.
 
 ## Commands
 
@@ -109,21 +111,9 @@ mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 GET http://127.0.0.1:18080/openapi-skill/skill.zip
 ```
 
-OpenSpec workflow, run from the repository root:
-
-```text
-openspec list                # active changes
-openspec list --specs        # agreed specs
-openspec validate [item]     # validate changes/specs
-openspec show [item]         # read a change or spec
-openspec status              # artifact completion for a change
-openspec doctor              # relationship health
-openspec update              # refresh generated agent instructions after a CLI upgrade
-```
-
-Slash commands are invoked inside a coding assistant, not the CLI: `/opsx:propose <idea>` and
-`/opsx:apply` in CodeBuddy or Claude, `$openspec-propose` in Codex, `/openspec-propose` in the
-universal tree. See `AGENTS.md` for the full table.
+OpenSpec workflow commands and per-assistant invocation names are provided by the installed OpenSpec skills and the
+OpenSpec CLI help; they are intentionally not duplicated in project documentation. Root `AGENTS.md` records only the
+governance precedence and repository-specific engineering rules.
 
 ## Constraints
 

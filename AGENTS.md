@@ -1,42 +1,13 @@
 # Project Instructions
 
-## Spec-Driven Development (OpenSpec)
+## Governance
 
-This project is developed with **OpenSpec** (`@fission-ai/openspec`, CLI 1.13.1). Any nontrivial
-feature, refactor, or architectural change starts as an OpenSpec change proposal, not as code.
+OpenSpec is the single workflow source of truth for spec-driven development, change lifecycle, and agreed behavior.
+Invoke the applicable OpenSpec workflow before any nontrivial feature, refactor, or architectural change.
 
-Workflow (invoke per tool):
-
-| Step | CodeBuddy / Claude | Codex | Universal |
-| --- | --- | --- | --- |
-| Think it through | `/opsx:explore` | `$openspec-explore` | `/openspec-explore` |
-| Propose a change | `/opsx:propose <idea>` | `$openspec-propose` | `/openspec-propose` |
-| Implement | `/opsx:apply` | `$openspec-apply-change` | `/openspec-apply-change` |
-| Update artifacts | `/opsx:update` | `$openspec-update-change` | `/openspec-update-change` |
-| Reconcile specs | `/opsx:sync` | `$openspec-sync-specs` | `/openspec-sync-specs` |
-| Archive when done | `/opsx:archive` | `$openspec-archive-change` | `/openspec-archive-change` |
-
-Layout: `openspec/specs/` = agreed current truth; `openspec/changes/<name>/` = in-flight proposals
-(`proposal.md`, `specs/`, `design.md`, `tasks.md`); `openspec/changes/archive/<date>-<name>/` = history.
-Artifacts are written in **zh-CN**; keep structural headings and SHALL/MUST keywords in English
-(`openspec/config.yaml`).
-
-CLI reference (from the repo root):
-
-- `openspec list` — active changes; `openspec list --specs` — specs
-- `openspec validate [item]` — validate changes/specs
-- `openspec show [item]` — read a change or spec
-- `openspec status` — artifact completion for a change
-- `openspec doctor` — relationship health
-- `openspec update` — refresh generated agent instructions after a CLI upgrade
-
-Rules:
-
-- Do not write implementation code for a nontrivial change until its `tasks.md` exists and the
-  proposal has been reviewed.
-- Keep `openspec/specs/` in sync: when a change alters agreed behavior, reconcile it in the same
-  slice rather than letting specs drift.
-- Adding an OpenSpec proposal is not authorization to start unrelated product stages.
+This file only records repository-specific engineering rules. It must not duplicate OpenSpec command tables, CLI
+references, artifact language settings, directory explanations, or lifecycle instructions; those are owned by
+`openspec/` and the generated OpenSpec skills.
 
 ## Mandatory First Read
 

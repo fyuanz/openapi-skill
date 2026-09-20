@@ -1,5 +1,27 @@
 # Tasks
 
+## 2026-09-20 - Streamline Agent Governance Around OpenSpec
+
+Status: Implemented in change `streamline-agent-governance`.
+
+- Root `AGENTS.md` was reduced to governance precedence plus repository-specific engineering rules. It retains the
+  mandatory codex first-read set, red-to-green testing, file-size guidance, documentation synchronization,
+  verification, and normal milestone commit/push rules.
+- The duplicated OpenSpec workflow manual was removed from `AGENTS.md`: per-tool command spelling, the CLI command
+  list, artifact language duplication, and OpenSpec lifecycle/directory details are now owned by `openspec/` and the
+  generated OpenSpec skills.
+- `PROJECT_CONTEXT.md` and `PROJECT_STRUCTURE.md` were updated to describe the boundary: OpenSpec owns workflow,
+  change lifecycle, and agreed behavior; root `AGENTS.md` owns repository engineering rules; generated
+  `.agents/`, `.claude/`, and `.codebuddy/` trees remain ignored output.
+- `DECISIONS.md` records the governance decision and explicitly supersedes the prior adoption note that instructed
+  root `AGENTS.md` to carry the OpenSpec CLI surface and per-tool command spelling.
+- Verification for this governance slice: `openspec validate "streamline-agent-governance"`,
+  `openspec status --change "streamline-agent-governance" --json`, `openspec doctor`, `openspec list --json`,
+  targeted `rg` searches, and `git diff --check`. No product code, dependency, release artifact, OpenSpec config, or
+  generated agent tree was modified.
+- No version bump is required because generated product output and runtime behavior are unchanged. Publication is not
+  part of this governance change.
+
 ## Current Scope
 
 Product design v4.0.0 keeps the embedded Spring Boot runtime endpoint as the primary SpringDoc workflow. The application
@@ -171,9 +193,9 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
 - `.gitignore` now ignores the three generated instruction trees (`.agents/`, `.claude/`,
   `.codebuddy/`) and keeps `openspec/` tracked. Verified with `git check-ignore -v`: all three trees
   match their rules and `openspec/config.yaml` does not.
-- `AGENTS.md` gained a leading Specification-Driven Development section that names the workflow, the
-  per-tool command spelling, the tracked-versus-generated split, the CLI surface, and the rule that a
-  nontrivial change needs a reviewed proposal before implementation code.
+- `AGENTS.md` initially gained a leading Specification-Driven Development section. That broader manual was later
+  superseded by change `streamline-agent-governance`: root `AGENTS.md` now only states OpenSpec precedence and
+  repository engineering rules, while concrete workflow/command details are owned by OpenSpec skills and `openspec/`.
 - No version bump: this change adds process, configuration, and documentation. It does not alter
   generated output, so the release rule in DECISIONS.md:367 is not triggered.
 
@@ -558,11 +580,10 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
-2026-09-20 (OpenSpec adopted as the development workflow: `@fission-ai/openspec@1.13.1` installed and
-verified, `openspec init` created the `openspec/` tree plus codebuddy/claude/codex/agents instruction
-trees, generated trees added to `.gitignore` while `openspec/` stays tracked, and `AGENTS.md` now leads
-with the spec-driven workflow and per-tool command spelling. No version bump, because no generated
-output changed).
+2026-09-20 (OpenSpec adopted and then made the single workflow source: `@fission-ai/openspec@1.13.1` is installed and
+verified, `openspec init` created the `openspec/` tree plus codebuddy/claude/codex/agents instruction trees, generated
+trees are ignored while `openspec/` stays tracked, and change `streamline-agent-governance` narrowed root `AGENTS.md`
+to governance precedence plus repository engineering rules. No version bump, because no generated output changed).
 2026-09-17 (Release closed out: annotated `v2.0.0` created on `c221a3a` and pushed, the two pending documentation
 commits pushed over SSH after the HTTPS GitHub path failed with HTTP 502, and the one-tag-per-version rule recorded
 as a decision. Both registry lines serve 2.0.0 and no tracked work item remains open).
