@@ -118,6 +118,10 @@ project whose generated Skill, `node_modules/`, and `dist/` are ignored rather t
   provenance are `references/catalog.md` and `references/source.json`; every physical member tree is under
   `references/services/<serviceId>/references/`. Relative Markdown links provide navigation, not filesystem symlinks.
   Node staging and backup attempts stay beside the output under `.openapi-skill/staging/` and `.openapi-skill/backups/`.
+- OpenSpec splits by lifetime, not by tool. `openspec/` is tracked source: `config.yaml`, `specs/` for agreed current
+  behavior, `changes/<name>/` for in-flight proposals, and `changes/archive/<date>-<name>/` for history. The generated
+  agent instruction trees `.agents/`, `.claude/`, and `.codebuddy/` are ignored because `openspec update` rewrites them
+  from the installed CLI version; they are output, not reviewable source.
 - Preserve safe local ignore rules for IDE files, secrets, logs, and temporary files.
 - Generated restricted API documentation must not be committed as a substitute for sanitized fixtures.
 

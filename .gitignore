@@ -56,3 +56,9 @@ $RECYCLE.BIN/
 .slidep
 docs/share
 ppt/
+
+# OpenSpec: generated agent instructions (regenerate with `openspec update`).
+# openspec/ itself IS tracked - specs and change proposals are versioned truth.
+.agents/
+.claude/
+.codebuddy/

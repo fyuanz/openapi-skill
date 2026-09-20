@@ -34,6 +34,7 @@ artifact coordination remain outside scope.
 | P12 | Rename repository, npm/Maven artifacts, Java namespaces, runtime/config identities and local modules to `openapi-skill` | Complete in source; publication intentionally left to the user |
 | P13 | LLM-first document context, clean semantic paths, and precomputed reference closure | Complete in Java and Node; runtime/Vue evidence verified, publication not requested |
 | P14 | Tag-grouped navigation: one readable file per first OpenAPI tag, slim group-index context, catalog-owned server/security facts, 72-character names, breaking 2.0.0 release | Complete in Java and Node; runtime/Vue/cross-implementation evidence verified, publication not requested |
+| P15 | Adopt OpenSpec as the spec-driven development workflow for this repository | Complete; CLI `1.13.1` installed, four tool trees initialized, `openspec/` tracked and generated instruction trees ignored |
 | P15 | Accept OpenAPI 3.0.x and 3.1.x root markers, record the input's own dialect, and capture real 3.0 snapshots | Complete in Java and Node; 77 core and 43 Node tests pass, the published core/3 tree is byte-identical, publication not requested |
 | P16 | Consumer testbed reproducibility: track the one tarball its lockfile pins, and record that `npm pack` is line-ending dependent | Complete; a fresh clone with an empty npm cache installs, and the committed tarball reproduces byte-identically from an LF checkout. The standing "no tarball is committed" rule now has exactly one deliberate exception |
 | Release | Maven Central releases | `1.0.0` and `2.0.0` for the `openapi-skill*` coordinates published; `2.0.0` went live 2026-09-17 via the maintainer-run Central Portal deployment `0a0a1c39-a8ab-4378-b862-9b659a5f5c4f`; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
@@ -133,6 +134,24 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   Maven Central `2.0.0` artifacts were published on 2026-09-17, so both registry lines now serve `2.0.0`.
 
 ## Verified
+
+## 2026-09-20 - OpenSpec Adopted As The Development Workflow
+
+- `@fission-ai/openspec@1.13.1` installed globally and verified: `openspec --version` prints `1.13.1`.
+  The registry was queried directly because `npm view openspec` resolves a different, unrelated bare
+  `openspec` placeholder at `0.0.0`.
+- `openspec init --tools codebuddy,claude,codex,agents --language zh-CN` created
+  `openspec/{config.yaml,specs/,changes/archive/}` plus 6 skills and 6 commands under each selected
+  tool tree. `openspec doctor` reports `OpenSpec root: ok`; `openspec list` reports
+  `No active changes found.`, which is the correct empty state for a fresh adoption.
+- `.gitignore` now ignores the three generated instruction trees (`.agents/`, `.claude/`,
+  `.codebuddy/`) and keeps `openspec/` tracked. Verified with `git check-ignore -v`: all three trees
+  match their rules and `openspec/config.yaml` does not.
+- `AGENTS.md` gained a leading Specification-Driven Development section that names the workflow, the
+  per-tool command spelling, the tracked-versus-generated split, the CLI surface, and the rule that a
+  nontrivial change needs a reviewed proposal before implementation code.
+- No version bump: this change adds process, configuration, and documentation. It does not alter
+  generated output, so the release rule in DECISIONS.md:367 is not triggered.
 
 ## 2026-09-17 - Maven Central 2.0.0 Release Preflight
 
@@ -515,6 +534,11 @@ deferred or that SpringDoc generation runs at Maven `verify` are superseded by P
 
 ## Last Updated
 
+2026-09-20 (OpenSpec adopted as the development workflow: `@fission-ai/openspec@1.13.1` installed and
+verified, `openspec init` created the `openspec/` tree plus codebuddy/claude/codex/agents instruction
+trees, generated trees added to `.gitignore` while `openspec/` stays tracked, and `AGENTS.md` now leads
+with the spec-driven workflow and per-tool command spelling. No version bump, because no generated
+output changed).
 2026-09-17 (Release closed out: annotated `v2.0.0` created on `c221a3a` and pushed, the two pending documentation
 commits pushed over SSH after the HTTPS GitHub path failed with HTTP 502, and the one-tag-per-version rule recorded
 as a decision. Both registry lines serve 2.0.0 and no tracked work item remains open).

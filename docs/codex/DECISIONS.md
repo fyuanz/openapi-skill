@@ -1,5 +1,52 @@
 # Decisions
 
+## 2026-09-20 - Adopt OpenSpec As The Development Workflow
+
+Status: Accepted and implemented
+
+Context:
+
+- Planning and agreed behavior were spread across `docs/codex/TASKS.md` (stage table),
+  `DECISIONS.md` (ADRs), and the bilingual README, with no single place holding the current agreed
+  requirements in a form a coding agent reads before writing code.
+- `AGENTS.md` stated a mandatory first read and per-stage rules, but nothing forced a change to be
+  proposed, reviewed, and archived as a unit.
+
+Decision:
+
+- Adopt OpenSpec (`@fission-ai/openspec`, CLI `1.13.1`, requires Node >= 20.19.0) as the
+  spec-driven development workflow. Any nontrivial feature, refactor, or architectural change starts
+  as an OpenSpec change proposal before implementation code is written.
+- Initialize with `--tools codebuddy,claude,codex,agents` and `--language zh-CN`, so the repository
+  carries instruction trees for the three editors in use plus the universal `.agents/skills` tree.
+- Track `openspec/` (specs and change proposals are versioned truth) and ignore the three generated
+  instruction trees (`.agents/`, `.claude/`, `.codebuddy/`) with a comment recording that
+  `openspec update` regenerates them. Generated instructions are per-machine and per-version output,
+  not reviewable source.
+- Keep `docs/codex/` as-is. OpenSpec owns *what is being built and what is agreed*; `docs/codex/`
+  keeps owning *stages, ADR history, module responsibilities, and build context*. OpenSpec's
+  `openspec/specs/` is synchronized by the change itself, not by hand-copied text.
+- Record the CLI surface and per-tool command spelling in `AGENTS.md`, since the invocation differs
+  by assistant (`/opsx:propose` for CodeBuddy and Claude, `$openspec-propose` for Codex,
+  `/openspec-propose` for the universal tree).
+
+Consequences:
+
+- Existing `docs/codex/DECISIONS.md` entries remain the historical ADR record and are not migrated.
+  New architectural decisions may live in an OpenSpec change's `design.md` while it is in flight; a
+  decision that outlives the change is still recorded here.
+- The `language: zh-CN` context in `openspec/config.yaml` makes new artifacts Chinese while keeping
+  structural headings and SHALL/MUST keywords English, matching the repository's existing split
+  between Chinese narrative and English contract language.
+
+Evidence: `openspec init` created `openspec/{config.yaml,specs/.gitkeep,changes/archive/.gitkeep}` plus
+6 skills and 6 commands under each tool tree. `openspec doctor` reports `OpenSpec root: ok`,
+`openspec list` reports no active changes, and `openspec init` reported setup complete for all four
+selected tools. `git check-ignore -v` confirms all three generated trees are ignored and
+`openspec/config.yaml` is not. Official setup steps and the tool list were read from the project's
+README on 2026-09-20; the registry was queried directly rather than through `npm view`, which
+resolves this package incorrectly (a bare `openspec` placeholder exists at 0.0.0 and is unrelated).
+
 ## 2026-09-18 - Commit The One Tarball The Consumer Lockfile Pins
 
 Status: Accepted and implemented
