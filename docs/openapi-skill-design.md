@@ -197,6 +197,9 @@ ZIP 文件名是 `<skillName>.zip`，内部有唯一顶层目录：
 - operation 保留参数覆盖、请求体/媒体类型、响应、servers、安全和原 JSON。
 - Schema 保留字段、必填/可空、枚举、约束、组合、数组和本地引用。
 - 通用的 OpenAPI 缺省/null/空值解释只写入一次 `conventions.md`，operation/schema 文件通过链接引用。
+  取值域同样在 `conventions.md` 集中说明：`enum`、`const` 与 `description` 中列举的取值都是文档已声明的取值域，
+  三者不一致时报告冲突而非静默取舍；文档未声明取值域时不得推断、编造或收窄类型。生成器保持忠实导出，
+  不合成源文档没有的 `enum`。
 - `source.json` 记录服务、Skill、完整分组、版本、摘要和数量。
 - 本地 `$ref` 按源文档隔离；生成器为每个 operation 预计算排序、去重的直接/传递引用闭包及递归边，不跨
   文档猜测、合并或复制 Schema 正文。

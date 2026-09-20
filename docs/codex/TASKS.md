@@ -37,6 +37,7 @@ artifact coordination remain outside scope.
 | P15 | Adopt OpenSpec as the spec-driven development workflow for this repository | Complete; CLI `1.13.1` installed, four tool trees initialized, `openspec/` tracked and generated instruction trees ignored |
 | P15 | Accept OpenAPI 3.0.x and 3.1.x root markers, record the input's own dialect, and capture real 3.0 snapshots | Complete in Java and Node; 77 core and 43 Node tests pass, the published core/3 tree is byte-identical, publication not requested |
 | P16 | Consumer testbed reproducibility: track the one tarball its lockfile pins, and record that `npm pack` is line-ending dependent | Complete; a fresh clone with an empty npm cache installs, and the committed tarball reproduces byte-identically from an LF checkout. The standing "no tarball is committed" rule now has exactly one deliberate exception |
+| P17 | Read a value domain wherever the document states it, including in a `description`, without synthesizing an `enum` | Complete in Java and Node; 79 core and 43 Node tests pass, the producer testbed records a description-stated domain, and source moves to `2.1.1-SNAPSHOT`. Publication not requested |
 | Release | Maven Central releases | `1.0.0` and `2.0.0` for the `openapi-skill*` coordinates published; `2.0.0` went live 2026-09-17 via the maintainer-run Central Portal deployment `0a0a1c39-a8ab-4378-b862-9b659a5f5c4f`; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
 | Release | npm release | `openapi-skill@1.0.0`, `1.1.0` and `2.0.0` published; `latest = 2.0.0` since 2026-09-16 |
 | Release | Release tags | `v2.0.0` (annotated, on `c221a3a`) covers both registry lines; one tag per released version is the standing rule recorded in DECISIONS |
@@ -134,6 +135,29 @@ The user approved this reviewed plan on 2026-09-16. All slices were implemented 
   Maven Central `2.0.0` artifacts were published on 2026-09-17, so both registry lines now serve `2.0.0`.
 
 ## Verified
+
+## 2026-09-20 - Description-Stated Value Domains
+
+- Red first: `SkillGeneratorTest.explainsEnumerationSemanticsWithoutInventingValues` failed on
+  `conventions must state that a value domain may be declared inside a description`, and the Node
+  assertions in `generate.test.mjs` fail the same way against the pre-change source.
+- Producer behaviour measured, not assumed. `UserView.role` is typed `Integer` with the domain stated
+  in its `@Schema` description, and the refreshed fixtures record exactly that: `"type": "integer"`,
+  the description, and no `enum` keyword in either dialect.
+- Green: `mvn -B clean install` runs 79 core tests (up from 77). `npm test` runs 43 Node tests.
+  `refresh-fixtures.ps1` regenerated both dialects and rewrote `metadata.json`; the 7 testbed tests
+  pass with the new `role` assertions in `OpenApiContractTest`.
+- Cross-implementation check: the Java and Node generators produced 22 files from the same two
+  documents with identical values, and `conventions.md` plus `SKILL.md` compared byte-identical.
+  `source.json` compares equal as parsed JSON. The remaining difference is the known Jackson
+  `"k" : v` versus `JSON.stringify` `"k": v` indentation, unchanged by this work.
+- Consumer end to end: `openapi-skill-2.1.1.tgz` packed from an LF checkout at 29,616 bytes, sha1
+  `9377d26c035bf059677639b1cd5b30db3d7b1b0d`, installed by `npm ci` against an empty cache, then run
+  against the live testbed to write 24 files. The generated `conventions.md` carries `## Value
+  domains` and `user-view.md` carries the role description with no invented `enum`.
+- Version: source moves to `2.1.1-SNAPSHOT` across the four poms, and the Node package to `2.1.1`
+  with its metadata assertion and the consumer lock updated together. Generated output changed, so
+  the release rule is triggered; publication was not requested.
 
 ## 2026-09-20 - OpenSpec Adopted As The Development Workflow
 

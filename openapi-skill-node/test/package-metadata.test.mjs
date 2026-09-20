@@ -10,7 +10,7 @@ const readmeEn = await readFile(new URL("../README.en.md", import.meta.url), "ut
 
 test("publishes under the unscoped openapi-skill name", () => {
   assert.equal(packageJson.name, "openapi-skill");
-  assert.equal(packageJson.version, "2.1.0");
+  assert.equal(packageJson.version, "2.1.1");
   assert.equal(packageJson.bin["openapi-skill"], "dist/cli.js");
   assert.equal(packageJson.repository.url, "git+https://github.com/fyuanz/openapi-skill.git");
   assert.equal(packageJson.homepage, "https://github.com/fyuanz/openapi-skill#readme");

@@ -1,5 +1,50 @@
 # Decisions
 
+## 2026-09-20 - Read A Value Domain Where The Document States It
+
+Status: Accepted and implemented
+
+Context:
+
+- A producer may declare the accepted values of a field in the `description` alone, leaving the type
+  `integer` or `string`. SpringDoc does exactly this when a field is typed `Integer` and the schema
+  annotation lists the meanings. The resulting document carries no `enum` keyword at all.
+- A reader of the generated Skill then sees a field that looks unconstrained, even though the source
+  document states its value domain in prose. The reader either types it as an open `number`/`string`
+  or invents a set of values the document never named.
+- The generator cannot fix this by parsing: extracting `1 超级管理员，2 普通管理员` out of free text
+  with a regular expression is unreliable, and synthesizing an `enum` the document never declared
+  would violate the faithful-export rule stated in `PROJECT_CONTEXT.md`.
+
+Decision:
+
+- Keep the generated output a faithful export. The generator must not synthesize an `enum` and must
+  not rewrite the description. A stated value domain reaches the generated files verbatim.
+- State the rule where the reader acts on it, following the point-of-use precedent of
+  2026-09-14. `references/conventions.md` gains a `## Value domains` section declaring that a value
+  domain may be stated by an `enum`, by a `const`, or in a `description`; that an `enum` and a
+  `description` that disagree must be reported rather than silently resolved; and that an unstated
+  domain is a question to ask of the API owner, never a gap to fill by inventing values.
+- Repeat the guidance in `SKILL.md` so both levels agree, and keep the Java and Node copies of that
+  text identical. The Node copy is a hand-maintained mirror; the two must not drift.
+- Record the case in the producer testbed rather than only in a synthetic unit test. `UserView.role`
+  is typed `Integer` with the value domain stated in its description, so the fixture, the contract
+  test and the Skill end-to-end path all exercise a description-stated domain.
+- Do not make a missing `enum` a generation failure. The upstream authoring habit is not a generator
+  defect, and rejecting such input would break the faithful-export boundary.
+
+This changes generated output, so it ships as `2.1.1-SNAPSHOT` source with a future release and tag.
+
+Evidence: the new core test `explainsEnumerationSemanticsWithoutInventingValues` failed on the
+description assertion before the conventions section existed, then passed; the Node
+`generate.test.mjs` assertions mirror it and fail the same way against the pre-change source. The
+regenerated fixtures record `role` as `integer` with the stated description and no `enum`, asserted
+by `OpenApiContractTest`. Cross-implementation check: generating the same two documents with the
+Java and Node generators produced 22 files whose values are identical, with `conventions.md` and
+`SKILL.md` byte-identical. An empty-cache `npm ci` in the consumer testbed installed the pinned
+`openapi-skill-2.1.1.tgz`, and the end-to-end run against the live testbed wrote 24 files carrying
+the new section.
+
 ## 2026-09-20 - Adopt OpenSpec As The Development Workflow
 
 Status: Accepted and implemented

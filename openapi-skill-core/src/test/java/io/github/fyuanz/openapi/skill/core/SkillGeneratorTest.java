@@ -193,6 +193,43 @@ class SkillGeneratorTest {
                 "source document declares no security for GET /users, so the value stays null");
     }
 
+    @Test void explainsEnumerationSemanticsWithoutInventingValues() throws Exception {
+        var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", snapshots());
+
+        // A value domain stated only inside `description` still is a stated fact the reader must honour.
+        String conventions = files.get("references/conventions.md");
+        assertTrue(conventions.contains("description"),
+                "conventions must state that a value domain may be declared inside a description");
+        assertTrue(conventions.contains("value domain"),
+                "conventions must name the value-domain concept explicitly");
+        assertTrue(conventions.contains("never invent") || conventions.contains("must not invent")
+                        || conventions.contains("not invent"),
+                "conventions must forbid inventing enumeration values that the document never states");
+
+        // The entry point must carry the same guidance so both levels agree.
+        String entry = files.get("SKILL.md");
+        assertTrue(entry.contains("value domain") || entry.contains("value-domain") || entry.contains("enumerat"),
+                "entrypoint must guide the reader on stated value domains");
+
+        // The guidance states a rule about reading; it must not fabricate a value list of its own.
+        assertFalse(conventions.matches("(?s).*[\"\\u201c]1[\"\\u201d]?\\s*[\\u2013\\u2014-]\\s*.{0,12}[\\u201c\"].*"),
+                "conventions must not carry an invented example value list");
+    }
+
+    @Test void carriesADescriptionStatedValueDomainThroughUnchanged() throws Exception {
+        var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", snapshots());
+        // The testbed declares the role value domain in the description only, so the document has no `enum`.
+        String stated = "用户角色：1 超级管理员，2 普通管理员，3 开发者";
+        var schema = files.entrySet().stream().filter(f -> f.getKey().endsWith("/schemas/user-view.md"))
+                .map(Map.Entry::getValue).findFirst().orElseThrow();
+        assertTrue(schema.contains(stated),
+                "a value domain stated in a description must reach the generated schema file verbatim");
+        assertFalse(schema.contains("\"enum\""),
+                "the generator must not invent an enum the document never declares");
+        // The reader is pointed at the rules that say how to read a stated domain.
+        assertTrue(schema.contains("conventions.md"), "the schema file must link the shared conventions");
+    }
+
     @Test void skillMetadataCarriesBilingualTaskTriggers() throws Exception {
         var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", snapshots());
         String entry = files.get("SKILL.md");

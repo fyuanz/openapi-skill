@@ -16,7 +16,7 @@ import java.util.List;
 @RequestMapping(value = "/users", produces = "application/json")
 @Tag(name = "用户管理")
 public class UserController {
-    private static final UserView SAMPLE = new UserView(1L, "示例用户", new Address("示例市", "示例路"), List.of());
+    private static final UserView SAMPLE = new UserView(1L, "示例用户", 1, new Address("示例市", "示例路"), List.of());
 
     @GetMapping
     @Operation(operationId = "listUsers", summary = "搜索用户")

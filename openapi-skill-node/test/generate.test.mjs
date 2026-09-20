@@ -59,6 +59,13 @@ test('explains OpenAPI default semantics and carries Chinese triggers', async ()
   }
   assert.match(files.get('references/conventions.md'), /not a claim/);
 
+  // A value domain stated only inside a description is still a stated fact the reader must honour.
+  const conventions = files.get('references/conventions.md');
+  assert.match(conventions, /value domain/, 'conventions must name the value-domain concept');
+  assert.match(conventions, /description/, 'conventions must accept a description as a stated value domain');
+  assert.match(conventions, /never invent/, 'conventions must forbid inventing unstated values');
+  assert.match(entry, /value[- ]domain/, 'the entrypoint must guide the reader on stated value domains');
+
   // An explicit empty security override must be called out as a declared override.
   const override = new TextEncoder().encode(JSON.stringify({
     openapi: '3.1.0', security: [{ auth: [] }],

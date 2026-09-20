@@ -18,7 +18,7 @@
                           "endpoint":  "/v3/api-docs/account",
                           "file":  "account.json",
                           "openapi":  "3.1.0",
-                          "sha256":  "8ab44c8c1cf0addc731f3428c8a2a46d38a925d70adf88a80c514d0c79214261",
+                          "sha256":  "17d87b38df34745ed7b0ae09c2ab36857bb3e8c7b5e3d770fa024aa4856699f9",
                           "operations":  2,
                           "schemas":  3
                       },
@@ -38,7 +38,7 @@
                           "endpoint":  "/v3/api-docs/account",
                           "file":  "account-v30.json",
                           "openapi":  "3.0.1",
-                          "sha256":  "abe48023abc3ae24f12469adb4cc26d5d336c81fe94270bad5adbbf581487069",
+                          "sha256":  "9aae858fca82a76365e32949a244ae44f239fe86de63951b6a068896d74b837b",
                           "operations":  2,
                           "schemas":  3
                       },
@@ -54,7 +54,7 @@
                       }
                   ],
     "sourceSha256":  {
-                         "pom.xml":  "d05457997196443cde9f61e55e74496d7dd0e1513d3ff04a97ea030abfab4b17",
+                         "pom.xml":  "d5ffc7e0a2aafc9e9d6fc0bf653aa49e9e233d99305e9629ab25eed84aa35db6",
                          "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/Address.java":  "6e40548e0554d7c2e63bd26124a9aecc575aff832829fb3d96ad4b1589f38654",
                          "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/ApiError.java":  "30ef9916130669fb8092dbb7675e749e6736eac9a6e041ca6696c4f96523efd5",
                          "src/main/java/io/github/fyuanz/openapi/skill/testbed/common/OpenApiConfiguration.java":  "caeb5e60efab8fb2b5c4744fd6b59d9a91e79cff6dee7a0b25da12d698d16b15",
@@ -63,8 +63,8 @@
                          "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/CreateOrder.java":  "adf473f13801416d0aa90e7493376952e4a2c42baccf9450a90484978c1d742d",
                          "src/main/java/io/github/fyuanz/openapi/skill/testbed/order/OrderController.java":  "102b70ca3f6125e396e3270346885d34180a48ac021269fcd40eddef1fc2ffbd",
                          "src/main/java/io/github/fyuanz/openapi/skill/testbed/TestbedApplication.java":  "ee23b076394685db11a15c1e2b2696995a2b6b54b018c35cbf573694a9786b59",
-                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserController.java":  "6b12df19837e0e6f564ec60aeefdda6b7e885671a18cd3901dac6dd959d12335",
-                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserView.java":  "fddc2b98bee0e528d7cd6435f08b2407ab26566b65aa574fb9688f1b2c47df1d",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserController.java":  "fa7558f17f233ce178bd198e20bb5188c496a10536d509e3a3bfc1e53659bd65",
+                         "src/main/java/io/github/fyuanz/openapi/skill/testbed/user/UserView.java":  "cb9547f603d3178a60bee81a73676589b47fa6d36387fa4091f84e8de8fb151f",
                          "src/main/resources/application.properties":  "30c1f2f760131c9b286ed44b21ad13dbb1a89587acfa3ed4ae18fa22072439ff"
                      }
 }

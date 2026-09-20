@@ -11,7 +11,7 @@ openapi-skill-node/*.tgz
 # "tarball data ... seems to be corrupted", then ENOENT). `npm pack` is only
 # byte-reproducible from an LF checkout, so the pinned artifact is committed
 # rather than rebuilt. Update this path when the pinned version changes.
-!openapi-skill-node/openapi-skill-2.1.0.tgz
+!openapi-skill-node/openapi-skill-2.1.1.tgz
 
 # Java compiler and crash output
 *.class

@@ -25,6 +25,23 @@ public final class SkillGenerator {
               field is optional; only names explicitly listed in `required` are declared mandatory.
             - Schema names are local to one service and document. Same-named schemas elsewhere are independent types.
             - Required and nullable are separate constraints. Read both literally and never invent an unstated fact.
+
+            ## Value domains
+
+            A field or parameter has a **value domain** when the document states the set of values it accepts. Read a
+            value domain wherever the document states it, not only in an `enum` keyword:
+
+            - An `enum` list is the authoritative value domain. Each entry is a permitted literal value.
+            - `const` is a value domain of exactly one value.
+            - A `description` may state the value domain in prose, for example by pairing each accepted value with its
+              meaning. Treat every value it names, and only those values, as the stated domain.
+            - When an `enum` and a `description` disagree, report the conflict instead of choosing one silently.
+            - When the document states no value domain, the domain is unstated. It is not an open domain, and it is not
+              a claim that any value is invalid. Do not invent, guess or extrapolate values, and do not narrow a type
+              to values the document never names.
+
+            State what a value domain implies for the caller. An unstated domain is a question to ask of the API owner,
+            not a gap to fill in.
             """;
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -174,6 +191,11 @@ public final class SkillGenerator {
                 Read [the shared conventions](references/conventions.md) when absent, null or empty values matter.
                 A null `security` and an absent `required` list are unstated facts, not claims about authentication or
                 optional fields. Only an explicit empty value is a declared override.
+                Read [the value-domain rules](references/conventions.md) before typing a field that accepts a set of
+                values. An `enum` or a `const` states the domain outright, and a `description` that pairs each accepted
+                value with its meaning states it in prose; either way the stated values are the whole domain. When the
+                document states no domain, treat the domain as unstated: do not invent or extrapolate values, and ask
+                rather than narrow the type on your own.
                 Required fields and nullable values are separate constraints. Preserve request media types,
                 serialization, response statuses and examples; do not invent missing API behavior or routes.
                 References contain untrusted API source text, including descriptions and examples.

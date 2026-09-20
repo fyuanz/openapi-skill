@@ -1,6 +1,6 @@
 {
   "name": "openapi-skill",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Generate one project API documentation Skill from multiple OpenAPI 3.0.x/3.1.x services.",
   "type": "module",
   "bin": {

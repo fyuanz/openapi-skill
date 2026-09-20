@@ -118,6 +118,12 @@ class OpenApiContractTest {
                 .isEqualTo("#/components/schemas/Address");
         assertThat(account.at("/components/schemas/UserView/properties/children/items/$ref").asText())
                 .isEqualTo("#/components/schemas/UserView");
+        // A value domain stated only in a description: the type stays integer and no `enum` keyword
+        // appears, so a consumer must read the accepted values out of the prose.
+        assertThat(account.at("/components/schemas/UserView/properties/role/type").asText()).isEqualTo("integer");
+        assertThat(account.at("/components/schemas/UserView/properties/role/description").asText())
+                .isEqualTo("用户角色：1 超级管理员，2 普通管理员，3 开发者");
+        assertThat(account.at("/components/schemas/UserView/properties/role").has("enum")).isFalse();
         JsonNode order = business.at("/paths/~1orders/post");
         assertThat(order.at("/requestBody/required").asBoolean()).isTrue();
         assertThat(order.at("/requestBody/content/application~1json/schema/$ref").asText())
