@@ -24,4 +24,4 @@
 - [x] 4.1 更新 Node 中英文 README，说明默认诊断格式、`--debug` 用法与调试输出可能包含敏感来源细节；通过针对性检索验证两种语言的命令和安全提示一致。
 - [x] 4.2 更新 `docs/codex/TASKS.md` 的状态和红到绿证据，并在实现确认技术取舍后更新 `docs/codex/DECISIONS.md`；运行 `git diff --check` 验证文档格式。
 - [x] 4.3 运行 `cd openapi-skill-node && npm test`、必要的本地 `npm pack --dry-run` 以及 `openspec validate "improve-node-cli-diagnostics"`，记录通过数量与任何无法运行的检查。
-- [ ] 4.4 按仓库里程碑规则仅提交本 change 的实现、测试、规格和文档并正常推送到配置的 GitHub remote；验证工作树未混入无关文件并记录 commit/push 结果。
+- [x] 4.4 按仓库里程碑规则提交本 change 的实现、测试、规格和文档；远程推送因网络不可用而由用户明确改为稍后手动执行，验证本地提交未混入无关文件。

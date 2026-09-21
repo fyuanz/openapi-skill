@@ -2,7 +2,8 @@
 
 ## 2026-09-21 - Improve Node CLI Diagnostics
 
-Status: Implemented in change `improve-node-cli-diagnostics`; awaiting archive.
+Status: Implemented and archived as `2026-09-21-improve-node-cli-diagnostics`; local commits are complete and the
+user will manually push them when network access is available.
 
 - Node CLI failures now render one stable stderr line with owner context when available, a diagnostic phase/code,
   a safe message, and reliable one-based JSON line/column positions. Duplicate keys report the second declaration.
