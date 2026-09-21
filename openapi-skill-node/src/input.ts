@@ -1,3 +1,5 @@
+import { DiagnosticError } from './diagnostics.js';
+
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
 /** Accepted dialects: every declared 3.0.x and 3.1.x patch, and nothing else. */
@@ -13,7 +15,10 @@ export function parseOpenApi(bytes: Uint8Array): JsonObject {
     rejectDuplicateKeys(text);
     value = JSON.parse(text);
   }
-  catch (error) { throw new Error('INVALID_JSON: expected a single JSON object', { cause: error }); }
+  catch (error) {
+    if (error instanceof DiagnosticError) throw error;
+    throw new DiagnosticError({ phase: 'PARSE', code: 'INVALID_JSON', safeMessage: 'expected a single JSON object', cause: error });
+  }
   if (!isObject(value)) throw new Error('INVALID_JSON: expected a single JSON object');
   if (!Object.hasOwn(value, 'openapi') || value.openapi === null) throw new Error('MISSING_VERSION: root openapi is required');
   if (typeof value.openapi !== 'string' || !SUPPORTED_VERSION.test(value.openapi))
@@ -30,6 +35,13 @@ export function own(object: JsonObject, key: string): boolean { return Object.ha
 
 function rejectDuplicateKeys(text: string): void {
   let index = 0;
+  const fail = (message: string, offset = index): never => {
+    const before = text.slice(0, offset);
+    const line = 1 + (before.match(/\n/g)?.length ?? 0);
+    const lastNewline = before.lastIndexOf('\n');
+    const column = offset - lastNewline;
+    throw new DiagnosticError({ phase: 'PARSE', code: 'INVALID_JSON', safeMessage: message, line, column });
+  };
   const whitespace = () => { while (/\s/.test(text[index] ?? '')) index++; };
   const string = (): string => {
     const start = index++;
@@ -37,7 +49,7 @@ function rejectDuplicateKeys(text: string): void {
       if (text[index] === '\\') { index += 2; continue; }
       if (text[index++] === '"') return JSON.parse(text.slice(start, index)) as string;
     }
-    throw new Error('unterminated string');
+    return fail('unterminated string', start);
   };
   const value = (): void => {
     whitespace();
@@ -45,15 +57,16 @@ function rejectDuplicateKeys(text: string): void {
       index++; whitespace(); const keys = new Set<string>();
       if (text[index] === '}') { index++; return; }
       while (index < text.length) {
-        whitespace(); if (text[index] !== '"') throw new Error('object key expected');
+        whitespace(); if (text[index] !== '"') fail('expected an object key');
+        const keyOffset = index;
         const key = string();
-        if (keys.has(key)) throw new Error(`duplicate key ${key}`); keys.add(key);
-        whitespace(); if (text[index++] !== ':') throw new Error('colon expected');
+        if (keys.has(key)) fail(`duplicate key ${key}`, keyOffset); keys.add(key);
+        whitespace(); if (text[index] !== ':') fail('expected a colon'); else index++;
         value(); whitespace();
         if (text[index] === '}') { index++; return; }
-        if (text[index++] !== ',') throw new Error('comma expected');
+        if (text[index] !== ',') fail('expected a comma'); else index++;
       }
-      throw new Error('unterminated object');
+      fail('unterminated object');
     }
     if (text[index] === '[') {
       index++; whitespace();
@@ -61,15 +74,15 @@ function rejectDuplicateKeys(text: string): void {
       while (index < text.length) {
         value(); whitespace();
         if (text[index] === ']') { index++; return; }
-        if (text[index++] !== ',') throw new Error('comma expected');
+        if (text[index] !== ',') fail('expected a comma'); else index++;
       }
-      throw new Error('unterminated array');
+      fail('unterminated array');
     }
     if (text[index] === '"') { string(); return; }
     const match = /^(?:-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)/.exec(text.slice(index));
-    if (!match) throw new Error('value expected');
+    if (!match) return fail('expected a JSON value');
     index += match[0].length;
   };
   value(); whitespace();
-  if (index !== text.length) throw new Error('trailing token');
+  if (index !== text.length) fail('unexpected trailing token');
 }

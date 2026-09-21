@@ -102,6 +102,14 @@ Add an npm script and run it after every configured API service is available:
 npm run skill:generate
 ```
 
+On failure, the CLI writes one stable diagnostic to stderr and exits with status `1`, for example:
+
+```text
+ERROR user-service/account [PARSE/INVALID_JSON]: expected a colon (line 42, column 17)
+```
+
+JSON syntax failures include one-based line and column numbers when they can be determined reliably. Default diagnostics do not echo OpenAPI content, HTTP headers, or remote-URL credentials, query parameters, and fragments. Run `openapi-skill --debug` to append the complete stack and `cause` chain; it can be combined with `--config <path>` in either order. Debug output may contain source details, so review and redact it before posting it to a public issue.
+
 Before publication, OpenAPI Skill reads and validates every configured document from every service, generates and validates the complete project Skill, and then performs one directory replacement. If an HTTP download, local file read, contract validation, or generation step fails, the complete previous Skill remains unchanged; OpenAPI Skill never publishes a subset that silently omits a service. A later successful replacement also removes services, documents, and operations no longer present in the configuration.
 
 Each document `url` may be an HTTP(S) URL or a plain local file path. Relative local paths are resolved from the project root where the CLI runs; `file://` URLs, directory discovery, and globs are not supported. HTTP sources must return JSON successfully and redirects are rejected; local sources must be regular files. Both source kinds must declare a supported `openapi: 3.0.x` or `3.1.x`, share the 8 MiB per-document and 32 MiB project input limits, and reject external `$ref` values. `timeoutMs` applies only to HTTP downloads and defaults to `30000`. Set `output` to an absolute path or a path relative to the project root to change the output parent; the default is `.agents/skills`. Configuration may instead be placed under `package.json#openapiSkill` or selected with `openapi-skill --config <path>`.

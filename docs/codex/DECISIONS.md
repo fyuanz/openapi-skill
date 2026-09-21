@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-09-21 - Keep Default Node CLI Diagnostics Safe And Put Full Causes Behind Debug
+
+Status: Accepted
+
+Node CLI diagnostics use a fielded internal error at the parsing boundary and a single renderer at the executable
+boundary. Default failures identify owner, phase, code and safe message without printing stack traces, document snippets,
+headers or sensitive URL components. The existing JSON duplicate-key scanner supplies deterministic UTF-16 offsets,
+converted to one-based line and column positions, instead of parsing Node/V8-dependent `JSON.parse` error wording.
+
+`--debug` is an explicit troubleshooting mode that appends the complete stack and `cause` chain with cycle detection and
+a fixed depth bound. It can expose source details, so documentation warns users to redact output before public sharing.
+Library entry points remain console-free, and diagnostic rendering does not move work across the atomic publication
+boundary. A third-party parser and a general logging framework were rejected as unnecessary dependencies. This changes
+CLI observability but not generated files, so the existing `2.1.1` source version remains appropriate until publication
+is separately requested.
+
 ## 2026-09-21 - Treat Explicit Local JSON Paths As Node Document Sources
 
 Status: Accepted and implemented

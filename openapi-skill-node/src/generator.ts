@@ -1,4 +1,5 @@
 import { asObject, isObject, JsonObject, own, parseOpenApi } from './input.js';
+import { DiagnosticError } from './diagnostics.js';
 import { boundedKeywords, normalizeKeywords } from './keywords.js';
 import { digest, DocumentReferences, label, operationFiles, operationIdentity, sorted, tagFiles } from './references.js';
 import { GenerateOptions } from './types.js';
@@ -145,7 +146,16 @@ export function generateSkill(options: GenerateOptions): ReadonlyMap<string, str
       const source: JsonObject = { documentId: id, sha256: digest(bytes), openapi: typeof root.openapi === 'string' ? root.openapi : '', apiVersion: asObject(root.info)?.version ?? '', operations: operations.length, schemas: schemaCount };
       if (enriched) source.keywords = keywords;
       sources.push(source);
-    } catch (error) { throw new Error(`${id}: ${message(error)}`, { cause: error }); }
+    } catch (error) {
+      if (error instanceof DiagnosticError) throw new DiagnosticError({
+        phase: error.phase, code: error.code, safeMessage: error.safeMessage,
+        owner: `${options.serviceId}/${id}`,
+        ...(error.line === undefined ? {} : { line: error.line }),
+        ...(error.column === undefined ? {} : { column: error.column }),
+        cause: error
+      });
+      throw new Error(`${id}: ${message(error)}`, { cause: error });
+    }
   }
   files.set('references/catalog.md', catalog);
   files.set('references/operations.jsonl', jsonLines(operationIndex));

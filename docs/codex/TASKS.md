@@ -1,5 +1,19 @@
 # Tasks
 
+## 2026-09-21 - Improve Node CLI Diagnostics
+
+Status: Implemented in change `improve-node-cli-diagnostics`; awaiting archive.
+
+- Node CLI failures now render one stable stderr line with owner context when available, a diagnostic phase/code,
+  a safe message, and reliable one-based JSON line/column positions. Duplicate keys report the second declaration.
+- `--debug` can be combined with `--config <path>` in either order and appends a bounded stack/`cause` chain;
+  default output omits stacks, document content, HTTP headers, and sensitive remote URL components.
+- Success remains stdout/exit `0`, runtime failure stderr/exit `1`, and usage failure stderr/exit `2`. Library APIs still
+  throw or reject without writing to the console, and failed parsing retains an existing Skill byte-for-byte.
+- Red-to-green evidence: four new CLI scenarios plus four diagnostic scenarios initially failed; after implementation
+  `cd openapi-skill-node && npm test` passes 57 tests, up from 49.
+- Scope is Node-only. No generated core/3 output, Java code, Spring Boot Starter behavior, or runtime dependency changed.
+
 ## 2026-09-21 - Support Local JSON Document Sources In The Node Package
 
 Status: Implemented and archived as `2026-09-21-support-local-json-document-sources`.

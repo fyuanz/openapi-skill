@@ -100,6 +100,14 @@ HTTP method 和 path，不依赖可缺失或重复的 SpringDoc `operationId`；
 npm run skill:generate
 ```
 
+失败时，CLI 只向 stderr 输出一条稳定诊断并以状态码 `1` 退出，例如：
+
+```text
+ERROR user-service/account [PARSE/INVALID_JSON]: expected a colon (line 42, column 17)
+```
+
+JSON 语法错误会在能够可靠确定时给出一基行列号，且默认诊断不会回显 OpenAPI 正文、HTTP 请求头或远程 URL 的凭证、查询参数和片段。需要排查内部原因时可运行 `openapi-skill --debug`；它会在诊断后展开完整 stack 和 `cause` 链，也可与 `--config <path>` 按任意顺序组合。调试输出可能包含来源细节，请检查并脱敏后再粘贴到公开 issue。
+
 发布前会先读取并校验所有服务的全部配置文档，再生成和校验完整项目 Skill，最后只进行一次目录替换。任一 HTTP 下载、本地文件读取、契约校验或生成失败时，已有的整份 Skill 保持不变，不会发布缺少某个服务的部分结果；下一次成功更新会同时清除已经从配置中移除的服务、文档和接口。
 
 每个文档的 `url` 可以是 HTTP(S) URL，也可以是普通本地文件路径；本地相对路径以运行 CLI 的项目根目录为基准，不支持 `file://` URL、目录扫描或 glob。HTTP 来源必须成功返回 JSON，拒绝重定向；本地来源必须是普通文件。两类来源都必须声明受支持的 `openapi: 3.0.x` / `3.1.x`，都受单文档 8 MiB、项目合计 32 MiB 限制，外部 `$ref` 仍会被拒绝。`timeoutMs` 只约束 HTTP 下载，默认为 `30000`。`output` 可设置为绝对路径或相对于项目根目录的输出父目录；默认是 `.agents/skills`。配置也可以写在 `package.json#openapiSkill` 中，或通过 `openapi-skill --config <path>` 指定文件。
