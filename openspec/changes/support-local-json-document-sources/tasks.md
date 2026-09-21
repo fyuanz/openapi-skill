@@ -29,4 +29,4 @@
 - [x] 5.1 运行 `openspec validate "support-local-json-document-sources"`，确认提案、规格和任务工件有效。
 - [x] 5.2 运行 `openspec status --change "support-local-json-document-sources" --json`，确认 proposal/specs/design/tasks 均为完成状态且无缺失依赖。
 - [x] 5.3 运行 `git diff --check` 并审查 `git status --short` 与 `git diff -- openapi-skill-node/src openapi-skill-node/test openapi-skill-node/README*.md docs openspec/changes/support-local-json-document-sources`，确认没有无关文件、秘密或生成构建产物被纳入。
-- [ ] 5.4 按项目里程碑交付规则提交本变更相关文件并正常推送到 `origin`；若远端缺失、认证失败或需要人工交互，停止并报告具体阻塞，不使用 force-push。
+- [x] 5.4 按项目里程碑交付规则提交本变更相关文件并正常推送到 `origin`；若远端缺失、认证失败或需要人工交互，停止并报告具体阻塞，不使用 force-push。
