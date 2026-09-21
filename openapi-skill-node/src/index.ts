@@ -1,15 +1,16 @@
+import { readFile, stat } from 'node:fs/promises';
 import { generateSkill } from './generator.js';
 import { generateProjectSkill } from './project-generator.js';
 import { loadConfig } from './config.js';
 import { publishSkill } from './publisher.js';
-import { ProjectServiceInput, ResolvedOpenApiSkillConfig, RunOptions, RunResult } from './types.js';
+import { ProjectServiceInput, ResolvedDocumentSource, ResolvedOpenApiSkillConfig, RunOptions, RunResult } from './types.js';
 
 export { generateSkill } from './generator.js';
 export { generateProjectSkill } from './project-generator.js';
 export { loadConfig } from './config.js';
 export { publishSkill } from './publisher.js';
 export type {
-  DocumentSource, GenerateOptions, GenerateProjectOptions, LegacyOpenApiSkillConfig,
+  DocumentSource, DocumentSourceKind, GenerateOptions, GenerateProjectOptions, LegacyOpenApiSkillConfig,
   ProjectServiceInput, ProjectOpenApiSkillConfig, ResolvedDocumentSource,
   ResolvedServiceSource, ResolvedOpenApiSkillConfig, RunOptions, RunResult,
   ServiceSource, OpenApiSkillConfig, SourceType
@@ -35,6 +36,9 @@ export async function run(options: RunOptions = {}): Promise<RunResult> {
   return { skillDirectory, serviceCount: services.length, documentCount, fileCount: files.size };
 }
 
+const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
+const MAX_PROJECT_BYTES = 32 * 1024 * 1024;
+
 async function downloadServices(config: ResolvedOpenApiSkillConfig): Promise<ProjectServiceInput[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
@@ -46,9 +50,9 @@ async function downloadServices(config: ResolvedOpenApiSkillConfig): Promise<Pro
       const documentKeywords = new Map<string, readonly string[]>();
       for (const source of service.documents) {
         const owner = `${service.serviceId}/${source.id}`;
-        const bytes = await downloadDocument(owner, source.url, controller.signal);
+        const bytes = await readDocumentSource(owner, source, controller.signal);
         totalBytes += bytes.byteLength;
-        if (totalBytes > 32 * 1024 * 1024) throw new Error(`${owner}: LIMIT: project input bytes exceeded`);
+        if (totalBytes > MAX_PROJECT_BYTES) throw new Error(`${owner}: LIMIT: project input bytes exceeded`);
         documents.set(source.id, bytes);
         documentKeywords.set(source.id, source.keywords);
       }
@@ -61,6 +65,10 @@ async function downloadServices(config: ResolvedOpenApiSkillConfig): Promise<Pro
   } finally { clearTimeout(timeout); }
 }
 
+async function readDocumentSource(owner: string, source: ResolvedDocumentSource, signal: AbortSignal): Promise<Uint8Array> {
+  return source.kind === 'remote' ? downloadDocument(owner, source.path, signal) : readLocalDocument(owner, source.path);
+}
+
 async function downloadDocument(owner: string, url: string, signal: AbortSignal): Promise<Uint8Array> {
   let response: Response;
   try { response = await fetch(url, { signal, headers: { accept: 'application/json' }, redirect: 'error' }); }
@@ -69,10 +77,24 @@ async function downloadDocument(owner: string, url: string, signal: AbortSignal)
   const type = response.headers.get('content-type');
   if (type && !type.toLowerCase().includes('json')) throw new Error(`${owner}: DOWNLOAD: expected JSON content-type, received ${type}`);
   const length = Number(response.headers.get('content-length'));
-  if (Number.isFinite(length) && length > 8 * 1024 * 1024) throw new Error(`${owner}: LIMIT: input bytes exceeded`);
+  if (Number.isFinite(length) && length > MAX_DOCUMENT_BYTES) throw new Error(`${owner}: LIMIT: input bytes exceeded`);
   const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.byteLength > 8 * 1024 * 1024) throw new Error(`${owner}: LIMIT: input bytes exceeded`);
+  if (bytes.byteLength > MAX_DOCUMENT_BYTES) throw new Error(`${owner}: LIMIT: input bytes exceeded`);
   return bytes;
+}
+
+async function readLocalDocument(owner: string, path: string): Promise<Uint8Array> {
+  let info;
+  try { info = await stat(path); }
+  catch (error) { throw new Error(`${owner}: LOCAL: ${message(error)}`, { cause: error }); }
+  if (!info.isFile()) throw new Error(`${owner}: LOCAL: expected a regular file`);
+  if (info.size > MAX_DOCUMENT_BYTES) throw new Error(`${owner}: LIMIT: input bytes exceeded`);
+  let bytes: Buffer;
+  try { bytes = await readFile(path); }
+  catch (error) { throw new Error(`${owner}: LOCAL: ${message(error)}`, { cause: error }); }
+  const output = new Uint8Array(bytes);
+  if (output.byteLength > MAX_DOCUMENT_BYTES) throw new Error(`${owner}: LIMIT: input bytes exceeded`);
+  return output;
 }
 
 function message(error: unknown): string { return error instanceof Error ? error.message : String(error); }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { loadConfig } from '../dist/index.js';
 
@@ -63,6 +63,9 @@ test('rejects ambiguous services, invalid source types and unsafe keywords', asy
   await assert.rejects(config({ services: [
     { serviceId: 'svc', skillName: 'svc-api', documents: [{ id: 'a', url: 'http://a.test/openapi' }] }
   ] }), /one project produces one Skill/);
+  await assert.rejects(config({ services: [
+    { serviceId: 'svc', documents: [{ id: 'a', url: 'http://' }] }
+  ] }), /invalid URL for svc\/a/);
 });
 
 test('allows document ids to repeat across services but keeps the project document budget', async () => {
@@ -90,4 +93,24 @@ test('loads project configuration from package.json openapiSkill', async () => {
   const loaded = await loadConfig(root);
   assert.equal(loaded.mode, 'project');
   assert.equal(loaded.skillName, 'project-api');
+});
+
+test('loads local JSON document paths and resolves them from cwd', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-local-config-'));
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({
+    services: [
+      {
+        serviceId: 'local',
+        documents: [
+          { id: 'relative', url: './openapi/account.json' },
+          { id: 'absolute', url: join(root, 'openapi', 'account.json') }
+        ]
+      }
+    ]
+  }));
+  const loaded = await loadConfig(root);
+  assert.equal(loaded.services[0].documents[0].kind, 'local');
+  assert.equal(loaded.services[0].documents[0].path, resolve(root, 'openapi/account.json'));
+  assert.equal(loaded.services[0].documents[1].kind, 'local');
+  assert.equal(loaded.services[0].documents[1].path, resolve(root, 'openapi/account.json'));
 });

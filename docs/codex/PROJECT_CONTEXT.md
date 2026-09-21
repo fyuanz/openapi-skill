@@ -3,8 +3,9 @@
 ## Purpose
 
 openapi-skill converts OpenAPI contracts into Codex Skills. A running Spring Boot WebMVC service can expose a directly
-downloadable Skill ZIP, while the TypeScript npm consumer downloads explicitly configured OpenAPI endpoints from one or
-more internal or third-party services and installs one complete project Skill into a Vue 3 or other Node.js project.
+downloadable Skill ZIP, while the TypeScript npm consumer reads explicitly configured HTTP(S) endpoints or local JSON
+files from one or more internal or third-party services and installs one complete project Skill into a Vue 3 or other
+Node.js project.
 
 The source of truth is `docs/openapi-skill-design.md`. Core conversion, the runtime Starter, and Node project-Skill
 generation remain available. There is no Maven build-time compatibility plugin. Web/frontend acceptance is user-reviewed
@@ -23,12 +24,13 @@ and is not a delivery gate.
 
 ## Node Project Workflow
 
-1. A consuming project configures one or more services, with one or more explicit document ID/HTTP(S) URL pairs per
-   service. `sourceType` distinguishes `internal` from `third-party` sources.
+1. A consuming project configures one or more services, with one or more explicit document ID plus HTTP(S) URL or local
+   JSON path pairs per service. Relative local paths resolve from the CLI project root; `sourceType` distinguishes
+   `internal` from `third-party` sources.
 2. Project-, service-, and document-level keywords provide trusted discovery/navigation aliases without importing
    untrusted OpenAPI free text into `SKILL.md`.
-3. The CLI downloads every configured document under one timeout and shared input budget. A failed download or invalid
-   document aborts the whole project update.
+3. The CLI reads every configured document under a shared input budget; `timeoutMs` applies to HTTP downloads, while
+   local paths must name regular files. A failed download/read or invalid document aborts the whole project update.
 4. The generator creates one self-contained Skill, named `api-docs` by default, with service trees physically included
    under `references/services/<serviceId>/references/` and connected through relative Markdown links.
    Each tree exposes one slim group-index context per document, one interface file per first OpenAPI tag, clean
@@ -57,7 +59,7 @@ and is not a delivery gate.
   generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
   services plus project/service/document keywords, and publishes the complete service set atomically. The legacy
   `serviceId` + `documents` configuration is still accepted, while all new output uses `openapi-skill-core/3`.
-- Node verification currently passes 43 tests across configuration, generation, tag grouping, context navigation, semantic indexes, provenance, downloading, project-tree
+- Node verification currently passes 49 tests across configuration, local/HTTP input, generation, tag grouping, context navigation, semantic indexes, provenance, project-tree
   validation, project-wide document/byte budgets, legacy/project version acceptance, atomic legacy/project migration,
   stale service removal, package metadata, and compatibility behavior. The locally packed `2.0.0` tarball was installed into
   `testbeds/vue-ts-consumer`; it builds and generates a core/3 `api-docs` project Skill from the running testbed.
@@ -129,7 +131,8 @@ governance precedence and repository-specific engineering rules.
 - Source text is untrusted reference data and never enters the trusted Skill instruction template.
 - Existing document/file/reference/size bounds remain enforced. ZIP creation is in-memory and deterministic.
 - The Starter endpoint follows application security and accepts no arbitrary source URL. The Node CLI intentionally
-  fetches only user-configured HTTP(S) URLs, rejects redirects, and is meant for trusted project configuration.
+  reads only user-configured HTTP(S) URLs or plain local paths, rejects HTTP redirects, performs no path discovery or
+  glob expansion, and treats the project configuration as trusted input.
 - Node project mode permits at most 32 services and 32 documents across the project, 32 MiB aggregate input, 10,000
   output files, and 64 MiB output. Each document retains the existing 8 MiB and document-local reference boundaries.
 - Cross-service aggregation inside the Node consumer is supported; cross-service aggregation by the embedded runtime

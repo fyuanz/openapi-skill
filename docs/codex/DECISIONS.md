@@ -1,5 +1,48 @@
 # Decisions
 
+## 2026-09-21 - Treat Explicit Local JSON Paths As Node Document Sources
+
+Status: Accepted and implemented
+
+Context:
+
+- The Node CLI previously required every configured document `url` to use HTTP(S), even when a project already had an
+  exported OpenAPI JSON fixture or generated contract on disk.
+- Starting a temporary HTTP server for offline tests, CI fixtures or service-not-running workflows added an unrelated
+  runtime dependency. The downstream generator already consumes bytes and does not depend on transport.
+
+Decision:
+
+- Keep the public `services[].documents[].url` field and classify values beginning with `http://` or `https://` as
+  remote sources; treat every other non-empty value as a plain local path. `file://`, glob and directory discovery are
+  outside this contract.
+- Resolve relative local paths from the CLI `cwd`, not from an explicitly selected configuration file's directory.
+  This matches existing `output` and default project-root semantics; absolute paths remain absolute.
+- Record source kind and resolved path only in the internal resolved configuration. Generated provenance continues to
+  identify input snapshots by digest and does not expose local absolute paths.
+- Read local sources only when they are regular files. Apply the same 8 MiB per-document and 32 MiB project budgets as
+  HTTP input; `timeoutMs` remains network-only. Any local read or validation failure occurs before atomic publication,
+  so the previous complete Skill remains unchanged.
+
+Alternatives considered:
+
+- Add a separate `file` or `path` field. Rejected because it creates mutually exclusive configuration fields and the
+  requested compatibility surface is the existing `url` property.
+- Resolve relative paths from the configuration file directory. Rejected because `--config` may select a shared file
+  outside the consumer project, while current project-relative options resolve from `cwd`.
+- Support `file://` and directory scans immediately. Rejected to keep the trusted input boundary explicit and small.
+
+Consequences:
+
+- Existing HTTP(S) configurations remain source-compatible and retain their current fetch behavior.
+- Local fixtures and exported contracts can drive the same validation, generation and atomic replacement path without
+  a running service.
+- Documentation must describe `url` as an HTTP(S) URL or local JSON path rather than a network-only field.
+- The implementation is confined to `openapi-skill-node`; Java core and the Spring Boot Starter remain unchanged.
+
+Evidence: the Node suite passes 49 tests after adding config resolution and end-to-end local-source coverage, including
+missing-file and byte-limit failures that preserve the previous Skill.
+
 ## 2026-09-20 - Make OpenSpec The Single Workflow Source
 
 Status: Accepted and implemented

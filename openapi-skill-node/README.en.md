@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-Generate one self-contained Codex Skill from OpenAPI 3.0.x / 3.1.x JSON endpoints exposed by one or more services. The published `2.0.0` release defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
+Generate one self-contained Codex Skill from OpenAPI 3.0.x / 3.1.x JSON documents exposed over HTTP(S) or stored in local files. The published `2.0.0` release defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
 
 ## Install
 
@@ -51,6 +51,15 @@ Create `openapi-skill.config.json` in the project root:
 }
 ```
 
+A locally exported OpenAPI JSON document can use the same `url` field. Relative paths are resolved from the project root where the CLI runs:
+
+```json
+{
+  "id": "account",
+  "url": "./openapi/account.json"
+}
+```
+
 In project mode, `skillName` is optional and defaults to `api-docs`, producing `<project>/.agents/skills/api-docs/`. A monorepo that genuinely needs multiple project-level Skills can set another root-level `skillName` explicitly.
 
 The configuration levels have distinct roles:
@@ -93,9 +102,9 @@ Add an npm script and run it after every configured API service is available:
 npm run skill:generate
 ```
 
-Before publication, OpenAPI Skill downloads and validates every configured document from every service, generates and validates the complete project Skill, and then performs one directory replacement. If any service cannot be downloaded, contains an invalid contract, or fails generation, the complete previous Skill remains unchanged; OpenAPI Skill never publishes a subset that silently omits a service. A later successful replacement also removes services, documents, and operations no longer present in the configuration.
+Before publication, OpenAPI Skill reads and validates every configured document from every service, generates and validates the complete project Skill, and then performs one directory replacement. If an HTTP download, local file read, contract validation, or generation step fails, the complete previous Skill remains unchanged; OpenAPI Skill never publishes a subset that silently omits a service. A later successful replacement also removes services, documents, and operations no longer present in the configuration.
 
-Each URL must use HTTP(S), return JSON successfully, and declare a supported `openapi: 3.0.x` or `3.1.x`. Redirects and external `$ref` values are rejected. Set `output` to an absolute path or a path relative to the project root to change the output parent; the default is `.agents/skills`. `timeoutMs` defaults to `30000`. Configuration may instead be placed under `package.json#openapiSkill` or selected with `openapi-skill --config <path>`.
+Each document `url` may be an HTTP(S) URL or a plain local file path. Relative local paths are resolved from the project root where the CLI runs; `file://` URLs, directory discovery, and globs are not supported. HTTP sources must return JSON successfully and redirects are rejected; local sources must be regular files. Both source kinds must declare a supported `openapi: 3.0.x` or `3.1.x`, share the 8 MiB per-document and 32 MiB project input limits, and reject external `$ref` values. `timeoutMs` applies only to HTTP downloads and defaults to `30000`. Set `output` to an absolute path or a path relative to the project root to change the output parent; the default is `.agents/skills`. Configuration may instead be placed under `package.json#openapiSkill` or selected with `openapi-skill --config <path>`.
 
 ## Legacy single-service compatibility
 

@@ -14,7 +14,7 @@
 安装的 Skill ZIP。接入方只增加 Starter 依赖；不配置 Maven execution/phase，不启动第二个应用进程，
 不进行 HTTP 自请求，也不在构建目录落 OpenAPI 或 Skill 中间文件。
 
-Vue 3 或其他 Node.js 项目可使用 `openapi-skill` CLI/库，显式配置一个或多个服务及每个服务的 OpenAPI URL，
+Vue 3 或其他 Node.js 项目可使用 `openapi-skill` CLI/库，显式配置一个或多个服务及每个服务的 OpenAPI HTTP(S) URL 或本地 JSON 文件路径，
 在本项目生成一个 Skill。Skill 默认命名为 `api-docs`，服务内容全部物理包含在其中，不要求另外安装服务级
 Skill，也不使用文件系统符号链接。
 
@@ -79,14 +79,14 @@ GET /openapi-skill/skill.zip
 
 ```text
 读取并校验完整配置
-  → 在一个共享超时和 32 MiB 项目预算内下载全部文档
+  → 在一个 HTTP 共享超时和 32 MiB 项目预算内读取全部远程或本地文档
   → 按 serviceId/documentId 独立解析 OpenAPI 3.0.x / 3.1.x
   → 生成一个完整 project Skill 到 staging
   → 校验 provenance、路径、链接、边界和唯一根 SKILL.md
   → 原子替换 .agents/skills/<skillName>
 ```
 
-任何服务或文档下载、解析、生成或发布失败，都保留上一份完整 Skill，不发布新旧混合结果。项目最多包含
+任何服务或文档下载/本地读取、解析、生成或发布失败，都保留上一份完整 Skill，不发布新旧混合结果。项目最多包含
 32 个服务、合计 32 份文档、32 MiB 输入、10,000 个输出文件和 64 MiB 输出；每份文档仍最多 8 MiB。
 
 生成目录为：
@@ -221,7 +221,7 @@ core 的输入/输出、引用深度和文件数上限继续生效。文件按�
 每个微服务可独立加入 Starter 并提供自己的下载接口。跨服务运行时汇总需要一个可信协调服务、成员发现、
 鉴权和新鲜度契约，本版 Starter 不自动远程抓取，也不把 Swagger UI 的外部 URL 清单当成授权。
 
-Node project 模式解决的是不同边界：项目所有者显式列出允许下载的服务和文档 URL，CLI 在本地把这些输入
+Node project 模式解决的是不同边界：项目所有者显式列出服务及其文档 HTTP(S) URL 或本地 JSON 文件路径，CLI 在本地把这些输入
 生成一个项目 Skill。它不进行服务发现，也不声称多个服务处于同一发布版本。所有成员只共享一次原子生成，
 OpenAPI 语义、servers、安全定义、同名 Schema 和 `$ref` 始终按 serviceId/documentId 隔离。内部服务和第三方
 服务使用同一生成逻辑，`sourceType` 只记录来源边界和导航语义。
@@ -232,7 +232,8 @@ OpenAPI 语义、servers、安全定义、同名 Schema 和 `$ref` 始终按 ser
 
 - 下载接口沿用应用的 Spring Security 过滤链；OpenAPI Skill 不绕过认证。受限契约必须显式限制访问。
 - Starter 只调用同一应用上下文中的 SpringDoc 资源，不接受请求参数形式的任意 URL，因而不引入 SSRF 入口。
-- Node CLI 只访问项目配置中逐项声明的 HTTP(S) URL，拒绝重定向；配置文件属于受信项目配置，不提供网页
+- Node CLI 只访问项目配置中逐项声明的 HTTP(S) URL 或普通本地文件路径；远程来源拒绝重定向，本地相对
+  路径以 CLI 项目根目录为基准并要求普通文件。配置文件属于受信项目配置，不提供目录扫描、glob、网页
   请求参数、Swagger UI URL 清单或注册中心驱动的任意抓取。
 - API 文档必须由应用明确启用；最终 JSON 不是受支持的 `3.0.x` / `3.1.x`、含悬空/外部引用或超过上限时请求失败。
 - Node project Skill 在内存和 staging 中都校验路径、大小写碰撞、链接、provenance、唯一入口和文件上限；
@@ -252,7 +253,7 @@ Spring Boot 服务使用运行时 Starter；前端或其他 Node.js 项目使用
 | --- | --- | --- |
 | `openapi-skill-core` | OpenAPI 3.0.x/3.1.x 解析、分组 context/闭包渲染、文件集校验和旧目录安全发布 | 77 项测试通过 |
 | `openapi-skill-spring-boot-starter` | Spring Boot 自动配置、SpringDoc 最终文档发现、运行时转换和 ZIP 下载 | 2 项单/多文档测试通过 |
-| `openapi-skill-node` | 显式 URL 下载、core/3 多服务 project Skill 和本地原子发布 | 本地源码通过 43 项测试；已发布 1.0.0/1.1.0/2.0.0 |
+| `openapi-skill-node` | 显式 HTTP(S)/本地 JSON 输入、core/3 多服务 project Skill 和本地原子发布 | 本地源码通过 49 项测试；已发布 1.0.0/1.1.0/2.0.0 |
 | `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 7 项测试通过；含 3.1 与 3.0 两套方言快照 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x

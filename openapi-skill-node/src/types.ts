@@ -1,4 +1,5 @@
 export type SourceType = 'internal' | 'third-party';
+export type DocumentSourceKind = 'remote' | 'local';
 
 export interface DocumentSource {
   id: string;
@@ -37,7 +38,11 @@ export interface ProjectOpenApiSkillConfig extends CommonConfig {
 
 export type OpenApiSkillConfig = LegacyOpenApiSkillConfig | ProjectOpenApiSkillConfig;
 
-export interface ResolvedDocumentSource extends DocumentSource { keywords: string[] }
+export interface ResolvedDocumentSource extends DocumentSource {
+  keywords: string[];
+  kind: DocumentSourceKind;
+  path: string;
+}
 
 export interface ResolvedServiceSource extends Omit<ServiceSource, 'documents' | 'keywords' | 'sourceType'> {
   sourceType: SourceType;

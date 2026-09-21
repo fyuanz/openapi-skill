@@ -80,16 +80,18 @@ Core and runtime entry points now exist:
   ZIP creation, and the hidden `/openapi-skill/skill.zip` controller.
 - `openapi-skill-spring-boot-starter/src/test/`: default-document and multi-group auto-configuration/ZIP tests.
 - `openapi-skill-node/src/config.ts` accepts the preferred top-level `services` model, defaults its `skillName` to
-  `api-docs`, validates source types and project/service/document keywords, and normalizes the earlier single-service
-  configuration without changing that legacy contract.
+  `api-docs`, validates source types and project/service/document keywords, resolves explicit HTTP(S) or local document
+  sources from the CLI project root, and normalizes the earlier single-service configuration without changing that
+  legacy contract.
 - `openapi-skill-node/src/project-generator.ts` generates one `openapi-skill-core/3`, `kind=project` tree. It builds
   each service through the core-compatible service generator, omits nested `SKILL.md` files, physically relocates the
   complete reference trees beneath `references/services/<serviceId>/references/`, and creates the root catalog,
   provenance, and trusted entrypoint.
 - `openapi-skill-node/src/keywords.ts` applies deterministic keyword trimming, NFC normalization, de-duplication,
   sorting, count/length/control-character checks, and bounded frontmatter discovery text.
-- `openapi-skill-node/src/index.ts` downloads the complete project input and routes legacy configuration to the
-  service generator or `services` configuration to the project generator. `publisher.ts` validates
+- `openapi-skill-node/src/index.ts` reads the complete project input from HTTP(S) or regular local files under shared
+  per-document/project byte limits, then routes legacy configuration to the service generator or `services`
+  configuration to the project generator. `publisher.ts` validates
   `openapi-skill-core/3` contexts, group files, closures and machine indexes before staged replacement; owned core/1 and
   core/2 trees are recognized only as replacement inputs.
 - `openapi-skill-node/src/references.ts` allocates two filename families in two deterministic passes: ASCII semantic

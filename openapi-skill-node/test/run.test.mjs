@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -94,3 +94,79 @@ async function readTree(root) {
   await walk(root);
   return new Map([...files].sort(([a], [b]) => a.localeCompare(b, 'en')));
 }
+
+test('reads local JSON document paths and publishes a Skill', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-local-'));
+  await mkdir(join(root, 'openapi'), { recursive: true });
+  await writeFile(join(root, 'openapi', 'account.json'), JSON.stringify({ openapi: '3.1.0', info: { version: '1' }, paths: {} }));
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({
+    serviceId: 'demo', skillName: 'demo-api', documents: [{ id: 'account', url: './openapi/account.json' }]
+  }));
+  const result = await run({ cwd: root });
+  assert.equal(result.documentCount, 1);
+  assert.equal(result.skillDirectory, join(root, '.agents', 'skills', 'demo-api'));
+  assert.equal(JSON.parse(await readFile(join(result.skillDirectory, 'references', 'source.json'), 'utf8')).documents.length, 1);
+});
+
+test('does not replace an existing generated skill when a local source fails', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-local-failure-'));
+  const output = join(root, 'generated');
+  await mkdir(join(root, 'openapi'), { recursive: true });
+  const local = join(root, 'openapi', 'public.json');
+  await writeFile(local, JSON.stringify({ openapi: '3.1.0', paths: {} }));
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({ serviceId: 'demo', skillName: 'demo-api', output, documents: [{ id: 'public', url: './openapi/public.json' }] }));
+  await run({ cwd: root });
+  const before = await readFile(join(output, 'demo-api', 'SKILL.md'), 'utf8');
+  await rm(local);
+  await assert.rejects(run({ cwd: root }), /public: LOCAL:/);
+  assert.equal(await readFile(join(output, 'demo-api', 'SKILL.md'), 'utf8'), before);
+});
+
+test('keeps a previous Skill when a local document exceeds the single-file limit', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-local-limit-'));
+  const output = join(root, 'generated');
+  await mkdir(join(root, 'openapi'), { recursive: true });
+  const small = join(root, 'openapi', 'small.json');
+  const large = join(root, 'openapi', 'large.json');
+  await writeFile(small, JSON.stringify({ openapi: '3.1.0', paths: {} }));
+  await writeFile(large, Buffer.alloc(8 * 1024 * 1024 + 1, 32));
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({ serviceId: 'demo', skillName: 'demo-api', output, documents: [{ id: 'small', url: './openapi/small.json' }] }));
+  await run({ cwd: root });
+  const before = await readFile(join(output, 'demo-api', 'SKILL.md'), 'utf8');
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({ serviceId: 'demo', skillName: 'demo-api', output, documents: [{ id: 'large', url: './openapi/large.json' }] }));
+  await assert.rejects(run({ cwd: root }), /large: (LIMIT|LOCAL)/);
+  assert.equal(await readFile(join(output, 'demo-api', 'SKILL.md'), 'utf8'), before);
+});
+
+test('rejects local document input above the project byte limit', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-local-project-limit-'));
+  await mkdir(join(root, 'openapi'), { recursive: true });
+  const prefix = Buffer.from('{"openapi":"3.1.0","paths":{}}');
+  const fullDocument = Buffer.concat([prefix, Buffer.alloc(8 * 1024 * 1024 - prefix.byteLength, 32)]);
+  const documents = [];
+  for (let index = 0; index < 4; index += 1) {
+    const id = `full-${index}`;
+    await writeFile(join(root, 'openapi', `${id}.json`), fullDocument);
+    documents.push({ id, url: `./openapi/${id}.json` });
+  }
+  await writeFile(join(root, 'openapi', 'extra.json'), JSON.stringify({ openapi: '3.1.0', paths: {} }));
+  documents.push({ id: 'extra', url: './openapi/extra.json' });
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({
+    serviceId: 'demo', skillName: 'demo-api', documents
+  }));
+  await assert.rejects(run({ cwd: root }), /LIMIT: project input bytes exceeded/);
+});
+
+test('rejects an unsupported local OpenAPI version without replacing the Skill', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-local-version-'));
+  const output = join(root, 'generated');
+  await mkdir(join(root, 'openapi'), { recursive: true });
+  const local = join(root, 'openapi', 'public.json');
+  await writeFile(local, JSON.stringify({ openapi: '3.1.0', paths: {} }));
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({ serviceId: 'demo', skillName: 'demo-api', output, documents: [{ id: 'public', url: './openapi/public.json' }] }));
+  await run({ cwd: root });
+  const before = await readFile(join(output, 'demo-api', 'SKILL.md'), 'utf8');
+  await writeFile(local, JSON.stringify({ openapi: '3.2.0', paths: {} }));
+  await assert.rejects(run({ cwd: root }), /public: UNSUPPORTED_VERSION/);
+  assert.equal(await readFile(join(output, 'demo-api', 'SKILL.md'), 'utf8'), before);
+});

@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.en.md)
 
-从一个或多个服务的 OpenAPI 3.0.x / 3.1.x JSON 地址生成一份自包含的 Codex Skill。`2.0.0` 已发布，默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
+从一个或多个服务的 OpenAPI 3.0.x / 3.1.x JSON HTTP(S) 地址或本地文件生成一份自包含的 Codex Skill。`2.0.0` 已发布，默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
 
 ## 安装
 
@@ -51,6 +51,15 @@ npm install --save-dev openapi-skill
 }
 ```
 
+本地导出的 OpenAPI JSON 可以直接写入同一个 `url` 字段；相对路径以运行 CLI 的项目根目录为基准：
+
+```json
+{
+  "id": "account",
+  "url": "./openapi/account.json"
+}
+```
+
 项目模式下 `skillName` 可省略，默认是 `api-docs`，输出为 `<project>/.agents/skills/api-docs/`。如 monorepo 中确实需要多份项目级 Skill，可在根级显式设置其他 `skillName`。
 
 配置层级含义：
@@ -91,9 +100,9 @@ HTTP method 和 path，不依赖可缺失或重复的 SpringDoc `operationId`；
 npm run skill:generate
 ```
 
-发布前会先下载并校验所有服务的全部配置文档，再生成和校验完整项目 Skill，最后只进行一次目录替换。任一服务下载失败、返回无效契约或生成失败时，已有的整份 Skill 保持不变，不会发布缺少某个服务的部分结果；下一次成功更新会同时清除已经从配置中移除的服务、文档和接口。
+发布前会先读取并校验所有服务的全部配置文档，再生成和校验完整项目 Skill，最后只进行一次目录替换。任一 HTTP 下载、本地文件读取、契约校验或生成失败时，已有的整份 Skill 保持不变，不会发布缺少某个服务的部分结果；下一次成功更新会同时清除已经从配置中移除的服务、文档和接口。
 
-每个 URL 必须使用 HTTP(S)、成功返回 JSON，并声明受支持的 `openapi: 3.0.x` / `3.1.x`。重定向和外部 `$ref` 会被拒绝。`output` 可设置为绝对路径或相对于项目根目录的输出父目录；默认是 `.agents/skills`。`timeoutMs` 默认为 `30000`。配置也可以写在 `package.json#openapiSkill` 中，或通过 `openapi-skill --config <path>` 指定文件。
+每个文档的 `url` 可以是 HTTP(S) URL，也可以是普通本地文件路径；本地相对路径以运行 CLI 的项目根目录为基准，不支持 `file://` URL、目录扫描或 glob。HTTP 来源必须成功返回 JSON，拒绝重定向；本地来源必须是普通文件。两类来源都必须声明受支持的 `openapi: 3.0.x` / `3.1.x`，都受单文档 8 MiB、项目合计 32 MiB 限制，外部 `$ref` 仍会被拒绝。`timeoutMs` 只约束 HTTP 下载，默认为 `30000`。`output` 可设置为绝对路径或相对于项目根目录的输出父目录；默认是 `.agents/skills`。配置也可以写在 `package.json#openapiSkill` 中，或通过 `openapi-skill --config <path>` 指定文件。
 
 ## 旧单服务配置兼容
 

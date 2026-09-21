@@ -7,7 +7,7 @@
 | Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.1.0-SNAPSHOT`; parent, core and Starter reactor |
 | `openapi-skill-core` | Per-service conversion, context-first navigation, aggregate assembly, validation and safe filesystem publication | 77 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
-| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | local `openapi-skill@2.0.0` source passes 43 tests; `1.0.0`/`1.1.0`/`2.0.0` published |
+| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents | local `openapi-skill@2.1.1` source passes 49 tests; `1.0.0`/`1.1.0`/`2.0.0` published |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 7 tests pass; no OpenAPI Skill build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 
@@ -63,7 +63,7 @@ management-port resource layouts, remote service aggregation, caching, and artif
 The unscoped `openapi-skill` package targets Node.js 20+ and exports both an `openapi-skill` CLI and typed library
 functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `2.0.0` retains the
 preferred top-level `services` configuration: one project may contain internal and third-party services, and each
-service may contain multiple explicit document ID/HTTP(S) URL pairs. One configuration produces one self-contained
+service may contain multiple explicit document ID plus HTTP(S) URL or local JSON path pairs. One configuration produces one self-contained
 project Skill; `skillName` defaults to `api-docs` and no service has a separately installed Skill.
 
 Project generation physically embeds each complete service reference tree under
@@ -78,15 +78,16 @@ frontmatter; document keywords remain in the corresponding service catalog/prove
 keywords of 1-64 printable characters. OpenAPI free text remains untrusted reference data and does not become Skill
 instructions.
 
-Project mode permits 1-32 services, at most 32 documents across the whole project, at most 32 MiB total downloaded
-input, 10,000 output files, and 64 MiB output; the existing 8 MiB per-document and reference limits still apply. Every
-configured document must download and validate before staged replacement, so failure retains the previous complete
-Skill. Redirects and external references remain rejected. The default output parent is
+Project mode permits 1-32 services, at most 32 documents across the whole project, at most 32 MiB total HTTP/local
+input, 10,000 output files, and 64 MiB output; the existing 8 MiB per-document and reference limits still apply. Local
+relative paths resolve from the CLI project root and must name regular files; HTTP timeout and redirect rules remain
+network-only. Every configured document must be read and validated before staged replacement, so failure retains the
+previous complete Skill. HTTP redirects and external references remain rejected. The default output parent is
 `<consumer>/.agents/skills`; `output` supports a relative or absolute override.
 
 The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains accepted. Project and legacy
 configuration shapes cannot be mixed; every new tree uses core/3, while the publisher recognizes owned core/1 and
-core/2 trees only for safe atomic replacement. The local `2.0.0` implementation passes 43 Node tests; its packed tarball
+core/2 trees only for safe atomic replacement. The local `2.1.1` implementation passes 49 Node tests; its packed tarball
 generates the project Skill in the real Vue consumer against the running SpringDoc testbed. Accepted input root markers
 are any `3.0.x` or `3.1.x`, and `references/source.json` records the input's own dialect.
 

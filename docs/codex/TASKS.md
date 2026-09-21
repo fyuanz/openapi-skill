@@ -1,5 +1,20 @@
 # Tasks
 
+## 2026-09-21 - Support Local JSON Document Sources In The Node Package
+
+Status: Implemented in change `support-local-json-document-sources`.
+
+- `services[].documents[].url` and the legacy document list now accept explicit local JSON paths in addition to
+  HTTP(S) URLs. Relative local paths resolve from the Node CLI `cwd`; absolute paths are preserved.
+- Config parsing records an internal remote/local source kind without changing the public `url: string` configuration
+  shape. HTTP download timeout, redirect and content-type rules remain unchanged.
+- Local sources must be regular files and share the existing 8 MiB per-document and 32 MiB project input limits.
+  Missing, oversized or invalid local documents abort before publication and retain the previous complete Skill.
+- Red-to-green evidence: the new config and run tests first failed at the former HTTP-only configuration boundary;
+  after implementation `cd openapi-skill-node && npm test` passes 49 tests, including relative/absolute resolution,
+  successful local generation, missing-file retention, single/project byte limits and unsupported-version retention.
+- Scope is Node-only: no Java source, Maven module or Spring Boot Starter behavior was changed.
+
 ## 2026-09-20 - Streamline Agent Governance Around OpenSpec
 
 Status: Implemented in change `streamline-agent-governance`.
