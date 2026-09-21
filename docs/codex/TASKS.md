@@ -2,7 +2,7 @@
 
 ## 2026-09-21 - Support Local JSON Document Sources In The Node Package
 
-Status: Implemented in change `support-local-json-document-sources`.
+Status: Implemented and archived as `2026-09-21-support-local-json-document-sources`.
 
 - `services[].documents[].url` and the legacy document list now accept explicit local JSON paths in addition to
   HTTP(S) URLs. Relative local paths resolve from the Node CLI `cwd`; absolute paths are preserved.
