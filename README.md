@@ -21,7 +21,7 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`openapi-skill-node` 当前源码版本为 `openapi-skill@2.1.0`，npm 上已发布 `1.0.0`、`1.1.0` 与 `latest` 的 `2.0.0`。
+`openapi-skill-node` 当前源码版本与 npm `latest` 均为 `openapi-skill@2.1.2`。
 它推荐一个前端项目只生成一份接口文档
 Skill，并使用按 OpenAPI `tags` 分组的分组索引 `context.md`、每个 tag 一个可读名称的接口文件（中文 tag 名直接保留）、
 无冲突纯语义文件名、预计算引用闭包和集中 conventions；

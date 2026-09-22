@@ -2,14 +2,18 @@
 
 ## 2026-09-22 - Prepare The Node 2.1.2 npm Release
 
-Status: Release preflight complete; maintainer manual npm publication is pending in change `release-node-2-1-2`.
+Status: Maintainer publication complete; registry verification passed and repository release recording is in progress
+in change `release-node-2-1-2`.
 
-- npm registry reports no `openapi-skill@2.1.2`; `latest` remains `2.1.1`, so one new immutable publication is required.
+- npm published `openapi-skill@2.1.2` at `2026-09-22T06:53:32.791Z`; registry metadata reports
+  `latest = 2.1.2`, sha1 `8db7ecbe727a3e62f2a28414e86de935c0737248`, and integrity
+  `sha512-3M5r5rXdIqa4n2c03T0DcN7avBeYmH4e6V1XGce789A4vlacsFAqCi2w5OAyGbSrOCLZchoYkVkZ8OElpndhCw==`.
 - `npm ci` and the full 65-test Node suite pass with package, lockfile and lockfile-root metadata all at `2.1.2`.
 - `npm pack --dry-run --json` reports `openapi-skill@2.1.2`, 28 entries, both READMEs, LICENSE, CLI/library entrypoints,
   declarations and the compiled multi-output module; no tarball was written.
-- Publication credentials and `npm publish` remain maintainer-operated. The release is not recorded as published and
-  no `v2.1.2` tag is created until registry verification succeeds.
+- Publication credentials and `npm publish` remained maintainer-operated. Java/Maven source and published coordinates
+  were unchanged by this Node-only release.
+- Annotated tag `v2.1.2` identifies release source commit `60b26a6`; both the tag and preparation commit are pushed.
 
 ## 2026-09-22 - Publish One Node Skill To Multiple Agent Directories
 
@@ -121,7 +125,7 @@ artifact coordination remain outside scope.
 | P16 | Consumer testbed reproducibility: track the one tarball its lockfile pins, and record that `npm pack` is line-ending dependent | Complete; a fresh clone with an empty npm cache installs, and the committed tarball reproduces byte-identically from an LF checkout. The standing "no tarball is committed" rule now has exactly one deliberate exception |
 | P17 | Read a value domain wherever the document states it, including in a `description`, without synthesizing an `enum` | Complete in Java and Node; 79 core and 43 Node tests pass, the producer testbed records a description-stated domain, and source moves to `2.1.1-SNAPSHOT`. Publication not requested |
 | Release | Maven Central releases | `1.0.0` and `2.0.0` for the `openapi-skill*` coordinates published; `2.0.0` went live 2026-09-17 via the maintainer-run Central Portal deployment `0a0a1c39-a8ab-4378-b862-9b659a5f5c4f`; older `1.0.0`–`1.2.0` releases belong to the retired `smart-doc-agent` coordinates |
-| Release | npm release | `openapi-skill@1.0.0`, `1.1.0` and `2.0.0` published; `latest = 2.0.0` since 2026-09-16 |
+| Release | npm release | `openapi-skill@1.0.0`, `1.1.0`, `2.0.0`, `2.1.1`, and `2.1.2` published; `latest = 2.1.2` since 2026-09-22 |
 | Release | Release tags | `v2.0.0` (annotated, on `c221a3a`) covers both registry lines; one tag per released version is the standing rule recorded in DECISIONS |
 | Documentation | Chinese-default README, English guide and v4.0 design | Updated for tag-grouped core/3 navigation |
 

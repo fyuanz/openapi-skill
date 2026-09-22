@@ -22,8 +22,7 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The TypeScript package `openapi-skill@2.1.0` is the current source version; npm serves `1.0.0`, `1.1.0` and `2.0.0`
-as `latest`. It defaults to one self-contained
+The TypeScript package `openapi-skill@2.1.2` is both the current source version and npm `latest`. It defaults to one self-contained
 API Skill per frontend project and adds a `context.md` group index keyed by the OpenAPI `tags`, one interface file per
 tag under its own readable name (Chinese tag names are kept verbatim), clean semantic filenames,
 generator-computed reference closures, and centralized conventions. JSONL remains a machine validation artifact.
