@@ -1,5 +1,16 @@
 # Tasks
 
+## 2026-09-22 - Prepare The Node 2.1.2 npm Release
+
+Status: Release preflight complete; maintainer manual npm publication is pending in change `release-node-2-1-2`.
+
+- npm registry reports no `openapi-skill@2.1.2`; `latest` remains `2.1.1`, so one new immutable publication is required.
+- `npm ci` and the full 65-test Node suite pass with package, lockfile and lockfile-root metadata all at `2.1.2`.
+- `npm pack --dry-run --json` reports `openapi-skill@2.1.2`, 28 entries, both READMEs, LICENSE, CLI/library entrypoints,
+  declarations and the compiled multi-output module; no tarball was written.
+- Publication credentials and `npm publish` remain maintainer-operated. The release is not recorded as published and
+  no `v2.1.2` tag is created until registry verification succeeds.
+
 ## 2026-09-22 - Publish One Node Skill To Multiple Agent Directories
 
 Status: Implemented, validated, and archived as `2026-09-22-support-multiple-output-directories`.
