@@ -2,7 +2,7 @@
 
 ## 2026-09-22 - Publish One Node Skill To Multiple Agent Directories
 
-Status: Implemented and validated in change `support-multiple-output-directories`.
+Status: Implemented, validated, and archived as `2026-09-22-support-multiple-output-directories`.
 
 - `output` now accepts its compatible single path string or an ordered array of 1-8 paths. Relative paths resolve from
   the CLI project root; root, duplicate, and nested parents fail before any document read or output write.
