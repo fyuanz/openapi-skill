@@ -2,8 +2,8 @@
 
 ## 2026-09-22 - Prepare The Node 2.1.2 npm Release
 
-Status: Maintainer publication complete; registry verification passed and repository release recording is in progress
-in change `release-node-2-1-2`.
+Status: Maintainer publication complete; registry verification passed and change archived as
+`2026-09-22-release-node-2-1-2`.
 
 - npm published `openapi-skill@2.1.2` at `2026-09-22T06:53:32.791Z`; registry metadata reports
   `latest = 2.1.2`, sha1 `8db7ecbe727a3e62f2a28414e86de935c0737248`, and integrity
