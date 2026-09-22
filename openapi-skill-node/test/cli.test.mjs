@@ -73,3 +73,38 @@ test('default diagnostics do not disclose URL secrets or document text and prese
   assert.equal(remoteFailure.status, 1);
   assert.doesNotMatch(remoteFailure.stderr, /password|QUERY-SECRET|FRAGMENT/);
 });
+
+test('CLI lists every successful output directory', async () => {
+  const cwd = await project();
+  const outputs = [join(cwd, '.codex', 'skills'), join(cwd, '.trae', 'skills')];
+  await writeFile(join(cwd, 'openapi-skill.config.json'), JSON.stringify({
+    output: outputs,
+    services: [{ serviceId: 'users', documents: [{ id: 'account', url: './api.json' }] }]
+  }));
+  const result = runCli(cwd);
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Generated 1 service\(s\) and 1 OpenAPI document\(s\) into 2 output\(s\) \([^\r\n]+ files each\):/);
+  assert.match(result.stdout, new RegExp(escapeRegExp(join(outputs[0], 'api-docs'))));
+  assert.match(result.stdout, new RegExp(escapeRegExp(join(outputs[1], 'api-docs'))));
+  assert.equal(result.stderr, '');
+});
+
+test('CLI reports every target after partial publication without disclosing document content', async () => {
+  const cwd = await project('{"openapi":"3.1.0","info":{"description":"TOP-SECRET"},"paths":{}}');
+  const outputs = [join(cwd, 'first'), join(cwd, 'blocked'), join(cwd, 'last')];
+  await writeFile(outputs[1], 'not a directory');
+  await writeFile(join(cwd, 'openapi-skill.config.json'), JSON.stringify({
+    output: outputs,
+    services: [{ serviceId: 'users', documents: [{ id: 'account', url: './api.json' }] }]
+  }));
+  const result = runCli(cwd);
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, '');
+  assert.match(result.stderr, /^ERROR \[PUBLISH\/MULTI_OUTPUT_FAILED\]: 1 of 3 output targets failed/m);
+  assert.match(result.stderr, new RegExp(`^OK ${escapeRegExp(join(outputs[0], 'api-docs'))}$`, 'm'));
+  assert.match(result.stderr, new RegExp(`^FAILED ${escapeRegExp(join(outputs[1], 'api-docs'))} \\[`, 'm'));
+  assert.match(result.stderr, new RegExp(`^OK ${escapeRegExp(join(outputs[2], 'api-docs'))}$`, 'm'));
+  assert.doesNotMatch(result.stderr, /TOP-SECRET/);
+});
+
+function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }

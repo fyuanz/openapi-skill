@@ -1,5 +1,24 @@
 # Tasks
 
+## 2026-09-22 - Publish One Node Skill To Multiple Agent Directories
+
+Status: Implemented and validated in change `support-multiple-output-directories`.
+
+- `output` now accepts its compatible single path string or an ordered array of 1-8 paths. Relative paths resolve from
+  the CLI project root; root, duplicate, and nested parents fail before any document read or output write.
+- The CLI reads all documents and generates one immutable Skill file map once, then attempts every output in declaration
+  order. Each target retains its own validation, staging, backup and atomic replacement; targets do not form a global
+  transaction and successful publications are not rolled back when a peer fails.
+- `RunResult.skillDirectories` reports all successful targets while `skillDirectory` remains the first-target
+  compatibility field. Partial publication throws `MultiOutputPublishError`; the CLI reports ordered `OK` / `FAILED`
+  targets without echoing OpenAPI text or source URL secrets.
+- Red-to-green evidence: configuration, run, CLI/diagnostic and metadata/document tests failed against the single-output
+  implementation before the changes. The current full Node suite passes 65 tests. `npm pack --dry-run --json` reports
+  `openapi-skill@2.1.2`, 28 entries, both READMEs and the compiled `output-publication` module.
+- Node source and package-lock metadata are `2.1.2`; npm publication is not part of this implementation task.
+- `openspec validate support-multiple-output-directories --strict` passes; the change tracks all 14 implementation
+  tasks complete.
+
 ## 2026-09-21 - Improve Node CLI Diagnostics
 
 Status: Implemented and archived as `2026-09-21-improve-node-cli-diagnostics`; local commits are complete and the

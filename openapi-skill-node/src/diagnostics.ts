@@ -1,3 +1,5 @@
+import { MultiOutputPublishError } from './output-publication.js';
+
 export type DiagnosticPhase = 'CONFIG' | 'DOWNLOAD' | 'LOCAL' | 'PARSE' | 'VALIDATE' | 'GENERATE' | 'PUBLISH' | 'INTERNAL';
 
 export interface DiagnosticDetails {
@@ -57,6 +59,24 @@ export function formatDiagnostic(error: DiagnosticError): string {
   const owner = error.owner ? ` ${error.owner}` : '';
   const location = error.line === undefined ? '' : ` (line ${error.line}, column ${error.column})`;
   return `ERROR${owner} [${error.phase}/${error.code}]: ${oneLine(error.safeMessage)}${location}`;
+}
+
+export function formatMultiOutputDiagnostic(error: MultiOutputPublishError): string {
+  const failed = error.results.filter((result) => result.status === 'failed').length;
+  const lines = [`ERROR [PUBLISH/MULTI_OUTPUT_FAILED]: ${failed} of ${error.results.length} output targets failed`];
+  for (const result of error.results) {
+    if (result.status === 'success') {
+      lines.push(`OK ${result.skillDirectory}`);
+      continue;
+    }
+    const normalized = normalizeDiagnostic(result.error);
+    const diagnostic = normalized.phase === 'INTERNAL' && normalized.code === 'UNEXPECTED_ERROR'
+      ? new DiagnosticError({ phase: 'PUBLISH', code: 'TARGET_FAILED', safeMessage: 'Unable to publish generated Skill' })
+      : normalized;
+    const location = diagnostic.line === undefined ? '' : ` (line ${diagnostic.line}, column ${diagnostic.column})`;
+    lines.push(`FAILED ${result.skillDirectory} [${diagnostic.phase}/${diagnostic.code}]: ${oneLine(diagnostic.safeMessage)}${location}`);
+  }
+  return lines.join('\n');
 }
 
 export function formatDebugChain(error: unknown, maxDepth = 12): string {

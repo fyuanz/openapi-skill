@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, parse, resolve } from 'node:path';
 import { test } from 'node:test';
 import { loadConfig } from '../dist/index.js';
 
@@ -32,7 +32,40 @@ test('loads a multi-service project with api-docs defaults and normalized keywor
   assert.deepEqual(loaded.services[0].keywords, ['交易', '订单']);
   assert.deepEqual(loaded.services[0].documents[0].keywords, ['创建订单', '订单']);
   assert.match(loaded.output, /\.agents[\\/]skills$/);
+  assert.deepEqual(loaded.outputs, [loaded.output]);
   assert.equal(loaded.timeoutMs, 30_000);
+});
+
+test('keeps string output compatible and resolves one to eight output paths in declaration order', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-config-output-'));
+  const base = {
+    services: [{ serviceId: 'svc', documents: [{ id: 'public', url: 'http://svc.test/openapi' }] }]
+  };
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({ ...base, output: '.codex/skills' }));
+  const single = await loadConfig(root);
+  assert.equal(single.output, resolve(root, '.codex/skills'));
+  assert.deepEqual(single.outputs, [single.output]);
+
+  const declared = ['.codex/skills', resolve(root, '.trae/skills'), '.agents/skills', 'one', 'two', 'three', 'four', 'five'];
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({ ...base, output: declared }));
+  const multiple = await loadConfig(root);
+  assert.deepEqual(multiple.outputs, declared.map((path) => resolve(root, path)));
+  assert.equal(multiple.output, multiple.outputs[0]);
+});
+
+test('rejects invalid, duplicate, root and nested output paths', async () => {
+  const base = {
+    services: [{ serviceId: 'svc', documents: [{ id: 'public', url: 'http://svc.test/openapi' }] }]
+  };
+  for (const output of [[], Array.from({ length: 9 }, (_, index) => `out-${index}`), ['valid', ''], ['valid', 42]]) {
+    await assert.rejects(config({ ...base, output }), /output/);
+  }
+  await assert.rejects(config({ ...base, output: parse(resolve('.')).root }), /filesystem root/);
+  await assert.rejects(config({ ...base, output: ['generated', './generated'] }), /duplicate output/);
+  if (process.platform === 'win32') {
+    await assert.rejects(config({ ...base, output: ['.codex/skills', '.CODEX/SKILLS'] }), /duplicate output/);
+  }
+  await assert.rejects(config({ ...base, output: ['.codex', '.codex/skills'] }), /nested output/);
 });
 
 test('keeps the legacy single-service configuration compatible', async () => {

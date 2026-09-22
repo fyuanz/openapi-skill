@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { identity } from './generator.js';
 import { normalizeKeywords } from './keywords.js';
 import { DocumentSourceKind, ResolvedDocumentSource, ResolvedServiceSource, ResolvedOpenApiSkillConfig, SourceType } from './types.js';
@@ -31,12 +31,41 @@ export async function loadConfig(cwd: string, explicit?: string): Promise<Resolv
   if (services.reduce((sum, service) => sum + service.documents.length, 0) > 32) throw new Error('CONFIG: project must contain at most 32 documents');
   const timeoutMs = value.timeoutMs ?? 30_000;
   if (!Number.isSafeInteger(timeoutMs) || (timeoutMs as number) <= 0 || (timeoutMs as number) > 2_147_483_647) throw new Error('CONFIG: timeoutMs must be a positive safe timer integer');
-  const output = value.output ?? join('.agents', 'skills');
-  if (typeof output !== 'string' || output.trim() === '') throw new Error('CONFIG: output must be a non-empty path');
+  const outputs = parseOutputs(cwd, value.output);
   return {
     mode, skillName: skillName as string, keywords, services,
-    output: isAbsolute(output) ? output : resolve(cwd, output), timeoutMs: timeoutMs as number
+    output: outputs[0]!, outputs, timeoutMs: timeoutMs as number
   };
+}
+
+function parseOutputs(cwd: string, value: unknown): string[] {
+  const raw = value === undefined ? [join('.agents', 'skills')] : typeof value === 'string' ? [value] : value;
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 8) {
+    throw new Error('CONFIG: output must be a non-empty path or an array of 1 to 8 paths');
+  }
+  const outputs = raw.map((entry) => {
+    if (typeof entry !== 'string' || entry.trim() === '') throw new Error('CONFIG: every output must be a non-empty path');
+    const output = isAbsolute(entry) ? resolve(entry) : resolve(cwd, entry);
+    if (dirname(output) === output) throw new Error('CONFIG: output parent cannot be a filesystem root');
+    return output;
+  });
+  const keys = outputs.map(pathKey);
+  if (new Set(keys).size !== keys.length) throw new Error('CONFIG: duplicate output paths are not allowed');
+  for (let left = 0; left < outputs.length; left += 1) {
+    for (let right = left + 1; right < outputs.length; right += 1) {
+      if (isAncestor(outputs[left]!, outputs[right]!) || isAncestor(outputs[right]!, outputs[left]!)) {
+        throw new Error('CONFIG: nested output paths are not allowed');
+      }
+    }
+  }
+  return outputs;
+}
+
+function pathKey(path: string): string { return process.platform === 'win32' ? path.toLowerCase() : path; }
+
+function isAncestor(parent: string, child: string): boolean {
+  const nested = relative(parent, child);
+  return nested !== '' && nested !== '..' && !nested.startsWith(`..${sep}`) && !isAbsolute(nested);
 }
 
 function parseServices(cwd: string, value: unknown): ResolvedServiceSource[] {

@@ -1,5 +1,46 @@
 # Decisions
 
+## 2026-09-22 - Publish Multi-Agent Outputs As Independent Atomic Targets
+
+Status: Accepted and implemented
+
+Context:
+
+- A consuming project may use Codex, Trae, and other agents whose Skill roots are different directories, while the
+  generated API Skill content is identical.
+- The Node CLI previously accepted only one `output` parent, forcing users to duplicate configuration and regenerate or
+  copy the same Skill separately.
+
+Decision:
+
+- Keep `output` as the configuration key and accept either its existing non-empty path string or an ordered array of
+  1-8 paths. Omission still means `.agents/skills`; no Agent-name enum or automatic installation is introduced.
+- Resolve paths from the CLI project root and reject roots, platform-equivalent duplicates, and ancestor/descendant
+  parents before reading documents. Retain the first normalized target as the compatible resolved `output` field and
+  expose the complete ordered list as `outputs`.
+- Read and validate inputs once and generate one immutable Skill file map. Attempt every configured target in order
+  through the existing single-target publisher.
+- Treat each target as an independent atomic publication. Multiple directories are not one transaction: a failed
+  target retains its prior complete Skill or remains absent, successful targets remain updated, and no cross-target
+  rollback is attempted.
+- Add `RunResult.skillDirectories` while retaining `skillDirectory` for the first target. Partial publication raises a
+  structured `MultiOutputPublishError`; default CLI diagnostics list target-level `OK` / `FAILED` results without
+  rendering source content or remote URL secrets.
+- Ship the Node-only capability as source version `2.1.2`; Java coordinates and generated core/3 content do not change.
+
+Alternatives considered:
+
+- Add a separate `outputs` configuration key. Rejected because accepting both keys introduces precedence rules and the
+  existing `output` key can evolve compatibly from one value to one-or-many.
+- Stop at the first failed target. Rejected because independent destinations should all be attempted and one run should
+  return the complete target status.
+- Stage and roll back every directory as one transaction. Rejected because cross-filesystem replacement and rollback
+  cannot provide the same reliable atomic boundary as one directory.
+
+Evidence: the new configuration and runtime tests failed against the single-output implementation first. The completed
+Node suite passes 65 tests, including two identical output trees, a failed middle target followed by a successful final
+target, target-level safe diagnostics, compatibility fields, and `2.1.2` metadata/document assertions.
+
 ## 2026-09-21 - Keep Default Node CLI Diagnostics Safe And Put Full Causes Behind Debug
 
 Status: Accepted

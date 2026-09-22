@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { run } from './index.js';
-import { formatDebugChain, formatDiagnostic, normalizeDiagnostic } from './diagnostics.js';
+import { formatDebugChain, formatDiagnostic, formatMultiOutputDiagnostic, normalizeDiagnostic } from './diagnostics.js';
+import { MultiOutputPublishError } from './output-publication.js';
 
 const args = process.argv.slice(2);
 let config: string | undefined;
@@ -18,9 +19,13 @@ if (invalid) {
 }
 if (process.exitCode === undefined) {
   run(config ? { config } : {}).then((result) => {
-    console.log(`Generated ${result.serviceCount} service(s) and ${result.documentCount} OpenAPI document(s) into ${result.skillDirectory} (${result.fileCount} files).`);
+    if (result.skillDirectories.length === 1) {
+      console.log(`Generated ${result.serviceCount} service(s) and ${result.documentCount} OpenAPI document(s) into ${result.skillDirectory} (${result.fileCount} files).`);
+    } else {
+      console.log(`Generated ${result.serviceCount} service(s) and ${result.documentCount} OpenAPI document(s) into ${result.skillDirectories.length} output(s) (${result.fileCount} files each):\n${result.skillDirectories.map((directory) => `- ${directory}`).join('\n')}`);
+    }
   }).catch((error: unknown) => {
-    console.error(formatDiagnostic(normalizeDiagnostic(error)));
+    console.error(error instanceof MultiOutputPublishError ? formatMultiOutputDiagnostic(error) : formatDiagnostic(normalizeDiagnostic(error)));
     if (debug) console.error(formatDebugChain(error));
     process.exitCode = 1;
   });

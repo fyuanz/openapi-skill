@@ -81,8 +81,8 @@ Core and runtime entry points now exist:
 - `openapi-skill-spring-boot-starter/src/test/`: default-document and multi-group auto-configuration/ZIP tests.
 - `openapi-skill-node/src/config.ts` accepts the preferred top-level `services` model, defaults its `skillName` to
   `api-docs`, validates source types and project/service/document keywords, resolves explicit HTTP(S) or local document
-  sources from the CLI project root, and normalizes the earlier single-service configuration without changing that
-  legacy contract.
+  sources from the CLI project root, normalizes one or 1-8 safe output parents, and preserves the earlier single-service
+  and single-output contracts.
 - `openapi-skill-node/src/project-generator.ts` generates one `openapi-skill-core/3`, `kind=project` tree. It builds
   each service through the core-compatible service generator, omits nested `SKILL.md` files, physically relocates the
   complete reference trees beneath `references/services/<serviceId>/references/`, and creates the root catalog,
@@ -90,15 +90,16 @@ Core and runtime entry points now exist:
 - `openapi-skill-node/src/keywords.ts` applies deterministic keyword trimming, NFC normalization, de-duplication,
   sorting, count/length/control-character checks, and bounded frontmatter discovery text.
 - `openapi-skill-node/src/index.ts` reads the complete project input from HTTP(S) or regular local files under shared
-  per-document/project byte limits, then routes legacy configuration to the service generator or `services`
-  configuration to the project generator. `publisher.ts` validates
+  per-document/project byte limits, routes legacy configuration to the service generator or `services`
+  configuration to the project generator, and publishes that one generated file map to every configured target.
+  `output-publication.ts` records ordered target results and partial failure; `publisher.ts` validates
   `openapi-skill-core/3` contexts, group files, closures and machine indexes before staged replacement; owned core/1 and
   core/2 trees are recognized only as replacement inputs.
 - `openapi-skill-node/src/references.ts` allocates two filename families in two deterministic passes: ASCII semantic
   slugs for operations and schemas, and tag stems that preserve `\p{L}\p{N}_-` so a Chinese tag keeps its own name.
   `generator.ts` renders the catalog facts, the group-index context, the group files and the slimmed one-line entries.
-- The Node CLI defaults output to the consuming project's `.agents/skills/`; an explicit relative or absolute output
-  parent remains supported.
+- The Node CLI defaults output to the consuming project's `.agents/skills/`; `output` accepts one relative/absolute
+  parent or an ordered array of 1-8 non-duplicate, non-nested parents.
 
 Do not add package repositories, unconfigured URL discovery, or cross-service aggregation to the embedded runtime
 Starter. The Node CLI's explicit trusted configuration is the only current remote URL ingestion boundary. The standalone fixture at
@@ -116,10 +117,11 @@ project whose generated Skill, `node_modules/`, and `dist/` are ignored rather t
   fixture test still writes asserted snapshots to `target/openapi/` for the separate refresh script.
 - For an output parent, the final Skill is `<skillName>/`; updater state is outside it under `.openapi-skill/locks/<skillName>.lock`, `.openapi-skill/staging/`, `.openapi-skill/backups/`, and `.openapi-skill/status/<serviceId>.json`.
 - Each service and aggregate owns separate output, staging, lock and status paths. Individual references use `references/documents/<documentId>/`; aggregate members use `references/services/<serviceId>/references/documents/<documentId>/`. The aggregate has one root `SKILL.md` and remains independently installable.
-- Node project output uses one `<skillName>/` (default `api-docs`) with one root `SKILL.md`. Its root catalog and
+- Each Node project output uses one `<skillName>/` (default `api-docs`) with one root `SKILL.md`. Its root catalog and
   provenance are `references/catalog.md` and `references/source.json`; every physical member tree is under
   `references/services/<serviceId>/references/`. Relative Markdown links provide navigation, not filesystem symlinks.
-  Node staging and backup attempts stay beside the output under `.openapi-skill/staging/` and `.openapi-skill/backups/`.
+  Node staging and backup attempts stay beside each output under `.openapi-skill/staging/` and `.openapi-skill/backups/`.
+  Each target is replaced atomically and independently; successful targets are not rolled back when another target fails.
 - OpenSpec splits by lifetime, not by tool. `openspec/` is the tracked workflow and specification source:
   `config.yaml`, `specs/` for agreed current behavior, `changes/<name>/` for in-flight proposals, and
   `changes/archive/<date>-<name>/` for history. The generated agent instruction trees `.agents/`, `.claude/`, and

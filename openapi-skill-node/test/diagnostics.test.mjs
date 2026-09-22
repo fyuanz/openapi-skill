@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateSkill } from '../dist/index.js';
 import { DiagnosticError, formatDebugChain, formatDiagnostic, normalizeDiagnostic } from '../dist/diagnostics.js';
+import { MultiOutputPublishError } from '../dist/index.js';
+import { formatMultiOutputDiagnostic } from '../dist/diagnostics.js';
 
 const bytes = (value) => new TextEncoder().encode(value);
 const failure = (text) => {
@@ -47,4 +49,18 @@ test('debug chains are complete and bounded for cycles and depth', () => {
   let deep = new Error('cause 20');
   for (let index = 19; index >= 0; index--) deep = new Error(`cause ${index}`, { cause: deep });
   assert.match(formatDebugChain(deep, 4), /cause chain truncated after 4 levels/);
+});
+
+test('formats multi-output publication results without raw failure details', () => {
+  const error = new MultiOutputPublishError([
+    { skillDirectory: '/first/api-docs', status: 'success' },
+    { skillDirectory: '/blocked/api-docs', status: 'failed', error: new Error('TOP-SECRET raw failure') },
+    { skillDirectory: '/last/api-docs', status: 'success' }
+  ]);
+  const rendered = formatMultiOutputDiagnostic(error);
+  assert.match(rendered, /^ERROR \[PUBLISH\/MULTI_OUTPUT_FAILED\]: 1 of 3 output targets failed/m);
+  assert.match(rendered, /^OK \/first\/api-docs$/m);
+  assert.match(rendered, /^FAILED \/blocked\/api-docs \[PUBLISH\/TARGET_FAILED\]: Unable to publish generated Skill$/m);
+  assert.match(rendered, /^OK \/last\/api-docs$/m);
+  assert.doesNotMatch(rendered, /TOP-SECRET/);
 });

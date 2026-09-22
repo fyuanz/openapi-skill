@@ -17,7 +17,7 @@ export interface ServiceSource {
 interface CommonConfig {
   skillName?: string;
   keywords?: string[];
-  output?: string;
+  output?: string | string[];
   timeoutMs?: number;
 }
 
@@ -56,6 +56,7 @@ export interface ResolvedOpenApiSkillConfig {
   keywords: string[];
   services: ResolvedServiceSource[];
   output: string;
+  outputs: string[];
   timeoutMs: number;
 }
 
@@ -86,6 +87,7 @@ export interface RunOptions { cwd?: string; config?: string }
 
 export interface RunResult {
   skillDirectory: string;
+  skillDirectories: string[];
   serviceCount: number;
   documentCount: number;
   fileCount: number;

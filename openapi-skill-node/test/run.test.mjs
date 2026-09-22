@@ -25,7 +25,52 @@ test('downloads configured documents and publishes under .agents/skills by defau
   const result = await run({ cwd: root });
   assert.equal(result.documentCount, 2);
   assert.equal(result.skillDirectory, join(root, '.agents', 'skills', 'demo-api'));
+  assert.deepEqual(result.skillDirectories, [result.skillDirectory]);
   assert.equal(JSON.parse(await readFile(join(result.skillDirectory, 'references', 'source.json'), 'utf8')).documents.length, 2);
+});
+
+test('generates once and publishes the same complete Skill to multiple outputs', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-multi-output-'));
+  const document = join(root, 'api.json');
+  await writeFile(document, JSON.stringify({ openapi: '3.1.0', info: { version: '1' }, paths: {} }));
+  const outputs = [join(root, '.codex', 'skills'), join(root, '.trae', 'skills')];
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({
+    output: outputs,
+    services: [{ serviceId: 'demo', documents: [{ id: 'public', url: './api.json' }] }]
+  }));
+  const result = await run({ cwd: root });
+  const expected = outputs.map((output) => join(output, 'api-docs'));
+  assert.deepEqual(result.skillDirectories, expected);
+  assert.equal(result.skillDirectory, expected[0]);
+  assert.equal(result.fileCount, (await readTree(expected[0])).size);
+  assert.deepEqual(await readTree(expected[0]), await readTree(expected[1]));
+});
+
+test('continues after a middle output fails and reports partial publication without rollback', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-partial-output-'));
+  await writeFile(join(root, 'api.json'), JSON.stringify({ openapi: '3.1.0', info: { version: '1' }, paths: {} }));
+  const outputs = [join(root, 'first'), join(root, 'blocked'), join(root, 'last')];
+  await writeFile(outputs[1], 'not a directory');
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({
+    output: outputs,
+    services: [{ serviceId: 'demo', documents: [{ id: 'public', url: './api.json' }] }]
+  }));
+  let failure;
+  try { await run({ cwd: root }); } catch (error) { failure = error; }
+  assert.equal(failure?.name, 'MultiOutputPublishError');
+  assert.deepEqual(failure.results.map(({ status }) => status), ['success', 'failed', 'success']);
+  assert.deepEqual(await readTree(join(outputs[0], 'api-docs')), await readTree(join(outputs[2], 'api-docs')));
+  assert.equal(await readFile(outputs[1], 'utf8'), 'not a directory');
+});
+
+test('rejects invalid output configuration before reading documents or writing output', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openapi-skill-node-invalid-output-'));
+  await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({
+    output: [],
+    services: [{ serviceId: 'demo', documents: [{ id: 'missing', url: './missing.json' }] }]
+  }));
+  await assert.rejects(run({ cwd: root }), /CONFIG: output/);
+  await assert.rejects(readFile(join(root, '.agents', 'skills', 'api-docs', 'SKILL.md')), /ENOENT/);
 });
 
 test('does not replace an existing generated skill when a download fails', async (t) => {

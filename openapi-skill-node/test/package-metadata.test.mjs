@@ -10,7 +10,7 @@ const readmeEn = await readFile(new URL("../README.en.md", import.meta.url), "ut
 
 test("publishes under the unscoped openapi-skill name", () => {
   assert.equal(packageJson.name, "openapi-skill");
-  assert.equal(packageJson.version, "2.1.1");
+  assert.equal(packageJson.version, "2.1.2");
   assert.equal(packageJson.bin["openapi-skill"], "dist/cli.js");
   assert.equal(packageJson.repository.url, "git+https://github.com/fyuanz/openapi-skill.git");
   assert.equal(packageJson.homepage, "https://github.com/fyuanz/openapi-skill#readme");
@@ -27,6 +27,10 @@ test("ships a Chinese default README with reciprocal English navigation", () => 
   assert.match(readmeZh, /api-docs/);
   assert.match(readmeZh, /keywords/);
   assert.match(readmeZh, /sourceType/);
+  assert.match(readmeZh, /"output"\s*:\s*\[/);
+  assert.match(readmeZh, /1 至 8/);
+  assert.match(readmeZh, /每个输出目录.*独立原子/s);
+  assert.match(readmeZh, /不会.*回滚/s);
 
   assert.match(readmeEn, /^# openapi-skill/m);
   assert.match(readmeEn, /\[简体中文\]\(README\.md\) \| \*\*English\*\*/);
@@ -35,4 +39,8 @@ test("ships a Chinese default README with reciprocal English navigation", () => 
   assert.match(readmeEn, /api-docs/);
   assert.match(readmeEn, /keywords/);
   assert.match(readmeEn, /sourceType/);
+  assert.match(readmeEn, /"output"\s*:\s*\[/);
+  assert.match(readmeEn, /1 to 8/);
+  assert.match(readmeEn, /Each output directory.*independently atomic/s);
+  assert.match(readmeEn, /not rolled back/s);
 });

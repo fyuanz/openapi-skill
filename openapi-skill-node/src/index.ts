@@ -1,14 +1,18 @@
 import { readFile, stat } from 'node:fs/promises';
+import { join } from 'node:path';
 import { generateSkill } from './generator.js';
 import { generateProjectSkill } from './project-generator.js';
 import { loadConfig } from './config.js';
 import { publishSkill } from './publisher.js';
+import { MultiOutputPublishError, OutputPublicationResult } from './output-publication.js';
 import { ProjectServiceInput, ResolvedDocumentSource, ResolvedOpenApiSkillConfig, RunOptions, RunResult } from './types.js';
 
 export { generateSkill } from './generator.js';
 export { generateProjectSkill } from './project-generator.js';
 export { loadConfig } from './config.js';
 export { publishSkill } from './publisher.js';
+export { MultiOutputPublishError } from './output-publication.js';
+export type { OutputPublicationResult } from './output-publication.js';
 export type {
   DocumentSource, DocumentSourceKind, GenerateOptions, GenerateProjectOptions, LegacyOpenApiSkillConfig,
   ProjectServiceInput, ProjectOpenApiSkillConfig, ResolvedDocumentSource,
@@ -28,12 +32,31 @@ export async function run(options: RunOptions = {}): Promise<RunResult> {
       serviceId: service.serviceId, skillName: config.skillName, documents: service.documents,
       ...(hasKeywords ? { keywords: service.keywords, documentKeywords: service.documentKeywords } : {})
     });
-    const skillDirectory = await publishSkill(config.output, service.serviceId, config.skillName, files);
-    return { skillDirectory, serviceCount: 1, documentCount, fileCount: files.size };
+    const skillDirectories = await publishOutputs(config.outputs, service.serviceId, config.skillName, files);
+    return { skillDirectory: skillDirectories[0]!, skillDirectories, serviceCount: 1, documentCount, fileCount: files.size };
   }
   const files = generateProjectSkill({ skillName: config.skillName, keywords: config.keywords, services });
-  const skillDirectory = await publishSkill(config.output, config.skillName, config.skillName, files);
-  return { skillDirectory, serviceCount: services.length, documentCount, fileCount: files.size };
+  const skillDirectories = await publishOutputs(config.outputs, config.skillName, config.skillName, files);
+  return { skillDirectory: skillDirectories[0]!, skillDirectories, serviceCount: services.length, documentCount, fileCount: files.size };
+}
+
+async function publishOutputs(outputs: readonly string[], ownerId: string, skillName: string,
+  files: ReadonlyMap<string, string>): Promise<string[]> {
+  const results: OutputPublicationResult[] = [];
+  for (const output of outputs) {
+    const skillDirectory = joinOutput(output, skillName);
+    try {
+      results.push({ skillDirectory: await publishSkill(output, ownerId, skillName, files), status: 'success' });
+    } catch (error) {
+      results.push({ skillDirectory, status: 'failed', error });
+    }
+  }
+  if (results.some((result) => result.status === 'failed')) throw new MultiOutputPublishError(results);
+  return results.map((result) => result.skillDirectory);
+}
+
+function joinOutput(output: string, skillName: string): string {
+  return join(output, skillName);
 }
 
 const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
