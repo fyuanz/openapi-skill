@@ -1,14 +1,22 @@
 # Tasks
 
-## 2026-09-23 - Plan Two-Level Catalog Interface Discovery
+## 2026-09-23 - Implement Two-Level Catalog Interface Discovery
 
-Status: Planning artifacts prepared in `add-catalog-interface-keywords`; implementation awaits review and an explicit apply request.
+Status: Implemented in `add-catalog-interface-keywords`; verification passed, delivery in progress.
 
-- Both the outer and service catalogs will expose source-derived interface discovery entries, grouped by service,
+- Both the outer and service catalogs expose source-derived interface discovery entries, grouped by service,
   document and first tag, while preserving the outer catalog -> service catalog -> context -> group -> operation path.
-- The proposal covers Java service/aggregate and Node service/project generation, deterministic coverage, old member
-  compatibility, relative links and trusted-template boundaries. No product code or package release is included in this planning slice.
-- Proposal, design, capability delta and test-first implementation tasks are recorded under the change directory.
+- Java service/aggregate and Node service/project generation share per-language discovery renderers. Existing machine
+  indexes supply summaries, operation IDs, method/path and tag aliases; document keywords appear at both catalog levels.
+- Java aggregation enriches old member catalogs idempotently while preserving other catalog facts and contract files.
+  No layout, JSONL format, version acceptance rule, package version or registry publication changes are included.
+- Red-to-green: five new Node and five initial Java behavioral tests failed before implementation. The final Node suite
+  passes 70 tests; `mvn -B clean install` passes 86 core and 2 Starter tests. One existing 30 ms timeout test failed
+  during the first concurrent run; the sequential clean reactor passes it unchanged.
+- `node testbeds/verify-catalog-discovery.mjs` verifies equivalent Java/Node discovery and all Node local links using
+  shared and 124-operation fixtures. Without configured keywords, the large outer catalogs are 4,871/4,882 bytes
+  (Java/Node), and service catalogs 5,274/5,297 bytes. Both cover all 124 operations; upload navigation follows both catalogs,
+  context and group to the operation. Budget expansion failures retain the previous complete published Skill.
 
 ## 2026-09-22 - Prepare The Node 2.1.2 npm Release
 

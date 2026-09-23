@@ -164,11 +164,15 @@ openapi.skill.runtime.skill-name=my-service-api
     ├── source.json
     └── documents/
         └── <文档>
-            ├── context.md        # 分组索引，先读这里
+            ├── context.md        # 从 catalog 定位后的分组索引
             ├── groups/           # 每个 OpenAPI tag 一个文件，文件名即 tag
             ├── operations/
             └── schemas/
 ```
+
+`catalog.md` 按文档和分组列出接口 summary、operationId、HTTP method/path 与其他 tag 检索词。
+多服务 Skill 的最外层和服务内 catalog 都有这些信息，按“外层 catalog → 服务 catalog → context → 分组 → 接口”逐级查找；
+单服务从服务 catalog 开始。无需配置完整关键词即可匹配已声明的接口动作，但不会自动生成业务同义词。
 
 然后在前端项目中尝试以下任务，并确认所用 Agent 实际发现并使用了该 Skill：
 

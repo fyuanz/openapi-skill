@@ -37,14 +37,17 @@ public final class AggregateSkillGenerator {
                 if (skillName.equals(memberSkill)) throw new IllegalArgumentException("IDENTITY: aggregate Skill collides with service Skill");
                 if (source.has("kind")) throw new IllegalArgumentException("INPUT: nested aggregate services are not supported");
                 validator.validate(tree, id, memberSkill);
+                var operations = CatalogDiscovery.operations(tree);
+                var memberCatalog = CatalogDiscovery.enrich(tree.get("references/catalog.md"), source.path("documents"), operations);
                 String prefix = "references/services/" + id + "/";
                 for (var file : tree.entrySet()) {
                     if (file.getKey().equals("SKILL.md")) continue;
                     if (!file.getKey().startsWith("references/")) throw new IllegalArgumentException("INPUT: unexpected service file");
-                    bytes += file.getValue().getBytes(StandardCharsets.UTF_8).length;
+                    String content = file.getKey().equals("references/catalog.md") ? memberCatalog : file.getValue();
+                    bytes += content.getBytes(StandardCharsets.UTF_8).length;
                     if (files.size() >= 9_997 || bytes > 64L * 1024 * 1024)
                         throw new IllegalArgumentException("LIMIT: aggregate output exceeded");
-                    files.put(prefix + file.getKey(), file.getValue());
+                    files.put(prefix + file.getKey(), content);
                 }
                 members.add(source.deepCopy());
                 for (var document : source.path("documents")) {
@@ -52,8 +55,9 @@ public final class AggregateSkillGenerator {
                     entry.put("serviceId", id);
                     documents.add(entry);
                 }
-                catalog.append("- [").append(id).append("](services/").append(id)
+                catalog.append("\n## Service ").append(id).append("\n\n- [").append(id).append("](services/").append(id)
                         .append("/references/catalog.md) — ").append(source.path("documents").size()).append(" document(s)\n");
+                catalog.append(CatalogDiscovery.render(source.path("documents"), operations, false));
             } catch (Exception error) {
                 throw new IllegalArgumentException(id + ": " + error.getMessage(), error);
             }
@@ -71,11 +75,12 @@ public final class AggregateSkillGenerator {
                 ---
 
                 When a user names an interface source file, read it first and extract its HTTP method/path.
-                Use the [service catalog](references/catalog.md) to select the service and document, then read that
-                document's `context.md` as its complete interface directory. Match method/path first, then follow the
-                operation's direct Markdown link. Each operation contains a generator-computed Complete referenced
-                contracts section; open only the contracts needed for the task.
-                Each document context describes documented servers and security facts.
+                Use the [service catalog](references/catalog.md) to match interface keywords and select a candidate service.
+                Follow its service catalog link, select the document there, then read that document's `context.md`.
+                Open the matching group and follow the operation's direct Markdown link. For older service layouts,
+                follow the interface links provided by that context. Each operation contains a generator-computed
+                Complete referenced contracts section; open only the contracts needed for the task.
+                The service catalog describes documented servers and security facts for current service output.
                 Operations include effective parameters, servers and security after overrides.
                 Read the selected service's `references/conventions.md` when absent, null or empty values matter.
                 A null `security` and an absent `required` list are unstated facts, not definite claims.
@@ -89,6 +94,7 @@ public final class AggregateSkillGenerator {
                 All references are included in this Skill; no separately installed service Skill is required.
                 [Source metadata](references/source.json) identifies input snapshots, not live-code freshness.
                 """.formatted(skillName, aggregateId, memberList, aggregateId, memberList));
+        files.put("SKILL.md", files.get("SKILL.md") + "\n" + CatalogDiscovery.MATCHING);
         validator.validate(files, aggregateId, skillName);
         return Collections.unmodifiableMap(files);
     }

@@ -67,11 +67,15 @@ The configuration levels have distinct roles:
 
 - Root `keywords` help discover the complete project API Skill.
 - Service `keywords` identify business services and appear, within a bounded length, in both the root Skill description and service catalog.
-- Document `keywords` locate modules or groups after a service is selected. They stay in that service's catalog instead of filling the root description with fine-grained terms.
+- Document `keywords` locate modules or groups and appear in both the outer and service catalogs, without entering the root Skill description.
 - `sourceType` accepts `internal` or `third-party` and defaults to `internal`. It records provenance; it does not change OpenAPI parsing semantics.
 - Each `serviceId` must be unique within the project. A document ID only needs to be unique within its service, so several services may each expose a document named `public`.
 
 Service and document boundaries remain intact: OpenAPI objects are not merged, `$ref` values are not resolved across documents, and gateway prefixes are not inferred. The output has one root `SKILL.md`; every service is physically included below `references/services/<serviceId>/` and reached through relative Markdown links. These are not filesystem symbolic links, so the complete `api-docs` directory remains portable.
+
+Both the outer `references/catalog.md` and each service catalog list discovery entries by document and first tag: summary, operationId, HTTP method/path, additional tags and configured keywords. Every operation remains searchable even without a summary; no synonyms or contract bodies are invented or copied. Same-named actions keep their service/document ownership. Exceeding the total output budget fails generation and retains the previous Skill rather than truncating entries.
+
+Follow outer catalog → service catalog → document context → group → operation. Match a known method/path exactly; inspect the contracts of multiple candidates and check other candidate documents and groups before concluding an interface is undocumented.
 
 Each service reference root uses `openapi-skill-core/3`. Every document has exactly one `context.md`, and it is a
 **group index**: it lists each of the document's tag groups with its interface count. Each group opens

@@ -50,10 +50,11 @@ test('emits core/3 document navigation, clean paths and retained machine indexes
   ].sort());
 });
 
-test('keeps the catalog compact and centralizes conventions', () => {
+test('includes discovery but not schema bodies and centralizes conventions', () => {
   const files = generateSkill({ serviceId: 'svc', skillName: 'svc-api', documents: new Map([['public', input]]) });
   const catalog = files.get('references/catalog.md');
-  assert.doesNotMatch(catalog, /GET \/users/);
+  assert.match(catalog, /GET \/users/);
+  assert.doesNotMatch(catalog, /```json/);
   assert.doesNotMatch(catalog, /UserView/);
   assert.match(catalog, /2 operation\(s\)/);
   assert.match(catalog, /3 schema\(s\)/);

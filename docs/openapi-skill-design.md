@@ -184,14 +184,14 @@ ZIP 文件名是 `<skillName>.zip`，内部有唯一顶层目录：
 ```
 
 - `SKILL.md` 是固定受信模板；OpenAPI 自由文本只进入不受信 references。
-- `catalog.md` 只选择文档，并承载该文档已声明的 servers 与 security 事实（可读文本，非原始 JSON 块）。
+- 服务 `catalog.md` 选择文档并承载已声明的 servers 与 security 事实；外层和服务 catalog 均按文档/第一 tag 展示完整接口检索短行（summary、operationId、method/path、其余 tags）和配置 keywords。保留分组计数、同名接口归属与空文档，不复制契约正文、不推断同义词或静默截断。
 - 每份文档恰有一个 `context.md`，它是**分组索引**：文档关键词加每个 tag 分组的一行链接与接口数。
 - `groups/<tag>.md` 按 operation 的 `tags[0]` 分文件，一个 operation 只属于一个分组；文件名即 tag 名，
   中文直接保留；无 tag 的 operation 进入 `untagged.md`。每条目一行：
   `- [语义化标题](../operations/<file>.md) — \`METHOD /path\``，不含 `Source operationId` 与 `Tags`。
 - `operations.jsonl`、`schemas.jsonl` 是按语义 ID 排序的紧凑机器校验索引，不属于 LLM 导航路径；前者带
   `group` / `groupFile` 列。
-- operation/schema ID 与 SpringDoc `operationId` 解耦；后者仅作为 `sourceOperationId` 元数据保留。
+- operation/schema ID 与 SpringDoc `operationId` 解耦；后者作为 `sourceOperationId` 元数据和 catalog 检索别名保留。
 - 唯一且文件系统安全的契约使用纯语义文件名（上限 72 字符）；仅真实大小写不敏感冲突或安全编码/长度回退
   追加确定性短摘要。
 - operation 保留参数覆盖、请求体/媒体类型、响应、servers、安全和原 JSON。
@@ -207,9 +207,9 @@ ZIP 文件名是 `<skillName>.zip`，内部有唯一顶层目录：
 core 的输入/输出、引用深度和文件数上限继续生效。文件按稳定路径排序，ZIP entry 使用固定时间；同一运行时
 契约、身份和生成器版本得到相同 ZIP 字节。ZIP 在内存生成，不写 `target/`。
 
-可信 `SKILL.md` 要求 LLM 从 catalog 选择 service/document，读取该 document 的 `context.md`，按 method/path
+可信 `SKILL.md` 要求 LLM 在外层 catalog 匹配接口动作及关键词，沿链接进入服务 catalog，再选定 document 的 `context.md`，按 method/path
 进入匹配的 tag 分组文件，再沿 operation 的直接链接进入其生成器列出的完整 reference 闭包。由于一个 operation
-只出现在一个分组里，契约里出现"接口不在预期分组"时先检查该文档的其它分组。它不要求 `grep`、`jq`、JSONL
+只出现在一个分组里，未命中时检查其他候选文档和分组，多候选时核对各自归属和契约。单服务从服务 catalog 开始。它不要求 `grep`、`jq`、JSONL
 搜索或由 LLM 自行做多跳
 图遍历。当前不引入 RAG、embedding 或外部索引服务。
 

@@ -31,7 +31,11 @@ and is not a delivery gate.
    untrusted OpenAPI free text into `SKILL.md`.
 3. The CLI reads every configured document under a shared input budget; `timeoutMs` applies to HTTP downloads, while
    local paths must name regular files. A failed download/read or invalid document aborts the whole project update.
-4. The generator creates one self-contained Skill, named `api-docs` by default, with service trees physically included
+4. Both outer and service catalogs list source-derived operation summaries, operation IDs, method/path, tag groups,
+   additional tag aliases and document keywords. Navigation follows outer catalog -> service catalog -> context -> group
+   -> operation; single-service output starts at the service catalog. Same-named actions retain their owners, all operations
+   are covered, and exceeding the existing output budget fails instead of silently truncating entries.
+   The generator creates one self-contained Skill, named `api-docs` by default, with service trees physically included
    under `references/services/<serviceId>/references/` and connected through relative Markdown links.
    Each tree exposes one slim group-index context per document, one interface file per first OpenAPI tag, clean
    semantic paths and precomputed reference closures. Compact JSONL operation/schema indexes remain machine-only
@@ -61,7 +65,7 @@ and is not a delivery gate.
   services plus project/service/document keywords, and can publish the same generated tree to one or 1-8 output
   parents. Each target remains atomic, while partial multi-target success is reported and not rolled back. The legacy
   `serviceId` + `documents` configuration is still accepted, while all new output uses `openapi-skill-core/3`.
-- Node verification currently passes 65 tests across configuration, local/HTTP input, multi-output publication and diagnostics, generation, tag grouping, context navigation, semantic indexes, provenance, project-tree
+- Node verification currently passes 70 tests across two-level catalog discovery, configuration, local/HTTP input, multi-output publication and diagnostics, generation, tag grouping, context navigation, semantic indexes, provenance, project-tree
   validation, project-wide document/byte budgets, legacy/project version acceptance, atomic legacy/project migration,
   stale service removal, package metadata, and compatibility behavior. The locally packed `2.0.0` tarball was installed into
   `testbeds/vue-ts-consumer`; it builds and generates a core/3 `api-docs` project Skill from the running testbed.

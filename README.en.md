@@ -160,11 +160,15 @@ Download the ZIP and extract its **entire Skill directory** into the frontend pr
     ├── source.json
     └── documents/
         └── <document>
-            ├── context.md        # group index; read this first
+            ├── context.md        # group index reached from the catalog
             ├── groups/           # one file per OpenAPI tag, named after the tag
             ├── operations/
             └── schemas/
 ```
+
+The catalog lists operation summaries, operation IDs, HTTP method/path and additional tags by document and group.
+Multi-service Skills repeat this discovery information in both catalogs: outer catalog → service catalog → context → group → operation.
+Single-service Skills start at the service catalog. Configured keywords are optional discovery aliases; the generator does not invent synonyms.
 
 Try this task in the frontend project and verify that your agent actually discovers and uses the Skill:
 

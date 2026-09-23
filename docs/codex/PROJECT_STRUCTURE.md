@@ -73,7 +73,7 @@ readable 72-character names. Legacy IR remains deleted.
 Core and runtime entry points now exist:
 
 - `openapi-skill-core/src/main/java/io/github/fyuanz/openapi/skill/core/`: OpenApiInput.java (version/JSON boundary), SkillGenerator.java (service assembly and indexes), SemanticNames.java (readable collision-safe paths), DocumentReferences.java (local graph, contract rendering and links), GeneratedSkillValidator.java (complete-tree/index checks), and ServiceSkillUpdater.java (bounded generation, locking, staged replacement, recovery, and external status).
-- `AggregateSkillGenerator.java` assembles validated service reference trees with a single trusted entrypoint, service catalog and provenance. Trusted templates reside in `SkillGenerator.java` and `AggregateSkillGenerator.java`.
+- `CatalogDiscovery.java` renders service/aggregate discovery from existing operation indexes and safely enriches older embedded catalogs. `AggregateSkillGenerator.java` assembles validated service reference trees with a single trusted entrypoint, service catalog and provenance. Trusted templates reside in `SkillGenerator.java` and `AggregateSkillGenerator.java`.
 - `openapi-skill-core/src/test/`: sanitized OpenAPI fixture, small boundary inputs, and meaningful semantic tests.
 - `openapi-skill-spring-boot-starter/src/main/java/io/github/fyuanz/openapi/skill/runtime/`: Boot auto-configuration,
   optional runtime properties, safe identity derivation, direct SpringDoc final-resource collection, deterministic in-memory
@@ -87,6 +87,9 @@ Core and runtime entry points now exist:
   each service through the core-compatible service generator, omits nested `SKILL.md` files, physically relocates the
   complete reference trees beneath `references/services/<serviceId>/references/`, and creates the root catalog,
   provenance, and trusted entrypoint.
+- `openapi-skill-node/src/catalog-discovery.ts` shares document/group/operation discovery rendering between the service
+  generator and outer project catalog. `testbeds/verify-catalog-discovery.mjs` compares Java/Node discovery using the shared
+  `openapi-skill-core/src/test/resources/catalog-discovery.json` and test-generated files under `openapi-skill-core/target/catalog-discovery/`.
 - `openapi-skill-node/src/keywords.ts` applies deterministic keyword trimming, NFC normalization, de-duplication,
   sorting, count/length/control-character checks, and bounded frontmatter discovery text.
 - `openapi-skill-node/src/index.ts` reads the complete project input from HTTP(S) or regular local files under shared

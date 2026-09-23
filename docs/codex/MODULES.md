@@ -5,7 +5,7 @@
 | Module | Responsibility | Status |
 | --- | --- | --- |
 | Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.1.0-SNAPSHOT`; parent, core and Starter reactor |
-| `openapi-skill-core` | Per-service conversion, context-first navigation, aggregate assembly, validation and safe filesystem publication | 77 tests pass |
+| `openapi-skill-core` | Per-service conversion, two-level catalog discovery, context navigation, aggregate assembly, validation and safe filesystem publication | 86 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
 | `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents and one or more output parents | local `openapi-skill@2.1.2` source passes 65 tests; `1.0.0`/`1.1.0`/`2.0.0` published |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 7 tests pass; no OpenAPI Skill build executions |
@@ -30,7 +30,9 @@ files. The `SKILL.md` frontmatter carries a bilingual action-triggered
 description built only from validated identities; `boundedList()` truncates the interpolated group list so the
 32-document worst case stays a single YAML-safe line under 1024 characters.
 
-`AggregateSkillGenerator` assembles validated service trees without semantic OpenAPI merging. `GeneratedSkillValidator`
+`CatalogDiscovery` renders complete interface discovery entries for service and aggregate catalogs from existing operation
+indexes. It preserves document/group ownership, safely renders source aliases, and idempotently enriches older embedded
+service catalogs without rewriting their contracts. `AggregateSkillGenerator` assembles validated service trees without semantic OpenAPI merging. `GeneratedSkillValidator`
 and `ServiceSkillUpdater` retain generic validated filesystem publication primitives. Core performs no Spring, Maven,
 HTTP, ZIP, UI, LLM, business API, or external-reference actions.
 
@@ -72,9 +74,12 @@ catalogs with relative Markdown links. Root provenance uses `openapi-skill-core/
 provenance and the flattened service/document list preserve origin without merging OpenAPI objects or resolving `$ref`
 across documents. `sourceType` is limited to `internal|third-party` and defaults to `internal`.
 
+`catalog-discovery.ts` provides the corresponding shared Node discovery view. The outer catalog links to service catalogs,
+which link to document contexts; both levels contain every operation's summary, source operationId, method/path and tag aliases.
+
 Optional project-, service-, and document-level keywords are normalized, de-duplicated, sorted and recorded in trusted
 catalog/provenance fields. Project and service keywords contribute only a bounded discovery fragment to the root
-frontmatter; document keywords remain in the corresponding service catalog/provenance. Each level accepts at most 16
+frontmatter; document keywords appear in both catalog levels and in provenance. Each level accepts at most 16
 keywords of 1-64 printable characters. OpenAPI free text remains untrusted reference data and does not become Skill
 instructions.
 

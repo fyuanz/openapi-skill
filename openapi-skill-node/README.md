@@ -67,11 +67,15 @@ npm install --save-dev openapi-skill
 
 - 根级 `keywords` 用于发现整份项目 API Skill。
 - 服务级 `keywords` 用于识别业务服务，并以受限长度进入根 Skill 描述和服务目录。
-- 文档级 `keywords` 用于在选定服务后定位模块或分组，保存在对应服务目录中，不会把所有细粒度词塞入根描述。
+- 文档级 `keywords` 用于定位模块或分组，同时展示在外层与对应服务 catalog 中，不进入根 Skill 描述。
 - `sourceType` 可设为 `internal` 或 `third-party`，省略时为 `internal`。它记录来源性质，不会改变 OpenAPI 解析规则。
 - `serviceId` 在项目内必须唯一；`document.id` 只需在所属服务内唯一，因此不同服务可以都有名为 `public` 的文档。
 
 每个服务及其文档保持独立边界，不会合并 OpenAPI 对象、跨文档解析 `$ref`，也不会猜测网关前缀。生成目录只包含一个根 `SKILL.md`，服务内容物理包含在 `references/services/<serviceId>/` 下，并通过相对 Markdown 链接导航；这里不使用文件系统符号链接，复制完整 `api-docs` 目录即可使用。
+
+最外层 `references/catalog.md` 与服务内 catalog 都按文档和第一 tag 列出接口检索条目：summary、operationId、HTTP method/path、其他 tags 和配置关键词。缺失 summary 时仍可按 method/path 查找；不生成来源中没有的业务同义词，不复制请求响应或 Schema 正文。相同名称保留服务/文档归属，全部操作均被覆盖，超出总输出预算会失败并保留旧 Skill。
+
+导航顺序是“外层 catalog → 服务 catalog → 文档 context → 分组 → 接口详情”。已知 method/path 优先精确匹配；多个候选继续核对契约，未命中时检查其他候选文档和分组。
 
 生成的服务 reference 根使用 `openapi-skill-core/3`。每份文档只有一个 `context.md`，它是**分组索引**：列出该文档的
 每个 tag 分组及其接口数；点进去是 `groups/<tag>.md`，文件名就是 OpenAPI 里的 tag 名（中文名直接保留），

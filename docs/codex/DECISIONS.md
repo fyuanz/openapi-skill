@@ -1,15 +1,26 @@
 # Decisions
 
-## 2026-09-23 - Propose Interface Discovery In Both Catalog Levels
+## 2026-09-23 - Expose Interface Discovery In Both Catalog Levels
 
-Status: Proposed in `add-catalog-interface-keywords`; not implemented
+Status: Accepted and implemented in `add-catalog-interface-keywords`
 
 The user confirmed that interface keywords should appear in both the outer `references/catalog.md` and each service
 catalog, with navigation continuing through the service catalog to the document context. Derive discovery entries
 from existing summaries, operation IDs, method/path, tags and configured keywords, preserving service/document ownership.
-Keep context/group/contract files and existing source-data trust boundaries. Proposed implementation uses existing machine
-indexes internally and does not require the consuming model to read JSONL. Detailed compatibility, coverage and test-first
-tasks live in the OpenSpec change; package publication and the pending Node release remain separate work.
+Keep context/group/contract files and existing source-data trust boundaries. The implementation uses existing machine
+indexes internally and does not require the consuming model to read JSONL. Each language shares one discovery renderer
+between levels. Entries preserve all operations and their owners rather than truncating a keyword list or merging aliases
+globally. Empty documents remain visible; absent summaries fall back to method/path. Source text never enters trusted instructions.
+
+Java aggregation replaces only a delimited generated discovery section in embedded member catalogs, preserving all other
+content and supporting earlier index rows without group columns. Current service/Node layouts remain core/3; the existing
+Java aggregate marker remains unchanged. No new persistent index format, configuration option or dependency is introduced.
+This supersedes the earlier decision to keep operation discovery entirely out of catalogs; context and group files remain
+the detailed navigation path. Full contract bodies and automatic synonym generation remain excluded.
+
+Evidence: 86 core, 2 Starter and 70 Node tests pass after the new tests failed against the old behavior. Shared fixtures
+produce equivalent discovery sections in Java/Node, including all 124 operations in the larger example. Registry publication
+and release version selection remain separate work.
 
 ## 2026-09-22 - Publish Multi-Agent Outputs As Independent Atomic Targets
 

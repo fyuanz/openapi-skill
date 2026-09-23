@@ -64,7 +64,7 @@ class SkillGeneratorIndexTest {
         assertTrue(schemas.stream().allMatch(row -> files.containsKey("references/" + row.path("file").asText())));
     }
 
-    @Test void keepsCatalogSmallAndCentralizesDefaultSemantics() {
+    @Test void includesDiscoveryButNotSchemaBodiesAndCentralizesDefaultSemantics() {
         String document = """
                 {"openapi":"3.1.0","paths":{"/open":{"get":{"security":[],"responses":{}}}},
                  "components":{"schemas":{"Payload":{"type":"object"}}}}
@@ -73,7 +73,8 @@ class SkillGeneratorIndexTest {
                 Map.of("public", document.getBytes(StandardCharsets.UTF_8)));
 
         String catalog = files.get("references/catalog.md");
-        assertFalse(catalog.contains("GET /open"));
+        assertTrue(catalog.contains("GET /open"));
+        assertFalse(catalog.contains("```json"));
         assertFalse(catalog.contains("Payload"));
         assertTrue(catalog.contains("1 operation(s)"));
         assertTrue(catalog.contains("1 schema(s)"));

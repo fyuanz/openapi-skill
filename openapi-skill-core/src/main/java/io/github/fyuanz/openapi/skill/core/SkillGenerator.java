@@ -166,7 +166,7 @@ public final class SkillGenerator {
                         .put("operations", operations.size()).put("schemas", schemaCount);
             } catch (IllegalArgumentException e) { throw new IllegalArgumentException(id + ": " + e.getMessage(), e); }
         }
-        files.put("references/catalog.md", catalog.toString());
+        files.put("references/catalog.md", CatalogDiscovery.enrich(catalog.toString(), sources, operationIndex));
         files.put("references/operations.jsonl", jsonLines(operationIndex));
         files.put("references/schemas.jsonl", jsonLines(schemaIndex));
         files.put("references/conventions.md", CONVENTIONS);
@@ -205,6 +205,7 @@ public final class SkillGenerator {
                 describe relationships and do not require unlimited expansion.
                 [Source metadata](references/source.json) identifies the input snapshots, not live-code freshness.
                 """.formatted(skillName, serviceId, groups, serviceId, groups));
+        files.put("SKILL.md", files.get("SKILL.md") + "\n" + CatalogDiscovery.MATCHING);
         long outputBytes = files.values().stream().mapToLong(s -> s.getBytes(StandardCharsets.UTF_8).length).sum();
         if (files.size() > 10000 || outputBytes > 64 * 1024 * 1024) throw new IllegalArgumentException("LIMIT: output exceeded");
         return Collections.unmodifiableMap(files);
