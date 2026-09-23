@@ -9,16 +9,6 @@ This file only records repository-specific engineering rules. It must not duplic
 references, artifact language settings, directory explanations, or lifecycle instructions; those are owned by
 `openspec/` and the generated OpenSpec skills.
 
-## Mandatory First Read
-
-Before analyzing, planning, or modifying code, read these files when they exist:
-
-1. `docs/codex/PROJECT_CONTEXT.md`
-2. `docs/codex/PROJECT_STRUCTURE.md`
-3. `docs/codex/MODULES.md`
-4. `docs/codex/TASKS.md`
-5. `docs/codex/DECISIONS.md`
-
 Do not scan the whole repository before reading these files. Use targeted `rg` searches afterward.
 
 ## Development Rules
@@ -26,15 +16,6 @@ Do not scan the whole repository before reading these files. Use targeted `rg` s
 - Write tests before implementation and keep the red to green sequence.
 - Keep source and test files below approximately 800-1000 lines; split files by responsibility before they become larger.
 - Prefer decisions that are verifiable and maintainable.
-
-## Documentation Updates
-
-When a change affects documented facts, update the relevant `docs/codex/` files in the same task:
-
-- Always update `TASKS.md` when task status changes.
-- Update `DECISIONS.md` when a technical decision is proposed, accepted, rejected, or superseded.
-- Update `MODULES.md` or `PROJECT_STRUCTURE.md` when responsibilities or paths change.
-- Update `PROJECT_CONTEXT.md` when goals, users, workflows, commands, status, or constraints change.
 
 ## Verification
 

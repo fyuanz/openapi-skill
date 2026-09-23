@@ -212,7 +212,6 @@ The SpringDoc script proves that an ordinary build performs no application start
 goal, then downloads and checks the ZIP on a real random port.
 
 `1.0.0` adds single-document/multi-group runtime starter tests and six testbed checks. See
-[task records](docs/codex/TASKS.md) for current results. The user will continue to review Skill usability manually.
 
 ## Repository and documentation
 
@@ -223,7 +222,6 @@ goal, then downloads and checks the ZIP on a real random port.
 | [SpringDoc testbed](testbeds/springdoc-multi-package/) | Multi-package, multi-group sample and runtime verification |
 | [Design (Chinese)](docs/openapi-skill-design.md) | Runtime and Node project-Skill primary paths |
 | [Release and usage (Chinese)](docs/maven-central.md) | Maven Central setup and maintainer publishing workflow |
-| [Task status](docs/codex/TASKS.md) | Completed work, verification evidence, and next steps |
 
 ## License
 

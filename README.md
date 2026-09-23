@@ -214,7 +214,6 @@ powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-in
 SpringDoc 脚本验证普通构建中没有应用启停、HTTP 抓取或 OpenAPI Skill Maven goal，并在随机真实端口下载、检查 ZIP。
 
 `1.0.0` 增加运行时 Starter 单文档/多分组测试和 6 项测试服务验证；最新结果见
-[任务记录](docs/codex/TASKS.md)。Skill 使用效果仍由用户人工校验后反馈。
 
 ## 项目结构与文档
 
@@ -225,7 +224,6 @@ SpringDoc 脚本验证普通构建中没有应用启停、HTTP 抓取或 OpenAPI
 | [SpringDoc 测试服务](testbeds/springdoc-multi-package/) | 多包、多分组示例与运行时验证 |
 | [设计文档](docs/openapi-skill-design.md) | 运行时与 Node 项目 Skill 主链路 |
 | [发布与使用](docs/maven-central.md) | Maven Central 配置与维护者发布流程 |
-| [任务状态](docs/codex/TASKS.md) | 已完成工作、验证证据与后续计划 |
 
 ## 许可证
 

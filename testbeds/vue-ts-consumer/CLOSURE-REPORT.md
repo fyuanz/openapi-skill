@@ -150,9 +150,6 @@ Vue 3 + TS 前端  src/api/client.ts  (5 个接口的真实调用)
 | 6 | `POST /orders` 非法体 | 400 + `ApiError` | 400 + `{"code":"VALIDATION_ERROR",...}` | 一致 |
 | 7 | `POST /files` multipart | 200 + `{"size":N}` | 200 + `{"size":5}`（5 字节探针，直连与代理均通过） | 一致 |
 
-`source.json` 中两份文档的 SHA-256（account `686c1b8b…6d87`、business `ae7e7d84…290c`）与 `docs/codex/TASKS.md`
-记录的历史值完全一致，说明本次运行时导出与既有契约快照是同一份数据。
-
 ## 独立前向可用性审计
 
 把生成的 Skill 交给一个**独立只读 agent**，要求它只用 Skill 自身文件回答 10 个前端集成问题，并与真实契约对照。
@@ -167,8 +164,7 @@ Vue 3 + TS 前端  src/api/client.ts  (5 个接口的真实调用)
 影响：前端无法确定应生成一个共享 `Address` 类型还是每分组各一个。
 
 **核实结论：这是 OpenAPI 语义本身的问题，不是生成缺陷。** 两个分组是各自独立的 OpenAPI 文档，
-`Address` 在各自 `components.schemas` 下确实是两份独立定义；设计边界明确不做语义合并
-（见 `docs/codex/DECISIONS.md`「no semantic merge」）。生成器忠实反映了这一点。
+`Address` 在各自 `components.schemas` 下确实是两份独立定义；设计边界明确不做语义合并。生成器忠实反映了这一点。
 但**这个事实对读者不可见**，值得在 Skill 中显式说明，否则每次都要靠人肉 diff。
 
 ### 缺口 2：`security: null` 的含义未在 Skill 内说明
