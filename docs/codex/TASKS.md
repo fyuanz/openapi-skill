@@ -2,8 +2,8 @@
 
 ## 2026-09-23 - Prepare The Node 2.1.3 npm Release
 
-Status: Implementation, release-package verification, commit, and normal push complete under OpenSpec change
-`release-node-2-1-3`; registry publication is not part of this preparation slice.
+Status: Implementation, release-package verification, commit, and normal push complete; OpenSpec change archived as
+`2026-09-23-release-node-2-1-3`. Registry publication is not part of this preparation slice.
 
 - The maintainer selected patch version `2.1.3` for the already implemented two-level catalog interface discovery.
 - Package manifest, lockfile root metadata, and package metadata test are synchronized to `2.1.3`; the targeted test
