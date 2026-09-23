@@ -7,7 +7,7 @@
 | Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.1.1-SNAPSHOT`; parent, core and Starter reactor |
 | `openapi-skill-core` | Per-service conversion, two-level catalog discovery, context navigation, aggregate assembly, validation and safe filesystem publication | 86 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
-| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents and one or more output parents | `openapi-skill@2.1.2` is published as npm `latest`; local source with unreleased catalog discovery passes 70 tests |
+| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents and one or more output parents | Source is pending `openapi-skill@2.1.3` with catalog discovery; npm `latest` remains `2.1.2`; 70 tests pass |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 7 tests pass; no OpenAPI Skill build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 
@@ -63,7 +63,8 @@ management-port resource layouts, remote service aggregation, caching, and artif
 ## Node.js Package
 
 The unscoped `openapi-skill` package targets Node.js 20+ and exports both an `openapi-skill` CLI and typed library
-functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Published version `2.1.2` retains the
+functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. The pending source version is
+`2.1.3`, while published npm `latest` remains `2.1.2`. It retains the
 preferred top-level `services` configuration: one project may contain internal and third-party services, and each
 service may contain multiple explicit document ID plus HTTP(S) URL or local JSON path pairs. One configuration produces one self-contained
 project Skill; `skillName` defaults to `api-docs` and no service has a separately installed Skill.

@@ -1,5 +1,30 @@
 # Decisions
 
+## 2026-09-23 - Prepare npm 2.1.3 Without Claiming Publication
+
+Status: Accepted and implemented
+
+The maintainer explicitly selected `2.1.3` for the next Node/npm release even though the included two-level catalog
+interface discovery is a user-visible compatible enhancement. Apply that version only to `openapi-skill-node`; Java
+remains `2.1.1-SNAPSHOT` and published Maven coordinates remain unchanged. The alternative `2.2.0` version was
+considered for conventional SemVer signaling but rejected in favor of the maintainer's explicit release choice.
+
+Use npm's no-tag version update to synchronize `package.json`, `package-lock.json`, and the lockfile root package. Lock
+the identity with a package metadata test that fails before the bump, then require `npm ci`, the complete 70-test Node
+suite, and `npm pack --dry-run --json`. The dry run must identify `openapi-skill@2.1.3` and include the CLI/library
+entrypoints, declarations, bilingual READMEs, and LICENSE without creating or committing a tarball.
+
+Release preparation and publication are separate states. Preparation documentation records local source as pending
+`2.1.3` while npm registry `latest` remains `2.1.2`. It does not run `npm publish`, change a dist-tag, read credentials,
+or create `v2.1.3`. Those actions require a later maintainer-triggered publication and registry verification; only then
+may project records call `2.1.3` published and attach its annotated tag.
+
+Evidence: the package metadata test failed first on `2.1.2 !== 2.1.3` and passed 2/2 after npm synchronized all three
+version locations. A clean `npm ci` reports zero vulnerabilities, the full Node suite passes 70/70, and
+`npm pack --dry-run --json` reports `openapi-skill@2.1.3` with 30 entries and sha1
+`a930c68c32f81753691c053ce84d95f5e6f0d7ac`. Required entrypoints, declarations, bilingual READMEs, and LICENSE are
+present; no `2.1.3` tarball, registry write, dist-tag change, or release tag was produced.
+
 ## 2026-09-23 - Expose Interface Discovery In Both Catalog Levels
 
 Status: Accepted, implemented, and archived as `2026-09-23-add-catalog-interface-keywords`

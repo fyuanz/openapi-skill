@@ -48,8 +48,8 @@ and is not a delivery gate.
 
 - Java source uses `io.github.fyuanz:openapi-skill*:2.1.1-SNAPSHOT` with package namespace
   `io.github.fyuanz.openapi.skill`; the `1.0.0` and `2.0.0` coordinates are published.
-- Node source and npm `latest` are `openapi-skill@2.1.2`; published npm versions are `1.0.0`, `1.1.0`, `2.0.0`,
-  `2.1.1`, and `2.1.2`.
+- Node source is the pending `openapi-skill@2.1.3` release, while npm registry `latest` remains `2.1.2`; published npm
+  versions are `1.0.0`, `1.1.0`, `2.0.0`, `2.1.1`, and `2.1.2`.
 - `openapi-skill-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/openapi-skill/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
@@ -60,7 +60,7 @@ and is not a delivery gate.
   sample APIs, and a real random-port ZIP download.
 - The Java reactor contains only parent, core, and Starter modules. Maven build-time compatibility and its integration
   testbed were removed by explicit product decision.
-- `openapi-skill-node` source is `2.1.2`. Preferred `services` configuration
+- `openapi-skill-node` source is the pending `2.1.3` release. Preferred `services` configuration
   generates one self-contained project Skill, defaults `skillName` to `api-docs`, supports internal and third-party
   services plus project/service/document keywords, and can publish the same generated tree to one or 1-8 output
   parents. Each target remains atomic, while partial multi-target success is reported and not rolled back. The legacy

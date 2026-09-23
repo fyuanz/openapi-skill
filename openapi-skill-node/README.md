@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.en.md)
 
-从一个或多个服务的 OpenAPI 3.0.x / 3.1.x JSON HTTP(S) 地址或本地文件生成一份自包含的 Codex Skill。npm `latest` 为 `2.1.2`，默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
+从一个或多个服务的 OpenAPI 3.0.x / 3.1.x JSON HTTP(S) 地址或本地文件生成一份自包含的 Codex Skill。当前源码为待发布的 `2.1.3`，npm registry 的 `latest` 仍为 `2.1.2`。`2.1.3` 包含两级目录接口发现：外层项目目录和服务目录都列出接口摘要、operationId、方法/路径、tag 与配置关键词，同时继续通过 context 和分组文件进入详细契约。默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
 
 ## 安装
 

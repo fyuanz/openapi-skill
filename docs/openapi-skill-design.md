@@ -2,7 +2,7 @@
 
 > 版本：4.0.0
 > 日期：2026-09-16
-> 状态：运行时 Starter 主链路已验证；`openapi-skill-core/3` tag 分组布局已在 Java 与 Node 实现，输入接受 OpenAPI 3.0.x / 3.1.x；Node 通过 65 项测试、Java core 通过 77 项测试；npm 已发布至 2.1.2（latest 2.1.2），Maven 已发布 1.0.0/2.0.0，Maven 源码线为 2.1.1-SNAPSHOT
+> 状态：运行时 Starter 主链路已验证；`openapi-skill-core/3` tag 分组布局和两级目录接口发现已在 Java 与 Node 实现，输入接受 OpenAPI 3.0.x / 3.1.x；Node 通过 70 项测试、Java core 通过 86 项测试；npm 源码为待发布 2.1.3，registry latest 仍为 2.1.2，Maven 已发布 1.0.0/2.0.0，Maven 源码线为 2.1.1-SNAPSHOT
 
 本版保留运行时下载主链路，并为前端/Node 项目增加一个自包含 API 文档 Skill：显式配置多个内部或第三方
 服务及其文档，完整下载、生成并原子安装到项目。历史范围和被取代的构建期决策保留在
@@ -253,11 +253,11 @@ Spring Boot 服务使用运行时 Starter；前端或其他 Node.js 项目使用
 | --- | --- | --- |
 | `openapi-skill-core` | OpenAPI 3.0.x/3.1.x 解析、分组 context/闭包渲染、文件集校验和旧目录安全发布 | 77 项测试通过 |
 | `openapi-skill-spring-boot-starter` | Spring Boot 自动配置、SpringDoc 最终文档发现、运行时转换和 ZIP 下载 | 2 项单/多文档测试通过 |
-| `openapi-skill-node` | 显式 HTTP(S)/本地 JSON 输入、core/3 多服务 project Skill 和本地原子发布 | 2.1.2 已发布为 npm latest；本地源码通过 65 项测试 |
+| `openapi-skill-node` | 显式 HTTP(S)/本地 JSON 输入、core/3 多服务 project Skill、本地原子发布和两级目录接口发现 | 源码为待发布 2.1.3，npm latest 仍为 2.1.2；本地源码通过 70 项测试 |
 | `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 7 项测试通过；含 3.1 与 3.0 两套方言快照 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x
-兼容性变化不会污染转换逻辑。当前 Maven 源码为 `2.1.1-SNAPSHOT`、npm 源码为 `2.1.2`；
+兼容性变化不会污染转换逻辑。当前 Maven 源码为 `2.1.1-SNAPSHOT`、npm 源码为待发布的 `2.1.3`；
 已发布版本（Maven `openapi-skill*:1.0.0`/`2.0.0`、npm 至 `openapi-skill@2.1.2`）保持不可变。
 
 ## 11. 暂不实现

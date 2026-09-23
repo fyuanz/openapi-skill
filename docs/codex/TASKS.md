@@ -1,5 +1,19 @@
 # Tasks
 
+## 2026-09-23 - Prepare The Node 2.1.3 npm Release
+
+Status: Implementation and release-package verification complete under OpenSpec change `release-node-2-1-3`;
+registry publication is not part of this preparation slice.
+
+- The maintainer selected patch version `2.1.3` for the already implemented two-level catalog interface discovery.
+- Package manifest, lockfile root metadata, and package metadata test are synchronized to `2.1.3`; the targeted test
+  first failed on `2.1.2 !== 2.1.3` and then passed 2/2 after the version bump.
+- `npm ci` reports zero vulnerabilities and all 70 Node tests pass. `npm pack --dry-run --json` reports
+  `openapi-skill@2.1.3`, 30 entries, sha1 `a930c68c32f81753691c053ce84d95f5e6f0d7ac`, and includes the CLI/library
+  entrypoints, declarations, bilingual READMEs, and LICENSE. No `2.1.3` tarball was generated or committed.
+- Until a later maintainer-operated publication is verified, documentation distinguishes pending source `2.1.3` from
+  npm registry `latest = 2.1.2`.
+
 ## 2026-09-23 - Implement Two-Level Catalog Interface Discovery
 
 Status: Implemented, delivered, synced to the main spec, and archived as
