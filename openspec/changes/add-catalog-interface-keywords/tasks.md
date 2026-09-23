@@ -18,4 +18,4 @@
 - [x] 3.1 运行 `mvn -B clean install` 与 `openapi-skill-node` 下的 `npm test`，确认现有生成、验证及原子替换回归通过，并记录红到绿证据。
 - [x] 3.2 用同一组脱敏输入比较 Java/Node 检索语义；生成多服务及大量接口样例，验证两层覆盖、分组数量、相对链接和稳定性，记录 catalog 字节数，并沿“上传文件”示例路径验证可到达正确操作。
 - [x] 3.3 同步 README、Node 指南、产品设计及受影响的 `docs/codex/` 文档，将本提案状态更新为实际完成状态；验证文档路径和描述与最终输出一致，不将本次工作记录为注册表发布。
-- [ ] 3.4 执行 `openspec validate add-catalog-interface-keywords --strict` 和 `git diff --check`，仅提交本变更文件并正常推送；记录检查及交付结果，遇远端阻塞时报告具体原因。
+- [x] 3.4 执行 `openspec validate add-catalog-interface-keywords --strict` 和 `git diff --check`，仅提交本变更文件并正常推送；记录检查及交付结果，遇远端阻塞时报告具体原因。

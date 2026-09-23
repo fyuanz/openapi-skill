@@ -2,7 +2,7 @@
 
 ## 2026-09-23 - Implement Two-Level Catalog Interface Discovery
 
-Status: Implemented in `add-catalog-interface-keywords`; verification passed, delivery in progress.
+Status: Implemented and delivered in `add-catalog-interface-keywords`; all 11 tasks complete, awaiting optional archive.
 
 - Both the outer and service catalogs expose source-derived interface discovery entries, grouped by service,
   document and first tag, while preserving the outer catalog -> service catalog -> context -> group -> operation path.
@@ -17,6 +17,9 @@ Status: Implemented in `add-catalog-interface-keywords`; verification passed, de
   shared and 124-operation fixtures. Without configured keywords, the large outer catalogs are 4,871/4,882 bytes
   (Java/Node), and service catalogs 5,274/5,297 bytes. Both cover all 124 operations; upload navigation follows both catalogs,
   context and group to the operation. Budget expansion failures retain the previous complete published Skill.
+- Delivery: implementation commit `255d1da` and merge `47bf840` were pushed to origin/main. The merge preserves the
+  separately completed npm 2.1.2 release records and does not change tested product code. This catalog enhancement is
+  source-only and has not been published to npm or Maven Central. Strict OpenSpec validation and Git whitespace checks pass.
 
 ## 2026-09-22 - Prepare The Node 2.1.2 npm Release
 
