@@ -2,7 +2,8 @@
 
 ## 2026-09-23 - Implement Two-Level Catalog Interface Discovery
 
-Status: Implemented and delivered in `add-catalog-interface-keywords`; all 11 tasks complete, awaiting optional archive.
+Status: Implemented, delivered, synced to the main spec, and archived as
+`2026-09-23-add-catalog-interface-keywords`; all 11 tasks complete.
 
 - Both the outer and service catalogs expose source-derived interface discovery entries, grouped by service,
   document and first tag, while preserving the outer catalog -> service catalog -> context -> group -> operation path.
@@ -20,6 +21,8 @@ Status: Implemented and delivered in `add-catalog-interface-keywords`; all 11 ta
 - Delivery: implementation commit `255d1da` and merge `47bf840` were pushed to origin/main. The merge preserves the
   separately completed npm 2.1.2 release records and does not change tested product code. This catalog enhancement is
   source-only and has not been published to npm or Maven Central. Strict OpenSpec validation and Git whitespace checks pass.
+- Archive: the `catalog-interface-discovery` delta created the validated main spec at
+  `openspec/specs/catalog-interface-discovery/spec.md`; the completed change then moved to the dated archive directory.
 
 ## 2026-09-22 - Prepare The Node 2.1.2 npm Release
 

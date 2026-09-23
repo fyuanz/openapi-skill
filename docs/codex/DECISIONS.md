@@ -2,7 +2,7 @@
 
 ## 2026-09-23 - Expose Interface Discovery In Both Catalog Levels
 
-Status: Accepted and implemented in `add-catalog-interface-keywords`
+Status: Accepted, implemented, and archived as `2026-09-23-add-catalog-interface-keywords`
 
 The user confirmed that interface keywords should appear in both the outer `references/catalog.md` and each service
 catalog, with navigation continuing through the service catalog to the document context. Derive discovery entries
