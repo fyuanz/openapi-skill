@@ -2,8 +2,8 @@
 
 ## 2026-09-23 - Prepare The Node 2.1.3 npm Release
 
-Status: Implementation and release-package verification complete under OpenSpec change `release-node-2-1-3`;
-registry publication is not part of this preparation slice.
+Status: Implementation, release-package verification, commit, and normal push complete under OpenSpec change
+`release-node-2-1-3`; registry publication is not part of this preparation slice.
 
 - The maintainer selected patch version `2.1.3` for the already implemented two-level catalog interface discovery.
 - Package manifest, lockfile root metadata, and package metadata test are synchronized to `2.1.3`; the targeted test
@@ -13,6 +13,8 @@ registry publication is not part of this preparation slice.
   entrypoints, declarations, bilingual READMEs, and LICENSE. No `2.1.3` tarball was generated or committed.
 - Until a later maintainer-operated publication is verified, documentation distinguishes pending source `2.1.3` from
   npm registry `latest = 2.1.2`.
+- Delivery: release preparation commit `d46bce8` is pushed to `origin/main`. `npm publish`, registry verification, and
+  annotated tag `v2.1.3` remain deliberately unexecuted.
 
 ## 2026-09-23 - Implement Two-Level Catalog Interface Discovery
 
