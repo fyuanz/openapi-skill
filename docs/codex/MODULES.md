@@ -4,17 +4,17 @@
 
 | Module | Responsibility | Status |
 | --- | --- | --- |
-| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.1.0-SNAPSHOT`; parent, core and Starter reactor |
+| Parent project | Java 17/Maven dependency management and module aggregation | `openapi-skill:2.1.1-SNAPSHOT`; parent, core and Starter reactor |
 | `openapi-skill-core` | Per-service conversion, two-level catalog discovery, context navigation, aggregate assembly, validation and safe filesystem publication | 86 tests pass |
 | `openapi-skill-spring-boot-starter` | Runtime SpringDoc discovery, current Skill generation and deterministic ZIP download | 2 tests pass; primary SpringDoc integration |
-| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents and one or more output parents | local `openapi-skill@2.1.2` source passes 65 tests; `1.0.0`/`1.1.0`/`2.0.0` published |
+| `openapi-skill-node` | TypeScript npm library/CLI for one project Skill spanning explicitly configured services/documents and one or more output parents | `openapi-skill@2.1.2` is published as npm `latest`; local source with unreleased catalog discovery passes 70 tests |
 | `testbeds/springdoc-multi-package` | Multi-package/group Spring Boot runtime download example | 7 tests pass; no OpenAPI Skill build executions |
 | `testbeds/vue-ts-consumer` | Real Vue 3 + TypeScript consumer that generates the Skill from the running testbed and calls its documented API | Builds and passes 7 live call scenarios; generated Skill and `node_modules` are not committed |
 
 ## Parent Project
 
 Coordinates are `io.github.fyuanz:openapi-skill`, `openapi-skill-core`, and
-`openapi-skill-spring-boot-starter`; current source is `2.1.0-SNAPSHOT` after the published `1.0.0` and `2.0.0`. Java
+`openapi-skill-spring-boot-starter`; current source is `2.1.1-SNAPSHOT` after the published `1.0.0` and `2.0.0`. Java
 packages use `io.github.fyuanz.openapi.skill`.
 
 ## Core
@@ -63,7 +63,7 @@ management-port resource layouts, remote service aggregation, caching, and artif
 ## Node.js Package
 
 The unscoped `openapi-skill` package targets Node.js 20+ and exports both an `openapi-skill` CLI and typed library
-functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Version `2.0.0` retains the
+functions. Its default `README.md` is Chinese and links reciprocally to `README.en.md`. Published version `2.1.2` retains the
 preferred top-level `services` configuration: one project may contain internal and third-party services, and each
 service may contain multiple explicit document ID plus HTTP(S) URL or local JSON path pairs. One configuration produces one self-contained
 project Skill; `skillName` defaults to `api-docs` and no service has a separately installed Skill.
@@ -94,7 +94,7 @@ success fails the overall run, remains published, and is reported without cross-
 
 The earlier top-level `serviceId`, `skillName`, and `documents` configuration remains accepted. Project and legacy
 configuration shapes cannot be mixed; every new tree uses core/3, while the publisher recognizes owned core/1 and
-core/2 trees only for safe atomic replacement. The local `2.1.2` implementation passes 65 Node tests; the prior `2.1.1` packed tarball
+core/2 trees only for safe atomic replacement. The local implementation with unreleased catalog discovery passes 70 Node tests; the prior `2.1.1` packed tarball
 generates the project Skill in the real Vue consumer against the running SpringDoc testbed. Accepted input root markers
 are any `3.0.x` or `3.1.x`, and `references/source.json` records the input's own dialect.
 

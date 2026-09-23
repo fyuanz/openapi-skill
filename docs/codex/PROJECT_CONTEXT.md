@@ -48,8 +48,8 @@ and is not a delivery gate.
 
 - Java source uses `io.github.fyuanz:openapi-skill*:2.1.1-SNAPSHOT` with package namespace
   `io.github.fyuanz.openapi.skill`; the `1.0.0` and `2.0.0` coordinates are published.
-- Node source is `openapi-skill@2.1.2`; the prior `2.1.1` source was locally packed and verified end to end in the real Vue consumer, and
-  `2.0.0` is published. The published npm versions are `1.0.0`, `1.1.0` and `2.0.0` (`latest`).
+- Node source and npm `latest` are `openapi-skill@2.1.2`; published npm versions are `1.0.0`, `1.1.0`, `2.0.0`,
+  `2.1.1`, and `2.1.2`.
 - `openapi-skill-spring-boot-starter` provides Boot auto-configuration for Servlet/WebMVC and SpringDoc 2.8.x.
 - Default path is `/openapi-skill/skill.zip`. `serviceId` derives from `spring.application.name`; Skill name defaults to
   `<serviceId>-api`. Enabled/path/identities are optional overrides.
@@ -81,9 +81,9 @@ and is not a delivery gate.
   to 72 characters. Every operation still carries its precomputed document-local direct/transitive closure plus
   recursive edges.
 - Historical releases remain available under the old `smart-doc-agent` / `smartdoc-agent-*` Maven coordinates and
-  `smartdoc-agent` npm name. Under the current identities, npm `openapi-skill` has `1.0.0` and `1.1.0` published
-  (`latest = 1.1.0`) and Maven Central has `io.github.fyuanz:openapi-skill{,-core,-spring-boot-starter}:1.0.0`; the
-  source now carries the breaking `2.0.0` line, which awaits manual publication.
+  `smartdoc-agent` npm name. Under the current identities, npm `openapi-skill` has releases through `2.1.2`
+  (`latest = 2.1.2`), while Maven Central has `io.github.fyuanz:openapi-skill{,-core,-spring-boot-starter}:1.0.0`
+  and `2.0.0`; the Java source line remains `2.1.1-SNAPSHOT`.
 - Development follows OpenSpec (`@fission-ai/openspec@1.13.1`) as the single workflow source for spec-driven
   development, change lifecycle, and agreed behavior. `openspec/specs/` holds agreed current behavior and
   `openspec/changes/<name>/` holds in-flight proposals; both are tracked. The generated agent instruction trees

@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-Generate one self-contained Codex Skill from OpenAPI 3.0.x / 3.1.x JSON documents exposed over HTTP(S) or stored in local files. The published `2.0.0` release defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
+Generate one self-contained Codex Skill from OpenAPI 3.0.x / 3.1.x JSON documents exposed over HTTP(S) or stored in local files. npm `latest` is `2.1.2`; it defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. The package works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
 
 ## Install
 

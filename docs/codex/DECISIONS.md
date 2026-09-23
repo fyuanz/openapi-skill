@@ -22,6 +22,22 @@ Evidence: 86 core, 2 Starter and 70 Node tests pass after the new tests failed a
 produce equivalent discovery sections in Java/Node, including all 124 operations in the larger example. Registry publication
 and release version selection remain separate work.
 
+## 2026-09-22 - Release npm 2.1.2 From The Verified Node-Only Source
+
+Status: Accepted and released
+
+Publish the already implemented multi-output Node package as immutable `openapi-skill@2.1.2` without changing Java
+or Maven coordinates. Keep npm credentials and the `npm publish` action with the maintainer; repository automation
+performs clean dependency installation, the full 65-test Node suite, dry-run package inspection, and registry
+verification without reading or persisting credentials.
+
+Treat registry visibility and the `latest` dist-tag as the release completion gate rather than relying only on the
+publish command exit status. npm reports `2.1.2` published at `2026-09-22T06:53:32.791Z`, `latest = 2.1.2`, sha1
+`8db7ecbe727a3e62f2a28414e86de935c0737248`, and integrity
+`sha512-3M5r5rXdIqa4n2c03T0DcN7avBeYmH4e6V1XGce789A4vlacsFAqCi2w5OAyGbSrOCLZchoYkVkZ8OElpndhCw==`.
+Annotated tag `v2.1.2` points to pushed release source commit `60b26a6`. Java source remains `2.1.1-SNAPSHOT`, and
+published Maven coordinates remain `1.0.0` and `2.0.0`.
+
 ## 2026-09-22 - Publish Multi-Agent Outputs As Independent Atomic Targets
 
 Status: Accepted and implemented
