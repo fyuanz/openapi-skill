@@ -1,5 +1,15 @@
 # Tasks
 
+## 2026-09-23 - Plan Two-Level Catalog Interface Discovery
+
+Status: Planning artifacts prepared in `add-catalog-interface-keywords`; implementation awaits review and an explicit apply request.
+
+- Both the outer and service catalogs will expose source-derived interface discovery entries, grouped by service,
+  document and first tag, while preserving the outer catalog -> service catalog -> context -> group -> operation path.
+- The proposal covers Java service/aggregate and Node service/project generation, deterministic coverage, old member
+  compatibility, relative links and trusted-template boundaries. No product code or package release is included in this planning slice.
+- Proposal, design, capability delta and test-first implementation tasks are recorded under the change directory.
+
 ## 2026-09-22 - Prepare The Node 2.1.2 npm Release
 
 Status: Release preflight complete; maintainer manual npm publication is pending in change `release-node-2-1-2`.

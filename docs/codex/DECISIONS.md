@@ -1,5 +1,16 @@
 # Decisions
 
+## 2026-09-23 - Propose Interface Discovery In Both Catalog Levels
+
+Status: Proposed in `add-catalog-interface-keywords`; not implemented
+
+The user confirmed that interface keywords should appear in both the outer `references/catalog.md` and each service
+catalog, with navigation continuing through the service catalog to the document context. Derive discovery entries
+from existing summaries, operation IDs, method/path, tags and configured keywords, preserving service/document ownership.
+Keep context/group/contract files and existing source-data trust boundaries. Proposed implementation uses existing machine
+indexes internally and does not require the consuming model to read JSONL. Detailed compatibility, coverage and test-first
+tasks live in the OpenSpec change; package publication and the pending Node release remain separate work.
+
 ## 2026-09-22 - Publish Multi-Agent Outputs As Independent Atomic Targets
 
 Status: Accepted and implemented
