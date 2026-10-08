@@ -38,7 +38,8 @@ public final class AggregateSkillGenerator {
                 if (source.has("kind")) throw new IllegalArgumentException("INPUT: nested aggregate services are not supported");
                 validator.validate(tree, id, memberSkill);
                 var operations = CatalogDiscovery.operations(tree);
-                var memberCatalog = CatalogDiscovery.enrich(tree.get("references/catalog.md"), source.path("documents"), operations);
+                var memberCatalog = tree.containsKey("references/catalog.md")
+                        ? CatalogDiscovery.enrich(tree.get("references/catalog.md"), source.path("documents"), operations) : "";
                 String prefix = "references/services/" + id + "/";
                 for (var file : tree.entrySet()) {
                     if (file.getKey().equals("SKILL.md")) continue;
@@ -95,7 +96,8 @@ public final class AggregateSkillGenerator {
                 [Source metadata](references/source.json) identifies input snapshots, not live-code freshness.
                 """.formatted(skillName, aggregateId, memberList, aggregateId, memberList));
         files.put("SKILL.md", files.get("SKILL.md") + "\n" + CatalogDiscovery.MATCHING);
-        validator.validate(files, aggregateId, skillName);
-        return Collections.unmodifiableMap(files);
+        var flat = FlatSkillLayout.flatten(files);
+        validator.validate(flat, aggregateId, skillName);
+        return flat;
     }
 }

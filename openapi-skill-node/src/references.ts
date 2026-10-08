@@ -370,7 +370,7 @@ function allocateFiles(readableByIdentity: ReadonlyMap<string, string>,
 
 function needsFallback(readable: string | undefined, stem: string): boolean {
   const hasAscii = /[A-Za-z0-9]/.test(readable ?? '');
-  return (!hasAscii && stem === 'item') || RESERVED_NAME.test(stem);
+  return (readable?.length ?? 0) > MAX_STEM || (!hasAscii && stem === 'item') || RESERVED_NAME.test(stem);
 }
 
 function tagStem(value: string): string {

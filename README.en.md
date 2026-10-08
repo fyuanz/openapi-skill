@@ -22,12 +22,7 @@ the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
 
 ## Generate a Skill in Vue 3 / Node.js projects
 
-The TypeScript package source is the pending `openapi-skill@2.1.3` release, while npm registry `latest` remains `2.1.2`. The pending release includes interface discovery in both the outer project catalog and each service catalog. It defaults to one self-contained
-API Skill per frontend project and adds a `context.md` group index keyed by the OpenAPI `tags`, one interface file per
-tag under its own readable name (Chinese tag names are kept verbatim), clean semantic filenames,
-generator-computed reference closures, and centralized conventions. JSONL remains a machine validation artifact.
-Multiple microservices, multiple documents within each service, and third-party providers are
-organized below one `.agents/skills/api-docs/` directory; `skillName` can override the `api-docs` default.
+The TypeScript source is the pending `openapi-skill@2.2.0` release. Single-service and project Skills use a flat layout: search one interface index, open the matching operation directly, then read schemas as needed. Every operation retains service/document ownership, complete contracts and computed reference closures. The default output is `.agents/skills/api-docs/`.
 
 ```json
 {
@@ -75,7 +70,7 @@ dependency and see the [Node package guide](openapi-skill-node/README.en.md) for
 The first release under the new name is `1.0.0`, and both the npm package and the Maven Central artifacts have been
 published manually. The published `2.0.0` moved the generated layout from the `openapi-skill-core/1` and
 `openapi-skill-core/2` trees to `openapi-skill-core/3`, on npm and Maven Central both. The Maven source line is now
-`2.1.0-SNAPSHOT`, which adds OpenAPI 3.0.x input support without changing any existing 3.1 output.
+`2.1.1-SNAPSHOT`, accepting OpenAPI 3.0.x / 3.1.x and generating the same flat core/4 layout as Node. Historical releases remain unchanged.
 SpringDoc applications should use the runtime Starter.
 
 | Artifact | Purpose |
@@ -152,22 +147,20 @@ sensitive. See the [starter guide](openapi-skill-spring-boot-starter/README.md).
 Download the ZIP and extract its **entire Skill directory** into the frontend project's `.agents/skills/`, preserving every reference file:
 
 ```text
-<frontend-project>/.agents/skills/my-service-api/
-├── SKILL.md
-└── references/
-    ├── catalog.md
-    ├── source.json
-    └── documents/
-        └── <document>
-            ├── context.md        # group index reached from the catalog
-            ├── groups/           # one file per OpenAPI tag, named after the tag
-            ├── operations/
-            └── schemas/
+api-docs/
+|-- SKILL.md
++-- references/
+    |-- index.md
+    |-- conventions.md
+    |-- source.json
+    |-- operations.jsonl
+    |-- schemas.jsonl
+    |-- operations/<service>--<document>--<operation>.md
+    |-- schemas/<service>--<document>--<schema>.md
+    +-- refs/<service>--<document>--<reference>.md
 ```
 
-The catalog lists operation summaries, operation IDs, HTTP method/path and additional tags by document and group.
-Multi-service Skills repeat this discovery information in both catalogs: outer catalog → service catalog → context → group → operation.
-Single-service Skills start at the service catalog. Configured keywords are optional discovery aliases; the generator does not invent synonyms.
+This is the current source's core/4 layout. Each index record includes summary, operationId, HTTP method/path, service, document, tags and keywords, with a direct contract link. Regenerate and replace the complete Skill when upgrading; external catalog/context/group path consumers must migrate. npm 2.2.0 will be published manually; existing Maven releases do not change with the source.
 
 Try this task in the frontend project and verify that your agent actually discovers and uses the Skill:
 

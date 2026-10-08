@@ -54,7 +54,7 @@ class SkillGeneratorTest {
         var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", docs);
         assertEquals(4, files.keySet().stream().filter(p -> p.contains("/operations/")).count());
         assertEquals(7, files.keySet().stream().filter(p -> p.contains("/schemas/")).count());
-        assertTrue(files.get("SKILL.md").contains("references/catalog.md"));
+        assertTrue(files.get("SKILL.md").contains("references/index.md"));
         assertFalse(files.get("SKILL.md").contains("仅用于文档契约验证"));
         for (var entry : docs.entrySet()) {
             var root = mapper.readTree(entry.getValue());
@@ -62,7 +62,7 @@ class SkillGeneratorTest {
                 var path = paths.next();
                 for (var ops = path.getValue().fields(); ops.hasNext();) {
                     var op = ops.next();
-                    var rendered = files.entrySet().stream().filter(f -> f.getKey().contains("/" + entry.getKey() + "/operations/"))
+                    var rendered = files.entrySet().stream().filter(f -> f.getKey().startsWith("references/operations/springdoc-multi-package--" + entry.getKey() + "--"))
                             .map(Map.Entry::getValue).map(this::contract)
                             .filter(n -> n.path("path").asText().equals(path.getKey())).findFirst().orElseThrow();
                     assertEquals(op.getValue(), rendered.get("operation"));
@@ -71,12 +71,12 @@ class SkillGeneratorTest {
             }
             for (var schemas = root.path("components").path("schemas").fields(); schemas.hasNext();) {
                 var schema = schemas.next();
-                assertTrue(files.entrySet().stream().filter(f -> f.getKey().contains("/" + entry.getKey() + "/schemas/"))
+                assertTrue(files.entrySet().stream().filter(f -> f.getKey().startsWith("references/schemas/springdoc-multi-package--" + entry.getKey() + "--"))
                         .map(Map.Entry::getValue).map(this::contract).anyMatch(schema.getValue()::equals));
             }
         }
         JsonNode source = mapper.readTree(files.get("references/source.json"));
-        assertEquals("openapi-skill-core/3", source.path("generatorVersion").asText());
+        assertEquals("openapi-skill-core/4", source.path("generatorVersion").asText());
         assertEquals(2, source.path("documents").size());
         assertTrue(source.path("documents").findValuesAsText("apiVersion").stream().allMatch("1.0.0"::equals));
         checkLinks(files);
@@ -220,7 +220,7 @@ class SkillGeneratorTest {
         var files = generator.generate("springdoc-multi-package", "springdoc-multi-package-api", snapshots());
         // The testbed declares the role value domain in the description only, so the document has no `enum`.
         String stated = "用户角色：1 超级管理员，2 普通管理员，3 开发者";
-        var schema = files.entrySet().stream().filter(f -> f.getKey().endsWith("/schemas/user-view.md"))
+        var schema = files.entrySet().stream().filter(f -> f.getKey().endsWith("--user-view.md"))
                 .map(Map.Entry::getValue).findFirst().orElseThrow();
         assertTrue(schema.contains(stated),
                 "a value domain stated in a description must reach the generated schema file verbatim");
@@ -244,7 +244,7 @@ class SkillGeneratorTest {
             assertTrue(description.contains(verb), "description must include the English task verb " + verb);
         // Broad Chinese and English keyword surface.
         for (String keyword : List.of("接口", "前端", "文档", "调用", "参数校验", "接口联调", "字段缺失",
-                "鉴权", "报错排查", "状态码", "前端请求代码", "catalog", "HTTP", "REST", "OpenAPI"))
+                "鉴权", "报错排查", "状态码", "前端请求代码", "index", "HTTP", "REST", "OpenAPI"))
             assertTrue(description.contains(keyword), "description must include the keyword " + keyword);
         // Identities stay discoverable so the trigger is anchored to one service.
         assertTrue(description.contains("springdoc-multi-package"), "description must name the service");

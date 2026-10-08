@@ -2,7 +2,7 @@
 
 > 版本：4.0.0
 > 日期：2026-09-16
-> 状态：运行时 Starter 主链路已验证；`openapi-skill-core/3` tag 分组布局和两级目录接口发现已在 Java 与 Node 实现，输入接受 OpenAPI 3.0.x / 3.1.x；Node 通过 70 项测试、Java core 通过 86 项测试；npm 源码为待发布 2.1.3，registry latest 仍为 2.1.2，Maven 已发布 1.0.0/2.0.0，Maven 源码线为 2.1.1-SNAPSHOT
+> 状态：当前源码实现 core/4 扁平布局和单索引直达接口；Node 准备 2.2.0，由维护者手动发布。Maven 源码仍为 2.1.1-SNAPSHOT。实现与验证记录见 `openspec/changes/flatten-skill-interface-navigation/`。
 
 本版保留运行时下载主链路，并为前端/Node 项目增加一个自包含 API 文档 Skill：显式配置多个内部或第三方
 服务及其文档，完整下载、生成并原子安装到项目。历史范围和被取代的构建期决策保留在
@@ -92,33 +92,20 @@ GET /openapi-skill/skill.zip
 生成目录为：
 
 ```text
-<skillName>/
-├── SKILL.md
-└── references/
-    ├── catalog.md
-    ├── source.json
-    └── services/
-        └── <serviceId>/
-            └── references/
-                ├── catalog.md
-                ├── source.json
-                ├── operations.jsonl
-                ├── schemas.jsonl
-                ├── conventions.md
-                └── documents/<documentId>/
-                    ├── context.md
-                    ├── groups/<tag>.md
-                    ├── operations/*.md
-                    └── schemas/*.md
+api-docs/
+|-- SKILL.md
++-- references/
+    |-- index.md
+    |-- conventions.md
+    |-- source.json
+    |-- operations.jsonl
+    |-- schemas.jsonl
+    |-- operations/<service>--<document>--<operation>.md
+    |-- schemas/<service>--<document>--<schema>.md
+    +-- refs/<service>--<document>--<reference>.md
 ```
 
-根 `source.json` 使用 `openapi-skill-core/3`、`kind=project`，保存排序后的服务 provenance 和带
-serviceId/sourceType 的扁平文档索引。每个服务的 core/3 provenance、分组 context、group 文件和机器索引同时保留在
-自己的 reference 子树。
-根 catalog 通过相对 Markdown 链接进入服务 catalog；成员文件是物理包含，不是操作系统软链接。
-
-旧的顶层 `serviceId` + `skillName` + `documents` 配置继续受支持；新生成结果统一使用
-`openapi-skill-core/3`。旧结构仍要求显式 `skillName`，且不能与 `services` 同时出现。
+根 `source.json` 使用 `openapi-skill-core/4`、`kind=project`，保存排序后的服务 provenance 和带 serviceId/sourceType 的文档来源。单服务配置继续兼容，同样输出扁平结构。总索引直接链接契约，所有 references 物理包含，无需独立安装服务 Skill。
 
 ## 4. 为什么不直接注入 `OpenAPI` Bean
 
@@ -167,51 +154,31 @@ core 拒绝；自动派生值会安全规范化。
 ZIP 文件名是 `<skillName>.zip`，内部有唯一顶层目录：
 
 ```text
-<skillName>/
-├── SKILL.md
-└── references/
-    ├── catalog.md
-    ├── source.json
-    ├── operations.jsonl
-    ├── schemas.jsonl
-    ├── conventions.md
-    └── documents/
-        └── <documentId>/
-            ├── context.md
-            ├── groups/<tag>.md
-            ├── operations/*.md
-            └── schemas/*.md
+api-docs/
+|-- SKILL.md
++-- references/
+    |-- index.md
+    |-- conventions.md
+    |-- source.json
+    |-- operations.jsonl
+    |-- schemas.jsonl
+    |-- operations/<service>--<document>--<operation>.md
+    |-- schemas/<service>--<document>--<schema>.md
+    +-- refs/<service>--<document>--<reference>.md
 ```
 
-- `SKILL.md` 是固定受信模板；OpenAPI 自由文本只进入不受信 references。
-- 服务 `catalog.md` 选择文档并承载已声明的 servers 与 security 事实；外层和服务 catalog 均按文档/第一 tag 展示完整接口检索短行（summary、operationId、method/path、其余 tags）和配置 keywords。保留分组计数、同名接口归属与空文档，不复制契约正文、不推断同义词或静默截断。
-- 每份文档恰有一个 `context.md`，它是**分组索引**：文档关键词加每个 tag 分组的一行链接与接口数。
-- `groups/<tag>.md` 按 operation 的 `tags[0]` 分文件，一个 operation 只属于一个分组；文件名即 tag 名，
-  中文直接保留；无 tag 的 operation 进入 `untagged.md`。每条目一行：
-  `- [语义化标题](../operations/<file>.md) — \`METHOD /path\``，不含 `Source operationId` 与 `Tags`。
-- `operations.jsonl`、`schemas.jsonl` 是按语义 ID 排序的紧凑机器校验索引，不属于 LLM 导航路径；前者带
-  `group` / `groupFile` 列。
-- operation/schema ID 与 SpringDoc `operationId` 解耦；后者作为 `sourceOperationId` 元数据和 catalog 检索别名保留。
-- 唯一且文件系统安全的契约使用纯语义文件名（上限 72 字符）；仅真实大小写不敏感冲突或安全编码/长度回退
-  追加确定性短摘要。
-- operation 保留参数覆盖、请求体/媒体类型、响应、servers、安全和原 JSON。
-- Schema 保留字段、必填/可空、枚举、约束、组合、数组和本地引用。
-- 通用的 OpenAPI 缺省/null/空值解释只写入一次 `conventions.md`，operation/schema 文件通过链接引用。
-  取值域同样在 `conventions.md` 集中说明：`enum`、`const` 与 `description` 中列举的取值都是文档已声明的取值域，
-  三者不一致时报告冲突而非静默取舍；文档未声明取值域时不得推断、编造或收窄类型。生成器保持忠实导出，
-  不合成源文档没有的 `enum`。
-- `source.json` 记录服务、Skill、完整分组、版本、摘要和数量。
-- 本地 `$ref` 按源文档隔离；生成器为每个 operation 预计算排序、去重的直接/传递引用闭包及递归边，不跨
-  文档猜测、合并或复制 Schema 正文。
+- `SKILL.md` 是受信模板；自由文本只进入 references。
+- `index.md` 每个接口一行，保留 summary、operationId、method/path、服务/文档、全部 tags、第一 tag 分组和关键词，直接链接接口；空文档保留明确记录。
+- 删除输出中的多层 catalog、context 和 groups，契约按类型平铺；文件名含服务和文档，长度最多 120 个 ASCII 字符，冲突和长名称有确定性摘要。
+- operation 保留生效参数、请求体、媒体类型、响应、servers/security、示例和完整直接/传递引用集合；Schema/refs 按需共享读取，递归不无限展开。
+- conventions 集中解释缺省/null/空值、必填与可空、enum/const/description 的取值域；不推断或收窄未声明事实。
+- JSONL 用于校验及程序消费者，路径统一映射，保留稳定 ID、group、closureFiles、recursiveEdges，移除 groupFile。根 source 保存完整来源。
+- 布局投影独立于契约解析；Java 接受受支持旧服务树并重建旧版缺失的引用集合。发布保持完整树校验和原子替换，不保留旧层级文件。
 
 core 的输入/输出、引用深度和文件数上限继续生效。文件按稳定路径排序，ZIP entry 使用固定时间；同一运行时
 契约、身份和生成器版本得到相同 ZIP 字节。ZIP 在内存生成，不写 `target/`。
 
-可信 `SKILL.md` 要求 LLM 在外层 catalog 匹配接口动作及关键词，沿链接进入服务 catalog，再选定 document 的 `context.md`，按 method/path
-进入匹配的 tag 分组文件，再沿 operation 的直接链接进入其生成器列出的完整 reference 闭包。由于一个 operation
-只出现在一个分组里，未命中时检查其他候选文档和分组，多候选时核对各自归属和契约。单服务从服务 catalog 开始。它不要求 `grep`、`jq`、JSONL
-搜索或由 LLM 自行做多跳
-图遍历。当前不引入 RAG、embedding 或外部索引服务。
+可信 `SKILL.md` 要求搜索总索引后直接打开接口，已知 method/path 或 operationId 时精确匹配，业务描述结合 tags 和关键词。大索引允许文本搜索；多候选核对归属，未命中扩大范围。没有强制中间导航文件，不增加 RAG、embedding 或外部搜索服务。
 
 ## 7. 服务、多分组与微服务边界
 
@@ -251,13 +218,13 @@ Spring Boot 服务使用运行时 Starter；前端或其他 Node.js 项目使用
 
 | 模块 | 职责 | 当前状态 |
 | --- | --- | --- |
-| `openapi-skill-core` | OpenAPI 3.0.x/3.1.x 解析、分组 context/闭包渲染、文件集校验和旧目录安全发布 | 77 项测试通过 |
+| `openapi-skill-core` | OpenAPI 解析、扁平索引/契约投影、引用闭包、旧树聚合与安全发布 | 见本次变更验证记录 |
 | `openapi-skill-spring-boot-starter` | Spring Boot 自动配置、SpringDoc 最终文档发现、运行时转换和 ZIP 下载 | 2 项单/多文档测试通过 |
-| `openapi-skill-node` | 显式 HTTP(S)/本地 JSON 输入、core/3 多服务 project Skill、本地原子发布和两级目录接口发现 | 源码为待发布 2.1.3，npm latest 仍为 2.1.2；本地源码通过 70 项测试 |
+| `openapi-skill-node` | HTTP(S)/本地 JSON 输入、core/4 扁平 Skill、原子发布 | 源码 2.2.0，待维护者发布 |
 | `testbeds/springdoc-multi-package` | Swagger UI、两分组真实 HTTP 下载和无构建侵入验证 | 7 项测试通过；含 3.1 与 3.0 两套方言快照 |
 
 core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被隔离在 Starter 模块，SpringDoc 2.8.x
-兼容性变化不会污染转换逻辑。当前 Maven 源码为 `2.1.1-SNAPSHOT`、npm 源码为待发布的 `2.1.3`；
+兼容性变化不会污染转换逻辑。当前 Maven 源码为 `2.1.1-SNAPSHOT`、npm 源码为待发布的 `2.2.0`；
 已发布版本（Maven `openapi-skill*:1.0.0`/`2.0.0`、npm 至 `openapi-skill@2.1.2`）保持不可变。
 
 ## 11. 暂不实现
@@ -268,5 +235,4 @@ core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被�
 - 跨项目自动同步、全局版本协调、锁文件和漂移管理。
 - RAG、搜索、AI enrichment、聊天、生成 API 客户端或其他知识源。
 
-实施状态和验证证据维护在 [TASKS.md](codex/TASKS.md)，技术取舍维护在
-[DECISIONS.md](codex/DECISIONS.md)。
+实施状态、设计和验证证据维护在 `openspec/changes/flatten-skill-interface-navigation/`。

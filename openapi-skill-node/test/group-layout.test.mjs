@@ -43,67 +43,27 @@ const generate = () => generateSkill({
   serviceId: 'uav-hub', skillName: 'uav-hub-api', documents: new Map([['uav', document()]])
 });
 
-test('groups operations under their first OpenAPI tag, one file per tag', () => {
+test('retains all tags and first-tag grouping in the direct index without group files', () => {
   const files = generate();
-  for (const tag of ['航线任务', '设备管理', '航线图形合规校验', 'Terra重建管理'])
-    assert.ok(files.has(`references/documents/uav/groups/${tag}.md`), `missing group file for ${tag}`);
-  assert.ok(files.has('references/documents/uav/groups/untagged.md'));
+  const index = files.get('references/index.md');
+  for (const tag of ['航线任务', '设备管理', '航线图形合规校验', 'Terra重建管理', '工单管理', 'untagged'])
+    assert.ok(index.includes(tag));
+  assert.ok(![...files.keys()].some(path => path.includes('/groups/') || path.endsWith('context.md')));
+  const lines = index.split('\n').filter(line => line.startsWith('- ['));
+  assert.equal(lines.length, 9);
+  for (const line of lines) assert.match(line, /service=uav-hub.*document=uav/);
 });
 
-test('keeps an operation in exactly one group and reuses the declared tag description', () => {
-  const files = generate();
-  const operations = files.get('references/documents/uav/groups/航线任务.md');
-  assert.match(operations, /# 航线任务/);
-  assert.match(operations, /航线任务管理/);
-  assert.match(operations, /3 interface\(s\)/);
-  assert.match(operations, /\.\.\/operations\/.*\.md\) — `POST \/drone\/task\/page`/);
-  assert.ok(!files.has('references/documents/uav/groups/工单管理.md'), 'a secondary tag must not create a group');
-
-  const devices = files.get('references/documents/uav/groups/设备管理.md');
-  assert.match(devices, /1 interface\(s\)/);
-  assert.match(devices, /设备列表、状态查询/);
-  assert.match(devices, /设备同步、列表查询、行政区挂载/, 'every declared description for a merged tag is kept');
-
-  const untagged = files.get('references/documents/uav/groups/untagged.md');
-  assert.match(untagged, /1 interface\(s\)/);
-  assert.match(untagged, /`GET \/drone\/ping`/);
-});
-
-test('turns the document context into a slim group index with no contract JSON', () => {
-  const context = generate().get('references/documents/uav/context.md');
-  assert.match(context, /## Interface groups/);
-  assert.match(context, /\[航线任务\]\(groups\/航线任务\.md\) — 3 interface\(s\)/);
-  assert.match(context, /\[untagged\]\(groups\/untagged\.md\) — 1 interface\(s\)/);
-  assert.ok(!context.includes('```json'), 'the raw contract block must leave the context');
-  assert.ok(!context.includes('Untrusted API contract data'));
-  assert.ok(!context.includes('192.168.1.52'), 'servers must not stay in the context');
-  assert.ok(!context.includes('securitySchemes'));
-  assert.ok(!context.includes('/drone/task/page'), 'the context no longer lists every operation');
-});
-
-test('moves the documented server and security facts into the catalog', () => {
-  const catalog = generate().get('references/catalog.md');
-  assert.match(catalog, /192\.168\.1\.52:8071/);
-  assert.match(catalog, /Authorization/);
-  assert.match(catalog, /ClientId/);
-  assert.match(catalog, /bearer/);
-  assert.ok(!catalog.includes('```json'), 'the catalog stays a readable summary, not a contract dump');
-});
-
-test('slims every entry to one title/path line', () => {
-  const group = generate().get('references/documents/uav/groups/航线任务.md');
-  for (const line of group.split('\n').filter((value) => value.startsWith('- ['))) {
-    assert.match(line, /^- \[[^\]]+\]\(\.\.\/operations\/[^)]+\.md\) — `[A-Z]+ [^`]+`$/);
-  }
-  assert.ok(!group.includes('Source operationId'));
-  assert.ok(!group.includes('Tags:'));
+test('effective server and security facts stay with the operation contract', () => {
+  const operation = generate().get('references/operations/uav-hub--uav--post-drone-task-page.md');
+  for (const fact of ['192.168.1.52:8071', 'Authorization', 'ClientId', 'bearer']) assert.ok(operation.includes(fact));
 });
 
 test('keeps the complete semantic file name instead of truncating it', () => {
   const files = generate();
-  assert.ok(files.has('references/documents/uav/operations/delete-drone-terra-reconstruction-model-file-by-file-id.md'));
-  assert.ok(files.has('references/documents/uav/operations/post-drone-terra-reconstruction-quality-report-by-id.md'));
-  assert.ok(files.has('references/documents/uav/operations/get-drone-wayline-recommended-dock-by-wayline-uuid.md'));
+  assert.ok(files.has('references/operations/uav-hub--uav--delete-drone-terra-reconstruction-model-file-by-file-id.md'));
+  assert.ok(files.has('references/operations/uav-hub--uav--post-drone-terra-reconstruction-quality-report-by-id.md'));
+  assert.ok(files.has('references/operations/uav-hub--uav--get-drone-wayline-recommended-dock-by-wayline-uuid.md'));
 });
 
 test('names group files from their OpenAPI tag, including non-ASCII tags', () => {
@@ -124,11 +84,11 @@ test('records the group on every operation index row', () => {
   const rows = files.get('references/operations.jsonl').trim().split('\n').map((line) => JSON.parse(line));
   const preview = rows.find(({ path }) => path === '/drone/task/preview');
   assert.equal(preview.group, '航线任务');
-  assert.equal(preview.groupFile, 'documents/uav/groups/航线任务.md');
+  assert.equal(preview.groupFile, undefined);
   assert.deepEqual(preview.tags, ['航线任务', '工单管理']);
-  assert.ok(files.has(`references/${preview.groupFile}`));
+  assert.ok(files.has(`references/${preview.file}`));
   for (const row of rows) {
-    assert.ok(files.has(`references/${row.groupFile}`), `missing group file for ${row.path}`);
+    assert.ok(files.has(`references/${row.file}`), `missing group file for ${row.path}`);
   }
 });
 
@@ -146,16 +106,16 @@ test('emits a resolvable link for every group and operation reference', () => {
 
 test('advances the generated layout version', () => {
   const files = generate();
-  assert.equal(JSON.parse(files.get('references/source.json')).generatorVersion, 'openapi-skill-core/3');
+  assert.equal(JSON.parse(files.get('references/source.json')).generatorVersion, 'openapi-skill-core/4');
 });
 
-test('publishes a tree whose group files carry non-ASCII tag names', async () => {
+test('publishes a flat tree retaining non-ASCII tags in its index', async () => {
   const output = await mkdtemp(join(tmpdir(), 'openapi-skill-cjk-'));
   try {
     const published = await publishSkill(output, 'uav-hub', 'uav-hub-api', generate());
     assert.equal(published, join(output, 'uav-hub-api'));
-    await access(join(published, 'references/documents/uav/groups/航线任务.md'));
-    await access(join(published, 'references/documents/uav/groups/Terra重建管理.md'));
+    await access(join(published, 'references/index.md'));
+    await access(join(published, 'references/operations/uav-hub--uav--get-drone-device-list.md'));
   } finally {
     await rm(output, { recursive: true, force: true });
   }

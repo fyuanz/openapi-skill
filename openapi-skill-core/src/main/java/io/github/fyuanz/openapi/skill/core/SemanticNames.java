@@ -83,7 +83,7 @@ final class SemanticNames {
 
     private static boolean needsFallback(String readable, String stem) {
         boolean hasAscii = readable != null && readable.matches(".*[A-Za-z0-9].*");
-        return (!hasAscii && stem.equals("item"))
+        return (readable != null && readable.length() > MAX_SLUG) || (!hasAscii && stem.equals("item"))
                 || stem.matches("(?i)con|prn|aux|nul|com[0-9]|lpt[0-9]");
     }
 

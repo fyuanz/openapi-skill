@@ -4,6 +4,7 @@ import { boundedKeywords, normalizeKeywords } from './keywords.js';
 import { digest, DocumentReferences, label, operationFiles, operationIdentity, sorted, tagFiles } from './references.js';
 import { GenerateOptions } from './types.js';
 import { catalogDiscovery, CATALOG_MATCHING } from './catalog-discovery.js';
+import { flattenSkill } from './flat-layout.js';
 
 const METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
 const encoder = new TextEncoder();
@@ -42,6 +43,11 @@ not a gap to fill in.
 `;
 
 export function generateSkill(options: GenerateOptions): ReadonlyMap<string, string> {
+  return flattenSkill(generateServiceTree(options));
+}
+
+/** Intermediate service contracts, also used by project assembly before flat projection. */
+export function generateServiceTree(options: GenerateOptions): ReadonlyMap<string, string> {
   identity(options.serviceId); identity(options.skillName);
   const sourceType = options.sourceType ?? 'internal';
   if (sourceType !== 'internal' && sourceType !== 'third-party') throw new Error('CONFIG: sourceType must be internal or third-party');

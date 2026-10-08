@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.en.md)
 
-从一个或多个服务的 OpenAPI 3.0.x / 3.1.x JSON HTTP(S) 地址或本地文件生成一份自包含的 Codex Skill。当前源码为待发布的 `2.1.3`，npm registry 的 `latest` 仍为 `2.1.2`。`2.1.3` 包含两级目录接口发现：外层项目目录和服务目录都列出接口摘要、operationId、方法/路径、tag 与配置关键词，同时继续通过 context 和分组文件进入详细契约。默认按“一个项目一份接口文档 Skill”组织多个微服务、模块和第三方服务，并按 OpenAPI `tags` 分组生成面向 LLM 的导航（每个 tag 一个可读文件名的分组文件，中文 tag 名直接保留）。适用于 Vue 3 及其他 Node.js 20+ 项目，也可以作为 TypeScript 库调用。
+从一个或多个服务的 OpenAPI 3.0.x / 3.1.x JSON HTTP(S) 地址或本地文件生成一份自包含 Skill。当前源码为待发布的 `2.2.0`，采用扁平文件布局和直达接口的总索引，让 Agent 搜索后直接打开接口契约。适用于 Vue 3 及其他 Node.js 20+ 项目，也可作为 TypeScript 库调用。
 
 ## 安装
 
@@ -66,28 +66,36 @@ npm install --save-dev openapi-skill
 配置层级含义：
 
 - 根级 `keywords` 用于发现整份项目 API Skill。
-- 服务级 `keywords` 用于识别业务服务，并以受限长度进入根 Skill 描述和服务目录。
-- 文档级 `keywords` 用于定位模块或分组，同时展示在外层与对应服务 catalog 中，不进入根 Skill 描述。
+- 服务级 `keywords` 用于识别业务服务，并以受限长度进入根 Skill 描述和总索引。
+- 文档级 `keywords` 用于定位模块或分组，展示在总索引的对应接口行中，不进入根 Skill 描述。
 - `sourceType` 可设为 `internal` 或 `third-party`，省略时为 `internal`。它记录来源性质，不会改变 OpenAPI 解析规则。
 - `serviceId` 在项目内必须唯一；`document.id` 只需在所属服务内唯一，因此不同服务可以都有名为 `public` 的文档。
 
-每个服务及其文档保持独立边界，不会合并 OpenAPI 对象、跨文档解析 `$ref`，也不会猜测网关前缀。生成目录只包含一个根 `SKILL.md`，服务内容物理包含在 `references/services/<serviceId>/` 下，并通过相对 Markdown 链接导航；这里不使用文件系统符号链接，复制完整 `api-docs` 目录即可使用。
+每个服务及文档保持独立边界，不合并 OpenAPI 对象，不跨文档解析 `$ref`，也不猜测网关前缀。单服务和多服务使用同一种扁平布局（`openapi-skill-core/4`），只有一个根 `SKILL.md`：
 
-最外层 `references/catalog.md` 与服务内 catalog 都按文档和第一 tag 列出接口检索条目：summary、operationId、HTTP method/path、其他 tags 和配置关键词。缺失 summary 时仍可按 method/path 查找；不生成来源中没有的业务同义词，不复制请求响应或 Schema 正文。相同名称保留服务/文档归属，全部操作均被覆盖，超出总输出预算会失败并保留旧 Skill。
+```text
+api-docs/
+|-- SKILL.md
++-- references/
+    |-- index.md
+    |-- conventions.md
+    |-- source.json
+    |-- operations.jsonl
+    |-- schemas.jsonl
+    |-- operations/<service>--<document>--<operation>.md
+    |-- schemas/<service>--<document>--<schema>.md
+    +-- refs/<service>--<document>--<reference>.md
+```
 
-导航顺序是“外层 catalog → 服务 catalog → 文档 context → 分组 → 接口详情”。已知 method/path 优先精确匹配；多个候选继续核对契约，未命中时检查其他候选文档和分组。
+Agent 搜索 `references/index.md`，直接打开命中的接口文件。每条接口记录占一行，包含 summary、HTTP method/path、service、document、operationId、全部 tags、第一 tag 分组及项目/服务/文档 keywords，搜索命中后无需再读取服务 catalog、context 或 group 文件。大索引可用文本搜索；无需预先加载全部契约。
 
-生成的服务 reference 根使用 `openapi-skill-core/3`。每份文档只有一个 `context.md`，它是**分组索引**：列出该文档的
-每个 tag 分组及其接口数；点进去是 `groups/<tag>.md`，文件名就是 OpenAPI 里的 tag 名（中文名直接保留），
-每个 operation 一行 `- [语义化标题](../operations/<file>.md) — \`METHOD /path\``，并只出现在它的**第一个** tag
-里。因此契约里找不到某个接口时，先检查该文档的其它分组。文档声明的 servers 与 security 事实写在服务
-`catalog.md` 里，不再占必读的 context 篇幅。`operations.jsonl`、`schemas.jsonl` 仍作为紧凑的机器校验索引
-保留（前者带 `group`/`groupFile` 列），LLM 导航不需要读取或搜索
-JSONL。接口主键使用 service、document、
-HTTP method 和 path，不依赖可缺失或重复的 SpringDoc `operationId`；后者仅作为导航别名。operation/schema
-文件在无冲突时使用纯语义名，例如 `get-users-by-id.md`；只有大小写不敏感冲突或文件系统安全回退才追加
-短摘要。每个 operation 还包含生成器预计算的完整直接/传递引用清单和递归边，LLM 不需要自行计算 `$ref`
-闭包。
+接口文件保留生效的参数、servers/security、请求响应和示例，并直接链接完整的 Schema/引用集合。Schema 共享存储、按需读取，递归引用不无限展开。缺失 summary 时仍能按 method/path 检索；多候选需核对来源和契约，未命中需扩大检索，不能据此断言接口不存在。所有来源文字仅为不受信数据，不是执行授权。
+
+文件名以 `service--document--name` 隔离来源，超长名称、大小写冲突或安全回退使用确定性摘要，最终文件名不超过 120 个 ASCII 字符。JSONL 保留为机器校验索引，Agent 不必读取；`group` 保留，已移除 `groupFile`，`file` 和 `closureFiles` 均指向扁平文件。接口身份仍由 service/document/method/path 决定，不依赖 operationId 唯一性。
+
+### 从 2.1.x 升级
+
+配置格式保持兼容，安装 2.2.0 后重新运行生成命令即可。成功发布会整体替换旧 Skill 并移除深层目录；失败保留旧完整树。**生成路径发生变化**：使用旧 catalog/context/group 路径或解析 JSONL 路径的外部脚本需迁移到 `index.md` 和新版索引。手动解压 ZIP 时也应替换整个 Skill，避免混入旧文件。
 
 ## 运行与原子更新
 
@@ -121,7 +129,7 @@ JSON 语法错误会在能够可靠确定时给出一基行列号，且默认诊
 
 ## 旧单服务配置兼容
 
-已有配置无需立即迁移，`2.0.0` 仍接受原来的单服务结构并保留显式 Skill 名称，但生成结果同样是 core/3 布局：
+已有配置无需立即迁移，`2.2.0` 仍接受原来的单服务结构并保留显式 Skill 名称，但生成结果同样是 core/4 扁平布局：
 
 ```json
 {

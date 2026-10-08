@@ -13,18 +13,14 @@ test('generates one deterministic navigable skill from multiple documents', asyn
   assert.equal([...first.keys()].filter((path) => path.includes('/operations/')).length, 4);
   assert.equal([...first.keys()].filter((path) => path.includes('/schemas/')).length, 7);
   const source = JSON.parse(first.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'openapi-skill-core/3');
+  assert.equal(source.generatorVersion, 'openapi-skill-core/4');
   assert.equal(source.sourceType, undefined, 'legacy generator metadata must remain byte-compatible in shape');
   assert.equal(source.keywords, undefined, 'legacy generator metadata must not gain empty keyword fields');
   assert.deepEqual(source.documents.map(({ documentId }) => documentId), ['account', 'business']);
-  assert.match(first.get('SKILL.md'), /references\/catalog\.md/);
+  assert.match(first.get('SKILL.md'), /references\/index\.md/);
   assert.doesNotMatch(first.get('SKILL.md'), /operations\.jsonl|schemas\.jsonl/);
-  assert.match(first.get('references/catalog.md'), /Defined security schemes/);
-  for (const id of ['account', 'business']) {
-    const context = first.get(`references/documents/${id}/context.md`);
-    assert.match(context, /## Interface groups/);
-    assert.ok(!context.includes('```json'), 'the document context must not dump the raw contract');
-  }
+  assert.match(first.get('references/index.md'), /GET \/users/);
+  assert.ok(![...first.keys()].some(path => path.includes('/documents/')));
 });
 
 test('explains OpenAPI default semantics and carries Chinese triggers', async () => {
@@ -40,7 +36,7 @@ test('explains OpenAPI default semantics and carries Chinese triggers', async ()
     assert.ok(description.includes(verb), `description must include the task verb ${verb}`);
   }
   for (const keyword of ['接口', '前端', '文档', '调用', '参数校验', '接口联调', '字段缺失', '鉴权', '报错排查',
-    '状态码', '前端请求代码', 'catalog', 'HTTP', 'REST', 'OpenAPI']) {
+    '状态码', '前端请求代码', 'index', 'HTTP', 'REST', 'OpenAPI']) {
     assert.ok(description.includes(keyword), `description must include ${keyword}: ${description}`);
   }
   assert.ok(description.includes('springdoc-multi-package'), 'description must still name the service');
@@ -164,17 +160,17 @@ test('generates one self-contained project Skill with logical service navigation
     ]
   });
   assert.equal([...files.keys()].filter((path) => path === 'SKILL.md').length, 1);
-  assert.ok(files.has('references/services/orders/references/catalog.md'));
-  assert.ok(files.has('references/services/shipping/references/catalog.md'));
-  assert.match(files.get('references/catalog.md'), /services\/orders\/references\/catalog\.md/);
-  assert.match(files.get('references/catalog.md'), /third-party/);
-  assert.match(files.get('references/services/orders/references/catalog.md'), /下单/);
+  assert.ok(files.has('references/index.md'));
+  assert.ok(files.has('references/operations/shipping--common--get-users.md'));
+  assert.match(files.get('references/index.md'), /service=orders/);
+  assert.match(files.get('references/index.md'), /下单/);
   assert.match(files.get('SKILL.md'), /接口文档/);
   assert.match(files.get('SKILL.md'), /订单/);
   assert.doesNotMatch(files.get('SKILL.md'), /下单/);
   const source = JSON.parse(files.get('references/source.json'));
-  assert.equal(source.generatorVersion, 'openapi-skill-core/3');
+  assert.equal(source.generatorVersion, 'openapi-skill-core/4');
   assert.equal(source.kind, 'project');
+  assert.equal(source.services[1].sourceType, 'third-party');
   assert.equal(source.skillName, 'api-docs');
   assert.deepEqual(source.services.map(({ serviceId }) => serviceId), ['orders', 'shipping']);
   assert.equal(source.documents.length, 2);

@@ -1,4 +1,5 @@
-import { boundedList, generateSkill, identity } from './generator.js';
+import { boundedList, generateServiceTree, identity } from './generator.js';
+import { flattenSkill } from './flat-layout.js';
 import { boundedKeywords, normalizeKeywords } from './keywords.js';
 import { label, sorted } from './references.js';
 import { GenerateProjectOptions, ProjectServiceInput, SourceType } from './types.js';
@@ -9,6 +10,11 @@ const encoder = new TextEncoder();
 
 /** Generates one self-contained project Skill containing every configured service reference tree. */
 export function generateProjectSkill(options: GenerateProjectOptions): ReadonlyMap<string, string> {
+  return flattenSkill(generateProjectTree(options));
+}
+
+/** Intermediate contracts, also used to exercise replacement of the legacy layout. */
+export function generateProjectTree(options: GenerateProjectOptions): ReadonlyMap<string, string> {
   const skillName = options.skillName ?? 'api-docs';
   identity(skillName);
   if (!Array.isArray(options.services) || options.services.length === 0) throw new Error('INPUT: required services missing');
@@ -28,7 +34,7 @@ export function generateProjectSkill(options: GenerateProjectOptions): ReadonlyM
     const serviceKeywords = normalizeKeywords(service.keywords, `${service.serviceId} service`);
     let member: ReadonlyMap<string, string>;
     try {
-      member = generateSkill({
+      member = generateServiceTree({
         serviceId: service.serviceId,
         skillName: service.serviceId,
         sourceType,

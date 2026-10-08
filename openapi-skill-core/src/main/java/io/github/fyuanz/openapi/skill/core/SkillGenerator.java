@@ -53,6 +53,11 @@ public final class SkillGenerator {
      * The returned map is immutable; this method does not publish files or access external references.
      */
     public Map<String, String> generate(String serviceId, String skillName, Map<String, byte[]> documents) {
+        return FlatSkillLayout.flatten(generateServiceTree(serviceId, skillName, documents));
+    }
+
+    /** Internal contract tree, retained as the supported legacy aggregation format. */
+    Map<String, String> generateServiceTree(String serviceId, String skillName, Map<String, byte[]> documents) {
         identity(serviceId); identity(skillName);
         if (documents == null || documents.isEmpty()) throw new IllegalArgumentException("INPUT: required documents missing");
         if (documents.size() > 32) throw new IllegalArgumentException("LIMIT: at most 32 documents");

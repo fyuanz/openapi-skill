@@ -3,11 +3,12 @@ import { access, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs
 import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { identity } from './generator.js';
+import { FLAT_VERSION } from './flat-layout.js';
 
 /** Layout version this generator emits; the publisher accepts it plus the former identities below. */
-const CURRENT_VERSION = 'openapi-skill-core/3';
+const CURRENT_VERSION = FLAT_VERSION;
 /** Versions that carry the machine-only operation and schema JSONL indexes. */
-const INDEX_BEARING_VERSIONS = [CURRENT_VERSION, 'openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/3'];
+const INDEX_BEARING_VERSIONS = [CURRENT_VERSION, 'openapi-skill-core/3', 'openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/3'];
 
 export async function publishSkill(outputParent: string, serviceId: string, skillName: string, files: ReadonlyMap<string, string>): Promise<string> {
   identity(serviceId); identity(skillName);
@@ -76,14 +77,15 @@ function validateTree(files: ReadonlyMap<string, string>, skillName: string, all
   if (!source || typeof source !== 'object' || Array.isArray(source)) throw new Error('OUTPUT: source metadata must be an object');
   const metadata = source as Record<string, unknown>;
   const generatorVersion = metadata.generatorVersion as string;
-  const formerIdentity = ['openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'];
-  if (metadata.skillName !== skillName || (generatorVersion !== 'openapi-skill-core/3'
+  const formerIdentity = ['openapi-skill-core/3', 'openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'];
+  if (metadata.skillName !== skillName || (generatorVersion !== CURRENT_VERSION
       && !(allowFormerIdentity && formerIdentity.includes(generatorVersion)))) {
     throw new Error('OUTPUT: source metadata owner or generator does not match');
   }
   if (INDEX_BEARING_VERSIONS.includes(generatorVersion) && metadata.kind === undefined) {
-    validateIndexes(files, '', metadata, generatorVersion === CURRENT_VERSION);
+    validateIndexes(files, '', metadata, generatorVersion === 'openapi-skill-core/3');
   }
+  if (generatorVersion === CURRENT_VERSION) validateFlat(files, metadata);
   for (const [path, content] of files) if (path.endsWith('.md')) validateLinks(path, content, files);
   return metadata;
 }
@@ -91,7 +93,7 @@ function validateTree(files: ReadonlyMap<string, string>, skillName: string, all
 function validateProjectSource(source: Record<string, unknown>, files: ReadonlyMap<string, string>, allowFormerIdentity = false): void {
   const generatorVersion = source.generatorVersion as string;
   if (generatorVersion !== CURRENT_VERSION
-      && !(allowFormerIdentity && ['openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'].includes(generatorVersion))) {
+      && !(allowFormerIdentity && ['openapi-skill-core/3', 'openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/2', 'smartdoc-agent-core/3'].includes(generatorVersion))) {
     throw new Error('OUTPUT: project source version is invalid');
   }
   if (source.serviceId !== undefined) throw new Error('OUTPUT: project source must not impersonate a service owner');
@@ -110,15 +112,16 @@ function validateProjectSource(source: Record<string, unknown>, files: ReadonlyM
     previousId = service.serviceId as string;
     if (service.sourceType !== 'internal' && service.sourceType !== 'third-party') throw new Error('OUTPUT: project sourceType is invalid');
     if (!Array.isArray(service.documents) || service.documents.length === 0) throw new Error('OUTPUT: project service documents are missing');
-    const nested = files.get(`references/services/${service.serviceId}/references/source.json`);
+    const nested = generatorVersion === CURRENT_VERSION ? JSON.stringify(service)
+      : files.get(`references/services/${service.serviceId}/references/source.json`);
     if (!nested) throw new Error(`OUTPUT: project service source missing for ${service.serviceId}`);
     let nestedSource: Record<string, unknown>;
     try { nestedSource = JSON.parse(nested) as Record<string, unknown>; } catch { throw new Error(`OUTPUT: project service source is invalid for ${service.serviceId}`); }
     if (nestedSource.serviceId !== service.serviceId) throw new Error(`OUTPUT: project service owner mismatch for ${service.serviceId}`);
     if (JSON.stringify(nestedSource) !== JSON.stringify(service)) throw new Error(`OUTPUT: project service provenance mismatch for ${service.serviceId}`);
-    if (INDEX_BEARING_VERSIONS.includes(nestedSource.generatorVersion as string)) {
+    if (generatorVersion !== CURRENT_VERSION && INDEX_BEARING_VERSIONS.includes(nestedSource.generatorVersion as string)) {
       validateIndexes(files, `references/services/${service.serviceId}/`, nestedSource,
-        nestedSource.generatorVersion === CURRENT_VERSION);
+        nestedSource.generatorVersion === 'openapi-skill-core/3');
     }
     for (const document of service.documents) {
       if (!document || typeof document !== 'object' || Array.isArray(document)) throw new Error('OUTPUT: project document metadata is invalid');
@@ -217,6 +220,10 @@ function validateContextsAndClosures(files: ReadonlyMap<string, string>, referen
   const actualGroups = [...files.keys()].filter((path) => path.startsWith(`${references}documents/`) && path.includes('/groups/'));
   if (actualGroups.length !== expectedGroups.size || actualGroups.some((path) => !expectedGroups.has(path)))
     throw new Error('OUTPUT: document groups do not match the operation index');
+  validateClosures(files, references, operations);
+}
+
+function validateClosures(files: ReadonlyMap<string, string>, references: string, operations: Record<string, unknown>[]): void {
   for (const row of operations) {
     const operationPath = `${references}${String(row.file)}`;
     const operation = files.get(operationPath);
@@ -233,6 +240,66 @@ function validateContextsAndClosures(files: ReadonlyMap<string, string>, referen
       if (!operation.includes(`](${relative})`)) throw new Error(`OUTPUT: ${operationPath} omits a declared closure link`);
     }
   }
+}
+
+function validateFlat(files: ReadonlyMap<string, string>, source: Record<string, unknown>): void {
+  const roots = new Set(['SKILL.md', 'references/index.md', 'references/conventions.md', 'references/source.json',
+    'references/operations.jsonl', 'references/schemas.jsonl']);
+  for (const path of files.keys()) if (!roots.has(path) && !/^references\/(operations|schemas|refs)\/[a-z0-9._-]{1,120}\.md$/.test(path))
+    throw new Error(`OUTPUT: unexpected flat file ${path}`);
+  const index = files.get('references/index.md');
+  if (index === undefined || !files.get('SKILL.md')?.includes('](references/index.md)')) throw new Error('OUTPUT: flat interface index is missing');
+  const members = source.kind === 'project' ? source.services : [source];
+  if (!Array.isArray(members)) throw new Error('OUTPUT: project services missing');
+  const docs = new Map<string, Record<string, unknown>>();
+  for (const raw of members) {
+    const member = raw as Record<string, unknown>;
+    if (!Array.isArray(member?.documents)) throw new Error('OUTPUT: document metadata is invalid');
+    identity(member.serviceId as string);
+    for (const value of member.documents) {
+      const doc = value as Record<string, unknown>;
+      identity(doc?.documentId as string);
+      const key = `${member.serviceId}/${doc.documentId}`;
+      if (docs.has(key)) throw new Error('OUTPUT: duplicate document metadata');
+      docs.set(key, doc);
+    }
+  }
+  if (source.kind === 'project') {
+    if (!Array.isArray(source.documents) || source.documents.length !== docs.size)
+      throw new Error('OUTPUT: flattened project documents do not match services');
+    const seen = new Set<string>();
+    for (const value of source.documents) {
+      const doc = value as Record<string, unknown>;
+      const key = `${doc.serviceId}/${doc.documentId}`, member = docs.get(key);
+      if (!member || seen.has(key) || Object.keys(member).some(field => JSON.stringify(doc[field]) !== JSON.stringify(member[field])))
+        throw new Error('OUTPUT: flattened project documents do not match services');
+      seen.add(key);
+    }
+  }
+  const allDocs = [...docs.values()];
+  const rows = validateIndex(files, 'references/operations.jsonl', 'references/', 'operation:', allDocs.reduce((n, doc) => n + metadataCount(doc, 'operations'), 0));
+  const schemas = validateIndex(files, 'references/schemas.jsonl', 'references/', 'schema:', allDocs.reduce((n, doc) => n + metadataCount(doc, 'schemas'), 0));
+  for (const [type, entries] of [['operations', rows], ['schemas', schemas]] as const) {
+    const used = new Set<string>();
+    for (const row of entries) {
+      const file = String(row.file), owner = `${row.serviceId}/${row.documentId}`;
+      if (!docs.has(owner) || !file.startsWith(`${type}/`) || used.has(file) || row.groupFile !== undefined)
+        throw new Error('OUTPUT: flat index owner or file mismatch');
+      used.add(file);
+      if (type === 'operations') {
+        if (row.id !== `operation:${row.serviceId}:${row.documentId}:${String(row.method).toLowerCase()}:${row.path}`)
+          throw new Error('OUTPUT: flat operation identity mismatch');
+        if (index.split(`](${file})`).length - 1 !== 1) throw new Error('OUTPUT: flat index must link every operation exactly once');
+      }
+    }
+    for (const [key, doc] of docs) if (entries.filter(row => `${row.serviceId}/${row.documentId}` === key).length !== metadataCount(doc, type))
+      throw new Error('OUTPUT: flat document count mismatch');
+    if ([...files.keys()].filter(path => path.startsWith(`references/${type}/`)).length !== used.size)
+      throw new Error('OUTPUT: flat contract files do not match index');
+  }
+  if (index.split('\n').filter(line => line.startsWith('- [')).length !== rows.length) throw new Error('OUTPUT: flat index contains extra operation entries');
+  if (!files.has('references/conventions.md')) throw new Error('OUTPUT: references/conventions.md is missing');
+  validateClosures(files, 'references/', rows);
 }
 
 function validateLinks(path: string, content: string, files: ReadonlyMap<string, string>): void {

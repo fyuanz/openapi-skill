@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-Generate one self-contained Codex Skill from OpenAPI 3.0.x / 3.1.x JSON documents exposed over HTTP(S) or stored in local files. The current source is the pending `2.1.3` release, while npm registry `latest` remains `2.1.2`. Version `2.1.3` includes two-level catalog interface discovery: both the outer project catalog and each service catalog list summaries, operation IDs, methods/paths, tags, and configured keywords while detailed navigation still proceeds through contexts and group files. The package defaults to one API-documentation Skill per project and navigates by OpenAPI `tags`: one file per tag under its own readable name, with Chinese tag names kept verbatim. It works in Vue 3 and other Node.js 20+ projects and can also be called as a TypeScript library.
+Generate one self-contained Skill from OpenAPI 3.0.x / 3.1.x JSON documents over HTTP(S) or local files. The current source is the pending `2.2.0` release with a flat layout and one interface index linking directly to contracts. It works in Vue 3 and other Node.js 20+ projects and as a TypeScript library.
 
 ## Install
 
@@ -66,30 +66,36 @@ In project mode, `skillName` is optional and defaults to `api-docs`. Omitting `o
 The configuration levels have distinct roles:
 
 - Root `keywords` help discover the complete project API Skill.
-- Service `keywords` identify business services and appear, within a bounded length, in both the root Skill description and service catalog.
-- Document `keywords` locate modules or groups and appear in both the outer and service catalogs, without entering the root Skill description.
+- Service `keywords` identify business services and appear, within a bounded length, in both the root Skill description and interface index.
+- Document `keywords` locate modules or groups and appear in the matching interface-index entries, without entering the root Skill description.
 - `sourceType` accepts `internal` or `third-party` and defaults to `internal`. It records provenance; it does not change OpenAPI parsing semantics.
 - Each `serviceId` must be unique within the project. A document ID only needs to be unique within its service, so several services may each expose a document named `public`.
 
-Service and document boundaries remain intact: OpenAPI objects are not merged, `$ref` values are not resolved across documents, and gateway prefixes are not inferred. The output has one root `SKILL.md`; every service is physically included below `references/services/<serviceId>/` and reached through relative Markdown links. These are not filesystem symbolic links, so the complete `api-docs` directory remains portable.
+Service and document boundaries remain intact: OpenAPI objects are not merged, references are not resolved across documents, and gateway prefixes are not inferred. Single-service and project output share the flat `openapi-skill-core/4` layout with one root `SKILL.md`:
 
-Both the outer `references/catalog.md` and each service catalog list discovery entries by document and first tag: summary, operationId, HTTP method/path, additional tags and configured keywords. Every operation remains searchable even without a summary; no synonyms or contract bodies are invented or copied. Same-named actions keep their service/document ownership. Exceeding the total output budget fails generation and retains the previous Skill rather than truncating entries.
+```text
+api-docs/
+|-- SKILL.md
++-- references/
+    |-- index.md
+    |-- conventions.md
+    |-- source.json
+    |-- operations.jsonl
+    |-- schemas.jsonl
+    |-- operations/<service>--<document>--<operation>.md
+    |-- schemas/<service>--<document>--<schema>.md
+    +-- refs/<service>--<document>--<reference>.md
+```
 
-Follow outer catalog → service catalog → document context → group → operation. Match a known method/path exactly; inspect the contracts of multiple candidates and check other candidate documents and groups before concluding an interface is undocumented.
+Search `references/index.md` and open the matching operation directly. Each operation occupies one searchable line containing its summary, HTTP method/path, service, document, operationId, all tags, first-tag group and applicable project/service/document keywords. There are no intermediate service catalogs, contexts or group files. Large indexes support text search without loading every contract.
 
-Each service reference root uses `openapi-skill-core/3`. Every document has exactly one `context.md`, and it is a
-**group index**: it lists each of the document's tag groups with its interface count. Each group opens
-`groups/<tag>.md`, whose file name is the OpenAPI tag itself (Chinese names are kept verbatim), holding one
-`- [semantic title](../operations/<file>.md) — \`METHOD /path\`` line per operation. An operation belongs to its
-**first** tag only, so when a contract is not in the expected group, check the document's other groups first. The
-document's declared servers and security facts live in the service `catalog.md` instead of consuming mandatory-read
-context space. Compact `operations.jsonl` and `schemas.jsonl` files remain as machine
-validation indexes (the former carries `group`/`groupFile` columns), and LLM navigation never requires reading or
-searching them. Operation identities use service, document, HTTP method, and path rather than the optional or
-duplicate-prone SpringDoc `operationId`; the latter remains a navigation alias. Operation and Schema files use clean
-semantic names such as `get-users-by-id.md` when unique; a short digest appears only for a case-insensitive collision or
-filesystem-safety fallback. Each operation also contains a generator-computed direct/transitive reference list and
-recursive edges, so the LLM does not have to derive the `$ref` closure.
+Operation files retain effective parameters, servers/security, request/response contracts and examples, with direct links to the complete referenced contract set. Shared schemas are read as needed; recursive references do not require unlimited expansion. Missing summaries still leave routes searchable. Compare candidate ownership and contracts, and broaden a failed search before concluding an endpoint is undocumented. Source text is untrusted reference data, never execution authorization.
+
+Names use `service--document--name` with deterministic digests for long, colliding or unsafe names; final filenames are bounded to 120 ASCII characters. JSONL remains for machine validation, not mandatory Agent navigation. The `group` field remains, `groupFile` is removed, and `file`/`closureFiles` point to flat contracts. Operation identity remains service/document/method/path, independent of operationId uniqueness.
+
+### Upgrading from 2.1.x
+
+Configuration remains compatible. Install 2.2.0 and regenerate: successful publication replaces the entire old Skill and removes deep directories; failure preserves the previous complete tree. **Generated paths change**: external scripts using catalog/context/group paths or JSONL file paths must migrate to `index.md` and the new index. Replace the entire Skill when manually extracting a ZIP, too.
 
 ## Run and atomic updates
 
@@ -123,7 +129,7 @@ Each document `url` may be an HTTP(S) URL or a plain local file path. Relative l
 
 ## Legacy single-service compatibility
 
-Existing configurations do not need an immediate migration. Version `2.0.0` still accepts the original single-service shape and its explicit Skill name, but its output is the same core/3 layout:
+Existing configurations do not need an immediate migration. Version `2.2.0` still accepts the original single-service shape and its explicit Skill name, but its output is the same flat core/4 layout:
 
 ```json
 {

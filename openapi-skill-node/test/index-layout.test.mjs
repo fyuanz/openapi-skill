@@ -17,24 +17,21 @@ const input = encoder.encode(JSON.stringify({
 
 const jsonLines = (content) => content.trim().split('\n').map((line) => JSON.parse(line));
 
-test('emits core/3 document navigation, clean paths and retained machine indexes', () => {
+test('emits core/4 flat navigation, clean paths and retained machine indexes', () => {
   const files = generateSkill({ serviceId: 'svc', skillName: 'svc-api', documents: new Map([['public', input]]) });
-  assert.equal(JSON.parse(files.get('references/source.json')).generatorVersion, 'openapi-skill-core/3');
+  assert.equal(JSON.parse(files.get('references/source.json')).generatorVersion, 'openapi-skill-core/4');
   assert.ok(files.has('references/operations.jsonl'));
   assert.ok(files.has('references/schemas.jsonl'));
   assert.ok(files.has('references/conventions.md'));
-  assert.ok(files.has('references/documents/public/operations/get-users-by-id.md'));
-  assert.ok(files.has('references/documents/public/operations/post-users.md'));
-  assert.ok(files.has('references/documents/public/schemas/payload.md'));
-  assert.equal([...files.keys()].filter((path) => /\/schemas\/user-view--[0-9a-f]{6}\.md$/.test(path)).length, 2);
-  const context = files.get('references/documents/public/context.md');
-  assert.match(context, /## Interface groups/);
-  assert.match(context, /\[users\]\(groups\/users\.md\) — 1 interface\(s\)/);
-  assert.match(context, /\[untagged\]\(groups\/untagged\.md\) — 1 interface\(s\)/);
-  assert.match(files.get('references/documents/public/groups/users.md'),
-    /\[Get user\]\(\.\.\/operations\/get-users-by-id\.md\) — `GET \/users\/\{id\}`/);
-  assert.doesNotMatch(files.get('SKILL.md'), /operations\.jsonl|schemas\.jsonl/);
-  assert.match(files.get('SKILL.md'), /context\.md/);
+  assert.ok(files.has('references/operations/svc--public--get-users-by-id.md'));
+  assert.ok(files.has('references/operations/svc--public--post-users.md'));
+  assert.ok(files.has('references/schemas/svc--public--payload.md'));
+  assert.equal([...files.keys()].filter((path) => /\/schemas\/svc--public--user-view--[0-9a-f]{6}\.md$/.test(path)).length, 2);
+  const index = files.get('references/index.md');
+  assert.match(index, /group=users/);
+  assert.match(index, /group=untagged/);
+  assert.ok(index.includes('](operations/svc--public--get-users-by-id.md)'));
+  assert.doesNotMatch(files.get('SKILL.md'), /context.md|catalog.md/);
 
   const operations = jsonLines(files.get('references/operations.jsonl'));
   assert.deepEqual(operations.map(({ id }) => id), [
@@ -52,7 +49,7 @@ test('emits core/3 document navigation, clean paths and retained machine indexes
 
 test('includes discovery but not schema bodies and centralizes conventions', () => {
   const files = generateSkill({ serviceId: 'svc', skillName: 'svc-api', documents: new Map([['public', input]]) });
-  const catalog = files.get('references/catalog.md');
+  const catalog = files.get('references/index.md');
   assert.match(catalog, /GET \/users/);
   assert.doesNotMatch(catalog, /```json/);
   assert.doesNotMatch(catalog, /UserView/);
@@ -64,18 +61,17 @@ test('includes discovery but not schema bodies and centralizes conventions', () 
   assert.match(files.get('references/conventions.md'), /not a claim/);
 });
 
-test('project mode navigates through document contexts and retains machine indexes', () => {
+test('project mode uses direct interface navigation and retains machine indexes', () => {
   const files = generateProjectSkill({ services: [
     { serviceId: 'orders', documents: new Map([['public', input]]) },
     { serviceId: 'users', documents: new Map([['public', input]]) }
   ] });
-  assert.equal(JSON.parse(files.get('references/source.json')).generatorVersion, 'openapi-skill-core/3');
-  for (const service of ['orders', 'users']) {
-    assert.ok(files.has(`references/services/${service}/references/operations.jsonl`));
-    assert.ok(files.has(`references/services/${service}/references/schemas.jsonl`));
-  }
+  assert.equal(JSON.parse(files.get('references/source.json')).generatorVersion, 'openapi-skill-core/4');
+  const operations = jsonLines(files.get('references/operations.jsonl'));
+  assert.deepEqual([...new Set(operations.map(row => row.serviceId))], ['orders', 'users']);
+  assert.ok(files.has('references/schemas.jsonl'));
   assert.doesNotMatch(files.get('SKILL.md'), /operations\.jsonl|schemas\.jsonl/);
-  assert.match(files.get('SKILL.md'), /context\.md/);
+  assert.match(files.get('SKILL.md'), /references\/index\.md/);
   assert.match(files.get('SKILL.md'), /complete referenced contracts/i);
 });
 

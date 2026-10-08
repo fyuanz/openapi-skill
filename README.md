@@ -21,13 +21,7 @@ WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 Sp
 
 ## Vue 3 / Node.js 项目生成 Skill
 
-`openapi-skill-node` 当前源码为待发布的 `openapi-skill@2.1.3`，npm registry 的 `latest` 仍为 `2.1.2`。待发布版本包含外层项目目录和服务目录的两级接口发现。
-它推荐一个前端项目只生成一份接口文档
-Skill，并使用按 OpenAPI `tags` 分组的分组索引 `context.md`、每个 tag 一个可读名称的接口文件（中文 tag 名直接保留）、
-无冲突纯语义文件名、预计算引用闭包和集中 conventions；
-JSONL 仅保留为机器校验索引。多个微服务、每个服务的
-多个文档分组以及第三方服务都组织在同一个自包含目录中。默认 Skill 名为
-`api-docs`，输出到 Vue 项目根目录的 `.agents/skills/api-docs/`。
+`openapi-skill-node` 当前源码为待发布的 `openapi-skill@2.2.0`。单服务和多服务均采用扁平布局：Agent 搜索总索引后直接打开接口，再按需读取 Schema。每个接口保留服务与文档归属、完整契约及预计算引用集合。默认生成 `.agents/skills/api-docs/`。
 
 ```shell
 npm install --save-dev openapi-skill
@@ -70,7 +64,7 @@ npm install --save-dev openapi-skill
 将 `"skill:generate": "openapi-skill"` 加入 `package.json#scripts`，执行 `npm run skill:generate`。
 根级、服务级和文档级 `keywords` 分别用于发现项目 Skill、选择服务和定位文档；`sourceType` 支持
 `internal`（默认）与 `third-party`。生成结果物理包含所有服务的引用文件，通过 Skill 内的相对 Markdown
-链接分层导航，不依赖文件系统符号链接或其他已安装 Skill。
+链接直接导航，不依赖文件系统符号链接或其他已安装 Skill。
 
 工具会先下载和校验全部服务的全部文档，再一次性替换完整 `api-docs` 目录。任一成员失败时保留上一份
 完整结果，不发布缺服务的部分 Skill。`skillName`、`output` 和 `timeoutMs` 均可在根级覆盖；旧版
@@ -81,7 +75,7 @@ npm install --save-dev openapi-skill
 
 改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布。已发布的 `2.0.0` 把生成产物布局
 从 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为 `openapi-skill-core/3`，npm 与 Maven Central 两侧均已上线。
-Maven 源码线当前为 `2.1.0-SNAPSHOT`，新增 OpenAPI 3.0.x 输入支持；该改动不改变现有 3.1 输入的产物。
+Maven 源码线当前为 `2.1.1-SNAPSHOT`，接受 OpenAPI 3.0.x / 3.1.x，并与 Node 同步生成 core/4 扁平布局；历史发布制品保持不变。
 对于 SpringDoc 应用，推荐使用运行时 Starter。
 
 | 构件 | 用途 |
@@ -157,22 +151,20 @@ openapi.skill.runtime.skill-name=my-service-api
 下载 ZIP 后，将其中的**整个 Skill 目录**解压到前端项目的 `.agents/skills/`，保留所有引用文件：
 
 ```text
-<frontend-project>/.agents/skills/my-service-api/
-├── SKILL.md
-└── references/
-    ├── catalog.md
-    ├── source.json
-    └── documents/
-        └── <文档>
-            ├── context.md        # 从 catalog 定位后的分组索引
-            ├── groups/           # 每个 OpenAPI tag 一个文件，文件名即 tag
-            ├── operations/
-            └── schemas/
+api-docs/
+|-- SKILL.md
++-- references/
+    |-- index.md
+    |-- conventions.md
+    |-- source.json
+    |-- operations.jsonl
+    |-- schemas.jsonl
+    |-- operations/<service>--<document>--<operation>.md
+    |-- schemas/<service>--<document>--<schema>.md
+    +-- refs/<service>--<document>--<reference>.md
 ```
 
-`catalog.md` 按文档和分组列出接口 summary、operationId、HTTP method/path 与其他 tag 检索词。
-多服务 Skill 的最外层和服务内 catalog 都有这些信息，按“外层 catalog → 服务 catalog → context → 分组 → 接口”逐级查找；
-单服务从服务 catalog 开始。无需配置完整关键词即可匹配已声明的接口动作，但不会自动生成业务同义词。
+以上为当前源码的 core/4 布局。`index.md` 每个接口一条记录，包含 summary、operationId、HTTP method/path、服务、文档、tags 和关键词，直接链接对应契约。升级后应重新生成并整体替换旧 Skill；外部脚本中的旧 catalog/context/group 路径需迁移。npm 2.2.0 由维护者手动发布，已有 Maven 发布制品不随源码自动更新。
 
 然后在前端项目中尝试以下任务，并确认所用 Agent 实际发现并使用了该 Skill：
 

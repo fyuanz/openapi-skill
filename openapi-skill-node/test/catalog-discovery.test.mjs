@@ -10,46 +10,37 @@ const empty = Buffer.from('{"openapi":"3.1.0","paths":{}}');
 const documents = new Map([['business', fixture], ['empty', empty]]);
 const project = () => generateProjectSkill({services: ['files', 'other'].map(serviceId => ({serviceId, documents}))});
 
-function checkEntries(catalog) {
-  for (const value of ['上传文件', 'uploadFile', 'POST /files', 'DELETE /files/{id}', 'GET /health', '附件', 'untagged', '文件管理', '2 interface(s)', 'No operations are documented.'])
-    assert.ok(catalog.includes(value), `missing ${value}`);
-  assert.ok(!catalog.includes('[run](outside.md)'));
-  assert.ok(!catalog.includes('<script>'));
-  const unsafe = catalog.split('\n').find(line => line.includes('GET /unsafe'));
-  assert.equal(unsafe.split('duplicate').length - 1, 1);
-  assert.ok(!catalog.includes('```json'));
+function checkEntries(index) {
+  for (const value of ['上传文件', 'uploadFile', 'POST /files', 'DELETE /files/{id}', 'GET /health', '附件', 'untagged', '文件管理', 'No operations are documented.'])
+    assert.ok(index.includes(value), `missing ${value}`);
+  assert.ok(!index.includes('[run](outside.md)'));
+  assert.ok(!index.includes('<script>'));
+  const unsafe = index.split('\n').find(line => line.includes('GET /unsafe'));
+  assert.ok(unsafe.includes('operationId=duplicate'));
+  assert.ok(!index.includes('```json'));
 }
 
-test('both catalogs expose complete scoped actions without configured keywords', () => {
+test('one flat index exposes complete scoped actions without configured keywords', () => {
   const files = project();
-  checkEntries(files.get('references/catalog.md'));
+  checkEntries(files.get('references/index.md'));
   for (const id of ['files', 'other']) {
-    const member = files.get(`references/services/${id}/references/catalog.md`);
-    checkEntries(member);
-    assert.equal(member.split('<!-- openapi-skill:interface-discovery -->').length - 1, 1,
-      'service discovery uses the shared marker so Java aggregation can refresh it without duplication');
-    assert.ok(member.includes('https://files.example'));
-    assert.ok(member.includes('documents/business/context.md'));
+    assert.ok(files.get('references/index.md').includes(`service=${id}`));
+    assert.ok(files.get(`references/operations/${id}--business--post-files.md`).includes('https://files.example'));
   }
-  assert.equal(files.get('references/catalog.md').split('POST /files').length - 1, 2);
-  const single = generateSkill({serviceId: 'files', skillName: 'files-api', documents});
-  checkEntries(single.get('references/catalog.md'));
+  assert.equal(files.get('references/index.md').split('POST /files').length - 1, 2);
+  checkEntries(generateSkill({serviceId: 'files', skillName: 'files-api', documents}).get('references/index.md'));
 });
 
-test('navigation follows both catalogs then context and source text stays outside instructions', async (t) => {
+test('navigation goes directly from the index to the operation and source text stays outside instructions', async (t) => {
   const files = project();
   const entry = files.get('SKILL.md');
-  assert.match(entry, /service catalog.*context/s);
+  assert.match(entry, /references\/index.md/);
   assert.match(entry, /multiple candidates/i);
-  assert.match(entry, /other.*documents.*groups/s);
+  assert.match(entry, /broaden keywords and service\/document scope/);
   assert.ok(!entry.includes('IGNORE_INSTRUCTIONS'));
-  let path = 'references/catalog.md';
-  for (const fragment of ['services/files/references/catalog.md', 'documents/business/context.md', 'groups/文件管理.md', '../operations/post-files.md']) {
-    assert.ok(files.get(path).includes(`](${fragment})`), `${path} -> ${fragment}`);
-    path = decodeURIComponent(new URL(fragment, `file:///${path}`).pathname.slice(1));
-  }
-  assert.ok(files.get(path).includes('uploadFile'));
-  const root = await mkdtemp(join(tmpdir(), 'catalog-links-'));
+  assert.ok(files.get('references/index.md').includes('](operations/files--business--post-files.md)'));
+  assert.ok(files.get('references/operations/files--business--post-files.md').includes('uploadFile'));
+  const root = await mkdtemp(join(tmpdir(), 'index-links-'));
   t.after(() => rm(root, {recursive: true, force: true}));
   await publishSkill(root, 'api-docs', 'api-docs', files); // validates every generated link and the complete tree
 });
@@ -60,26 +51,26 @@ test('same-named document actions remain separate and input ordering is stable',
   const docs = new Map([['second', fixture], ['business', Buffer.from(JSON.stringify(root))], ['empty', empty]]);
   const a = generateSkill({serviceId: 'files', skillName: 'files-api', documents: docs});
   const b = generateSkill({serviceId: 'files', skillName: 'files-api', documents: new Map([['empty', empty], ['business', fixture], ['second', fixture]])});
-  assert.equal(a.get('references/catalog.md'), b.get('references/catalog.md'));
-  assert.equal(a.get('references/catalog.md').split('POST /files').length - 1, 2);
+  assert.equal(a.get('references/index.md'), b.get('references/index.md'));
+  assert.equal(a.get('references/index.md').split('POST /files').length - 1, 2);
   const services = ['z', 'a'].map(serviceId => ({serviceId, documents}));
-  assert.equal(generateProjectSkill({services}).get('references/catalog.md'), generateProjectSkill({services: services.reverse()}).get('references/catalog.md'));
+  assert.equal(generateProjectSkill({services}).get('references/index.md'), generateProjectSkill({services: services.reverse()}).get('references/index.md'));
 });
 
-test('project catalog includes document keywords and all operations in a large document', () => {
+test('project index includes document keywords and all operations in a large document', () => {
   const paths = Object.fromEntries(Array.from({length: 124}, (_, i) => [`/items/${i}`, {get: {summary: `动作${i}`, tags: [`分组${i % 19}`], responses: {}}}]));
   const docs = new Map([['business', Buffer.from(JSON.stringify({openapi: '3.1.0', paths}))]]);
   const files = generateProjectSkill({services: [{serviceId: 'files', documents: docs, documentKeywords: new Map([['business', ['模块别名']]])}]});
-  for (const path of ['references/catalog.md', 'references/services/files/references/catalog.md']) {
-    const catalog = files.get(path);
-    assert.ok(catalog.includes('模块别名'));
-    assert.equal(catalog.split('GET /items/').length - 1, 124);
-    console.log(`${path}: ${Buffer.byteLength(catalog)} bytes, 124 operations`);
+  for (const path of ['references/index.md']) {
+    const index = files.get(path);
+    assert.ok(index.includes('模块别名'));
+    assert.equal(index.split('GET /items/').length - 1, 124);
+    console.log(`${path}: ${Buffer.byteLength(index)} bytes, 124 operations`);
   }
 });
 
-test('catalog expansion beyond the output budget fails without replacing the previous tree', async (t) => {
-  const root = await mkdtemp(join(tmpdir(), 'catalog-budget-'));
+test('index expansion beyond the output budget fails without replacing the previous tree', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'index-budget-'));
   t.after(() => rm(root, {recursive: true, force: true}));
   const services = Array.from({length: 5}, (_, i) => ({serviceId: `svc-${i}`, documents: [{id: 'public', url: './api.json'}]}));
   await writeFile(join(root, 'openapi-skill.config.json'), JSON.stringify({services}));

@@ -55,7 +55,7 @@ class RuntimeSkillEndpointTest {
         assertThat(files).containsKeys(
                 "orders-service-api/SKILL.md",
                 "orders-service-api/references/source.json",
-                "orders-service-api/references/catalog.md",
+                "orders-service-api/references/index.md",
                 "orders-service-api/references/operations.jsonl",
                 "orders-service-api/references/schemas.jsonl",
                 "orders-service-api/references/conventions.md");

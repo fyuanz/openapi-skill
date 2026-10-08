@@ -26,11 +26,11 @@ class AggregateSkillGeneratorTest {
         assertEquals(1, files.keySet().stream().filter(p -> p.endsWith("SKILL.md")).count());
         for (var service : inputs.entrySet()) {
             for (var file : service.getValue().entrySet()) {
-                if (file.getKey().startsWith("references/"))
-                    assertEquals(file.getValue(), files.get("references/services/" + service.getKey() + "/" + file.getKey()));
+                if (file.getKey().matches("references/(operations|schemas|refs)/.*"))
+                    assertEquals(file.getValue(), files.get(file.getKey()));
             }
         }
-        assertTrue(files.get("references/catalog.md").contains("services/billing/references/catalog.md"));
+        assertTrue(files.get("references/index.md").contains("service=billing"));
         assertFalse(files.get("SKILL.md").contains("UNTRUSTED DESCRIPTION"));
         var metadata = new ObjectMapper().readTree(files.get("references/source.json"));
         assertEquals("aggregate", metadata.path("kind").asText());
@@ -51,7 +51,7 @@ class AggregateSkillGeneratorTest {
         assertThrows(IllegalArgumentException.class, () -> generator.generate("../bad", "platform-api", Map.of("orders", service("orders", "string"))));
         assertThrows(IllegalArgumentException.class, () -> generator.generate("platform", "platform-api", Map.of("billing", service("orders", "string"))));
         var broken = new TreeMap<>(service("orders", "string"));
-        broken.remove("references/catalog.md");
+        broken.remove("references/index.md");
         assertThrows(IllegalArgumentException.class, () -> generator.generate("platform", "platform-api", Map.of("orders", broken)));
     }
 
@@ -84,7 +84,7 @@ class AggregateSkillGeneratorTest {
                         Map.of("orders", orders, "billing", service("billing", "integer")))).outcome());
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, updater.update("platform", "platform-api", temporary,
                 Duration.ofSeconds(2), () -> generator.generate("platform", "platform-api", Map.of("orders", orders))).outcome());
-        assertFalse(Files.exists(temporary.resolve("platform-api/references/services/billing")));
+        assertFalse(Files.exists(temporary.resolve("platform-api/references/operations/billing--common--get-users.md")));
         assertEquals(orders.get("SKILL.md"), Files.readString(temporary.resolve("orders-api/SKILL.md")));
     }
 

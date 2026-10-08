@@ -52,6 +52,7 @@ final class GeneratedSkillValidator {
         if (("openapi-skill-core/1".equals(version) || "openapi-skill-core/2".equals(version)
                 || "openapi-skill-core/3".equals(version)) && !source.has("kind"))
             validateIndexes(files, source, "openapi-skill-core/3".equals(version));
+        if (FlatSkillLayout.VERSION.equals(version)) validateFlat(files, source);
         validateLinks(files, normalized);
     }
 
@@ -173,6 +174,10 @@ final class GeneratedSkillValidator {
                 .filter(path -> path.startsWith("references/documents/") && path.contains("/groups/"))
                 .collect(java.util.stream.Collectors.toSet());
         if (!actualGroups.equals(expectedGroups)) throw invalid("document groups do not match the operation index");
+        validateClosures(files, operationRows);
+    }
+
+    private void validateClosures(Map<String, String> files, java.util.List<JsonNode> operationRows) {
         for (JsonNode row : operationRows) {
             String operationPath = "references/" + row.path("file").asText();
             String operation = files.get(operationPath);
@@ -196,6 +201,74 @@ final class GeneratedSkillValidator {
                 previous = target.asText();
             }
         }
+    }
+
+    private void validateFlat(Map<String, String> files, JsonNode source) {
+        var roots = Set.of("SKILL.md", "references/index.md", "references/source.json", "references/conventions.md",
+                "references/operations.jsonl", "references/schemas.jsonl");
+        for (String path : files.keySet()) if (!roots.contains(path)
+                && !path.matches("references/(operations|schemas|refs)/[a-z0-9._-]{1,120}\\.md"))
+            throw invalid("unexpected flat file " + path);
+        String index = files.get("references/index.md");
+        if (index == null || !files.get("SKILL.md").contains("](references/index.md)")) throw invalid("flat interface index is missing");
+        if (!files.containsKey("references/conventions.md")) throw invalid("references/conventions.md is missing");
+        var members = new java.util.ArrayList<JsonNode>();
+        if (source.has("kind")) {
+            if (!source.path("services").isArray() || source.path("services").isEmpty()) throw invalid("aggregate services are missing");
+            source.path("services").forEach(members::add);
+        } else members.add(source);
+        var documents = new java.util.TreeMap<String, JsonNode>();
+        for (JsonNode member : members) {
+            SkillGenerator.identity(member.path("serviceId").asText());
+            if (!member.path("documents").isArray()) throw invalid("document metadata is invalid");
+            for (JsonNode doc : member.path("documents")) {
+                SkillGenerator.identity(doc.path("documentId").asText());
+                if (documents.put(member.path("serviceId").asText() + "/" + doc.path("documentId").asText(), doc) != null)
+                    throw invalid("duplicate document metadata");
+            }
+        }
+        if (source.has("kind")) {
+            var seen = new HashSet<String>();
+            for (JsonNode doc : source.path("documents")) {
+                String key = doc.path("serviceId").asText() + "/" + doc.path("documentId").asText();
+                JsonNode member = documents.get(key);
+                if (member == null || !seen.add(key)) throw invalid("aggregate document provenance mismatch");
+                var fields = member.fields();
+                while (fields.hasNext()) {
+                    var field = fields.next();
+                    if (!field.getValue().equals(doc.path(field.getKey()))) throw invalid("aggregate document provenance mismatch");
+                }
+            }
+            if (!seen.equals(documents.keySet())) throw invalid("aggregate documents do not match services");
+        }
+        int operationCount = documents.values().stream().mapToInt(doc -> doc.path("operations").asInt()).sum();
+        int schemaCount = documents.values().stream().mapToInt(doc -> doc.path("schemas").asInt()).sum();
+        var operations = validateIndex(files, "references/operations.jsonl", "operation:", operationCount);
+        var schemas = validateIndex(files, "references/schemas.jsonl", "schema:", schemaCount);
+        for (String type : java.util.List.of("operations", "schemas")) {
+            var rows = type.equals("operations") ? operations : schemas;
+            var used = new HashSet<String>();
+            for (JsonNode row : rows) {
+                String file = row.path("file").asText();
+                String owner = row.path("serviceId").asText() + "/" + row.path("documentId").asText();
+                if (!documents.containsKey(owner) || !file.startsWith(type + "/") || !used.add(file) || row.has("groupFile"))
+                    throw invalid("flat index owner or file mismatch");
+                if (type.equals("operations")) {
+                    String id = "operation:" + row.path("serviceId").asText() + ":" + row.path("documentId").asText()
+                            + ":" + row.path("method").asText().toLowerCase(Locale.ROOT) + ":" + row.path("path").asText();
+                    if (!row.path("id").asText().equals(id)) throw invalid("flat operation identity mismatch");
+                    if (occurrences(index, "](" + file + ")") != 1) throw invalid("flat index must link every operation exactly once");
+                }
+            }
+            for (var document : documents.entrySet()) {
+                long count = rows.stream().filter(row -> (row.path("serviceId").asText() + "/" + row.path("documentId").asText()).equals(document.getKey())).count();
+                if (count != document.getValue().path(type).asInt()) throw invalid("flat document count mismatch");
+            }
+            if (files.keySet().stream().filter(path -> path.startsWith("references/" + type + "/")).count() != used.size())
+                throw invalid("flat contract files do not match index");
+        }
+        if (index.lines().filter(line -> line.startsWith("- [")).count() != operations.size()) throw invalid("flat index contains extra operation entries");
+        validateClosures(files, operations);
     }
 
     private int occurrences(String content, String target) {

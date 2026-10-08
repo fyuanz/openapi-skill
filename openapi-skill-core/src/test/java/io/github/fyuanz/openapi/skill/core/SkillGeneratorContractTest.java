@@ -99,8 +99,8 @@ class SkillGeneratorContractTest {
 
         Map<String, String> first = generator.generate("service-one", "service-one-api", documents);
 
-        JsonNode leftOperation = contract(first.entrySet().stream().filter(entry -> entry.getKey().contains("/left/operations/")).findFirst().orElseThrow().getValue());
-        JsonNode rightOperation = contract(first.entrySet().stream().filter(entry -> entry.getKey().contains("/right/operations/")).findFirst().orElseThrow().getValue());
+        JsonNode leftOperation = contract(first.entrySet().stream().filter(entry -> entry.getKey().contains("/operations/service-one--left--")).findFirst().orElseThrow().getValue());
+        JsonNode rightOperation = contract(first.entrySet().stream().filter(entry -> entry.getKey().contains("/operations/service-one--right--")).findFirst().orElseThrow().getValue());
         assertEquals("service-one", leftOperation.path("serviceId").asText());
         assertEquals("left", leftOperation.path("documentId").asText());
         assertEquals("basic", leftOperation.at("/securitySchemes/auth/scheme").asText());
@@ -160,7 +160,7 @@ class SkillGeneratorContractTest {
 
     private JsonNode onlyContractForDocument(Map<String, String> files, String document, String directory) {
         return files.entrySet().stream()
-                .filter(entry -> entry.getKey().contains("/" + document + directory))
+                .filter(entry -> entry.getKey().contains(directory) && entry.getKey().contains("--" + document + "--"))
                 .map(Map.Entry::getValue)
                 .map(this::contract)
                 .findFirst()

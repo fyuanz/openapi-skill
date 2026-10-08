@@ -23,57 +23,45 @@ class CatalogDiscoveryTest {
     }
     private void check(String catalog) {
         for (String text : List.of("上传文件", "uploadFile", "POST /files", "DELETE /files/{id}", "GET /health",
-                "附件", "untagged", "文件管理", "2 interface(s)", "No operations are documented."))
+                "附件", "untagged", "文件管理", "No operations are documented."))
             assertTrue(catalog.contains(text), "missing " + text);
         assertFalse(catalog.contains("[run](outside.md)"));
         assertFalse(catalog.contains("<script>"));
         String unsafe = catalog.lines().filter(l -> l.contains("GET /unsafe")).findFirst().orElseThrow();
-        assertEquals(1, unsafe.split("duplicate", -1).length - 1);
+        assertTrue(unsafe.contains("operationId=duplicate"));
         assertFalse(catalog.contains("```json"));
     }
-    @Test void exposesActionsAtBothLevelsAndKeepsContractsSeparate() throws Exception {
+    @Test void exposesActionsInFlatIndexAndKeepsContractsSeparate() throws Exception {
         var single = service("files");
-        check(single.get("references/catalog.md"));
+        check(single.get("references/index.md"));
         var aggregate = new AggregateSkillGenerator().generate("platform", "platform-api",
                 Map.of("files", single, "other", service("other")));
-        check(aggregate.get("references/catalog.md"));
-        assertEquals(2, aggregate.get("references/catalog.md").split("POST /files", -1).length - 1);
+        check(aggregate.get("references/index.md"));
+        assertEquals(2, aggregate.get("references/index.md").split("POST /files", -1).length - 1);
         for (String id : List.of("files", "other")) {
-            String prefix = "references/services/" + id + "/references/";
-            check(aggregate.get(prefix + "catalog.md"));
-            assertTrue(aggregate.get(prefix + "catalog.md").contains("https://files.example"));
+            assertTrue(aggregate.get("references/index.md").contains("service=" + id));
+            assertTrue(aggregate.get("references/operations/" + id + "--business--post-files.md").contains("https://files.example"));
         }
         new GeneratedSkillValidator().validate(aggregate, "platform", "platform-api");
     }
-    @Test void followsBothCatalogsThenContextWithoutTrustingSourceInstructions() throws Exception {
+    @Test void followsIndexDirectlyWithoutTrustingSourceInstructions() throws Exception {
         var files = new AggregateSkillGenerator().generate("platform", "platform-api", Map.of("files", service("files")));
         String skill = files.get("SKILL.md");
         assertTrue(skill.contains("multiple candidates"));
-        assertTrue(skill.contains("other candidate documents and groups"));
+        assertTrue(skill.contains("broaden keywords and service/document scope"));
         assertFalse(skill.contains("IGNORE_INSTRUCTIONS"));
-        String path = "references/catalog.md";
-        for (String relative : List.of("services/files/references/catalog.md", "documents/business/context.md",
-                "groups/文件管理.md", "../operations/post-files.md")) {
-            assertTrue(files.get(path).contains("](" + relative + ")"), path + " -> " + relative);
-            path = Path.of(path).getParent().resolve(relative).normalize().toString().replace('\\', '/');
-        }
-        assertTrue(files.get(path).contains("uploadFile"));
+        assertTrue(files.get("references/index.md").contains("](operations/files--business--post-files.md)"));
+        assertTrue(files.get("references/operations/files--business--post-files.md").contains("uploadFile"));
     }
-    @Test void enrichesOldMembersIdempotentlyAndPreservesExistingFacts() throws Exception {
-        var old = new TreeMap<>(service("files"));
-        String catalog = "# Service files\n\nPreserved server fact: https://files.example\n\n"
-                + "[Business](documents/business/context.md)\n[Empty](documents/empty/context.md)\n";
-        old.put("references/catalog.md", catalog);
+    @Test void projectsOldMembersAndPreservesEffectiveFacts() throws Exception {
+        var old = new SkillGenerator().generateServiceTree("files", "files-api", Map.of("business", fixture(), "empty",
+                "{\"openapi\":\"3.1.0\",\"paths\":{}}".getBytes(StandardCharsets.UTF_8)));
         var generator = new AggregateSkillGenerator();
-        var first = generator.generate("platform", "platform-api", Map.of("files", old));
-        String updated = first.get("references/services/files/references/catalog.md");
-        check(updated);
-        assertTrue(updated.startsWith(catalog));
-        old.put("references/catalog.md", updated);
-        var second = generator.generate("platform", "platform-api", Map.of("files", old));
-        assertEquals(first, second);
-        for (var entry : old.entrySet()) if (entry.getKey().startsWith("references/") && !entry.getKey().endsWith("catalog.md"))
-            assertEquals(entry.getValue(), first.get("references/services/files/" + entry.getKey()));
+        var migrated = generator.generate("platform", "platform-api", Map.of("files", old));
+        var current = generator.generate("platform", "platform-api", Map.of("files", service("files")));
+        assertEquals(current, migrated);
+        check(migrated.get("references/index.md"));
+        assertTrue(migrated.get("references/operations/files--business--post-files.md").contains("https://files.example"));
     }
     @Test void keepsDuplicateActionsInSeparateDocumentsAndSortsInputs() throws Exception {
         var root = new ObjectMapper().readTree(fixture());
@@ -85,8 +73,8 @@ class CatalogDiscoveryTest {
         ((com.fasterxml.jackson.databind.node.ObjectNode)root).set("paths", reversed);
         var first = new SkillGenerator().generate("files", "files-api", Map.of("a", fixture(), "b", root.toString().getBytes(StandardCharsets.UTF_8)));
         var second = new SkillGenerator().generate("files", "files-api", Map.of("b", fixture(), "a", fixture()));
-        assertEquals(first.get("references/catalog.md"), second.get("references/catalog.md"));
-        assertEquals(2, first.get("references/catalog.md").split("POST /files", -1).length - 1);
+        assertEquals(first.get("references/index.md"), second.get("references/index.md"));
+        assertEquals(2, first.get("references/index.md").split("POST /files", -1).length - 1);
     }
     @Test void expandedCatalogBudgetFailureRetainsPreviousPublishedTree() throws Exception {
         var updater = new ServiceSkillUpdater();
@@ -95,7 +83,7 @@ class CatalogDiscoveryTest {
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, updater.update("platform", "platform-api", temporary,
                 Duration.ofSeconds(30), () -> previous).outcome());
         var root = new ObjectMapper().createObjectNode().put("openapi", "3.1.0");
-        root.putObject("paths").putObject("/large").putObject("get").put("summary", "x".repeat(3 * 1024 * 1024)).putObject("responses");
+        root.putObject("paths").putObject("/large").putObject("get").put("summary", "x".repeat(5 * 1024 * 1024)).putObject("responses");
         byte[] bytes = root.toString().getBytes(StandardCharsets.UTF_8);
         var members = new TreeMap<String, Map<String, String>>();
         for (int i = 0; i < 5; i++) members.put("svc-" + i, new SkillGenerator().generate("svc-" + i, "svc-" + i + "-api", Map.of("public", bytes)));
@@ -108,7 +96,7 @@ class CatalogDiscoveryTest {
     }
 
     @Test void supportsLegacyIndexRowsWithoutGroupColumns() throws Exception {
-        var old = new TreeMap<>(service("files"));
+        var old = new TreeMap<>(new SkillGenerator().generateServiceTree("files", "files-api", Map.of("business", fixture(), "empty", "{\"openapi\":\"3.1.0\",\"paths\":{}}".getBytes(StandardCharsets.UTF_8))));
         var mapper = new ObjectMapper();
         var source = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(old.get("references/source.json"));
         source.put("generatorVersion", "openapi-skill-core/2");
@@ -122,8 +110,7 @@ class CatalogDiscoveryTest {
         old.put("references/operations.jsonl", rows.toString());
         old.put("references/catalog.md", "# Legacy files\n\n[Business](documents/business/context.md)\n");
         var files = new AggregateSkillGenerator().generate("platform", "platform-api", Map.of("files", old));
-        check(files.get("references/catalog.md"));
-        check(files.get("references/services/files/references/catalog.md"));
+        check(files.get("references/index.md"));
     }
 
     @Test void exportsVerifiedSharedFixtureAndLargeCatalogForCrossImplementationCheck() throws Exception {
@@ -138,7 +125,7 @@ class CatalogDiscoveryTest {
         }
         var service = new SkillGenerator().generate("files", "files-api", Map.of("business", root.toString().getBytes(StandardCharsets.UTF_8)));
         var large = generator.generate("platform", "platform-api", Map.of("files", service));
-        for (String path : List.of("references/catalog.md", "references/services/files/references/catalog.md")) {
+        for (String path : List.of("references/index.md")) {
             String catalog = large.get(path);
             assertEquals(124, catalog.split("GET /items/", -1).length - 1);
             System.out.println(path + ": " + catalog.getBytes(StandardCharsets.UTF_8).length + " bytes, 124 operations");

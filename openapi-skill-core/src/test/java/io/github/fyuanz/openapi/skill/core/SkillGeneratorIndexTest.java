@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SkillGeneratorIndexTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Test void emitsCore3ContextNavigationCleanPathsAndMachineIndexes() throws Exception {
+    @Test void emitsCore4DirectNavigationCleanPathsAndMachineIndexes() throws Exception {
         String document = """
                 {"openapi":"3.1.0","paths":{
                   "/users/{id}":{"get":{"operationId":"duplicate","summary":"Get user","tags":["users"],"responses":{"200":{"description":"ok","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserView"}}}}}}},
@@ -25,26 +25,23 @@ class SkillGeneratorIndexTest {
         Map<String, String> files = new SkillGenerator().generate("svc", "svc-api",
                 Map.of("public", document.getBytes(StandardCharsets.UTF_8)));
 
-        assertEquals("openapi-skill-core/3",
+        assertEquals("openapi-skill-core/4",
                 mapper.readTree(files.get("references/source.json")).path("generatorVersion").asText());
         assertTrue(files.containsKey("references/operations.jsonl"));
         assertTrue(files.containsKey("references/schemas.jsonl"));
         assertTrue(files.containsKey("references/conventions.md"));
-        assertTrue(files.containsKey("references/documents/public/operations/get-users-by-id.md"));
-        assertTrue(files.containsKey("references/documents/public/operations/post-users.md"));
-        assertTrue(files.containsKey("references/documents/public/schemas/payload.md"));
+        assertTrue(files.containsKey("references/operations/svc--public--get-users-by-id.md"));
+        assertTrue(files.containsKey("references/operations/svc--public--post-users.md"));
+        assertTrue(files.containsKey("references/schemas/svc--public--payload.md"));
         assertEquals(2, files.keySet().stream().filter(path -> path.matches(
-                ".*/schemas/user-view--[0-9a-f]{6}\\.md")).count());
+                ".*/schemas/svc--public--user-view--[0-9a-f]{6}\\.md")).count());
 
-        String context = files.get("references/documents/public/context.md");
-        assertTrue(context.contains("## Interface groups"));
-        assertTrue(context.contains("[users](groups/users.md) — 1 interface(s)"));
-        assertTrue(context.contains("[untagged](groups/untagged.md) — 1 interface(s)"));
-        assertTrue(files.get("references/documents/public/groups/users.md")
-                .contains("[Get user](../operations/get-users-by-id.md) — `GET /users/{id}`"));
+        String index = files.get("references/index.md");
+        assertTrue(index.contains("group=users"));
+        assertTrue(index.contains("group=untagged"));
+        assertTrue(index.contains("](operations/svc--public--get-users-by-id.md)"));
         assertFalse(files.get("SKILL.md").contains("operations.jsonl"));
-        assertFalse(files.get("SKILL.md").contains("schemas.jsonl"));
-        assertTrue(files.get("SKILL.md").contains("context.md"));
+        assertTrue(files.get("SKILL.md").contains("references/index.md"));
 
         List<JsonNode> operations = jsonLines(files.get("references/operations.jsonl"));
         assertEquals(2, operations.size());
@@ -72,7 +69,7 @@ class SkillGeneratorIndexTest {
         Map<String, String> files = new SkillGenerator().generate("svc", "svc-api",
                 Map.of("public", document.getBytes(StandardCharsets.UTF_8)));
 
-        String catalog = files.get("references/catalog.md");
+        String catalog = files.get("references/index.md");
         assertTrue(catalog.contains("GET /open"));
         assertFalse(catalog.contains("```json"));
         assertFalse(catalog.contains("Payload"));
@@ -112,17 +109,17 @@ class SkillGeneratorIndexTest {
 
         var drifting = new TreeMap<>(valid);
         drifting.put("references/operations.jsonl",
-                drifting.get("references/operations.jsonl").replace("documents/public/operations/", "documents/public/missing/"));
+                drifting.get("references/operations.jsonl").replace("operations/", "missing/"));
         assertThrows(IllegalArgumentException.class,
                 () -> new GeneratedSkillValidator().validate(drifting, "svc", "svc-api"));
 
         var missingContext = new TreeMap<>(valid);
-        missingContext.remove("references/documents/public/context.md");
+        missingContext.remove("references/index.md");
         assertThrows(IllegalArgumentException.class,
                 () -> new GeneratedSkillValidator().validate(missingContext, "svc", "svc-api"));
 
         var missingClosure = new TreeMap<>(valid);
-        String operation = "references/documents/public/operations/get-x.md";
+        String operation = "references/operations/svc--public--get-x.md";
         missingClosure.put(operation, missingClosure.get(operation).replace("## Complete referenced contracts", "## References"));
         assertThrows(IllegalArgumentException.class,
                 () -> new GeneratedSkillValidator().validate(missingClosure, "svc", "svc-api"));
@@ -149,28 +146,13 @@ class SkillGeneratorIndexTest {
         Map<String, String> files = new SkillGenerator().generate("uav-hub", "uav-hub-api",
                 Map.of("uav", document.getBytes(StandardCharsets.UTF_8)));
 
+        String index = files.get("references/index.md");
         for (String tag : List.of("航线任务", "设备管理", "Terra重建管理", "untagged"))
-            assertTrue(files.containsKey("references/documents/uav/groups/" + tag + ".md"),
-                    "missing group file for " + tag);
-        assertTrue(files.containsKey(
-                "references/documents/uav/operations/delete-drone-terra-reconstruction-model-file-by-file-id.md"));
-
-        String devices = files.get("references/documents/uav/groups/设备管理.md");
-        assertTrue(devices.contains("设备列表、状态查询; 设备同步、列表查询、行政区挂载"));
-        assertTrue(devices.contains("1 interface(s)."));
-        assertTrue(devices.contains("[分页查询设备列表](../operations/get-drone-device-list.md) — `GET /drone/device/list`"));
-        assertFalse(devices.contains("Source operationId"));
-        assertFalse(devices.contains("Tags:"));
-
-        String context = files.get("references/documents/uav/context.md");
-        assertTrue(context.contains("[航线任务](groups/航线任务.md) — 1 interface(s)"));
-        assertFalse(context.contains("```json"));
-        assertFalse(context.contains("192.168.1.52"));
-
-        String catalog = files.get("references/catalog.md");
-        assertTrue(catalog.contains("192.168.1.52:8071"));
-        assertTrue(catalog.contains("Authorization (http bearer JWT)"));
-        assertTrue(catalog.contains("ClientId (apiKey clientid in header)"));
+            assertTrue(index.contains("group=" + tag));
+        assertFalse(files.keySet().stream().anyMatch(path -> path.contains("/groups/") || path.endsWith("context.md")));
+        assertTrue(files.containsKey("references/operations/uav-hub--uav--delete-drone-terra-reconstruction-model-file-by-file-id.md"));
+        String operation = files.get("references/operations/uav-hub--uav--get-drone-device-list.md");
+        for (String fact : List.of("192.168.1.52:8071", "Authorization", "ClientId", "bearer")) assertTrue(operation.contains(fact));
 
         assertEquals("AI-识别.md", SemanticNames.tagFiles(Map.of("a", "AI 识别")).get("a"));
         assertEquals("untagged.md", SemanticNames.tagFiles(Map.of("a", "   ")).get("a"));

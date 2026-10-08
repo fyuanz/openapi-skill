@@ -24,8 +24,8 @@ class ServiceSkillUpdaterTest {
         Path output = temporary.resolve("skills");
         Files.createDirectories(output);
         Files.writeString(output.resolve("manual.txt"), "keep me");
-        Map<String, String> first = with(skill("orders", "orders-api", "old"),
-                "references/obsolete.md", "old file");
+        Map<String, String> first = new SkillGenerator().generateServiceTree("orders", "orders-api",
+                Map.of("public", document("/old", "old", "old file")));
 
         var initial = updater.update("orders", "orders-api", output, Duration.ofSeconds(2), () -> first);
         var replacement = updater.update("orders", "orders-api", output, Duration.ofSeconds(2),
@@ -33,7 +33,7 @@ class ServiceSkillUpdaterTest {
 
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, initial.outcome());
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, replacement.outcome());
-        assertFalse(Files.exists(output.resolve("orders-api/references/obsolete.md")));
+        assertFalse(Files.exists(output.resolve("orders-api/references/documents/public/operations/get-old.md")));
         assertEquals("keep me", Files.readString(output.resolve("manual.txt")));
         assertTrue(Files.readString(operation(output.resolve("orders-api"))).contains("new"));
         assertEquals("SUCCESS", mapper.readTree(Files.readString(replacement.statusFile())).path("outcome").asText());
@@ -42,9 +42,10 @@ class ServiceSkillUpdaterTest {
     }
 
     @Test
-    void replacesAnOwnedCore1TreeWithCore3Atomically() throws Exception {
+    void replacesAnOwnedCore1TreeWithCore4Atomically() throws Exception {
         Path output = temporary.resolve("skills");
-        var core1 = new TreeMap<>(skill("orders", "orders-api", "old"));
+        var core1 = new TreeMap<>(new SkillGenerator().generateServiceTree("orders", "orders-api",
+                Map.of("public", document("/old", "old", "old"))));
         core1.put("references/source.json", core1.get("references/source.json")
                 .replace("openapi-skill-core/3", "openapi-skill-core/1"));
 
@@ -54,7 +55,7 @@ class ServiceSkillUpdaterTest {
                 () -> skill("orders", "orders-api", "new"));
 
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, result.outcome(), result.message());
-        assertEquals("openapi-skill-core/3", mapper.readTree(Files.readString(
+        assertEquals("openapi-skill-core/4", mapper.readTree(Files.readString(
                 output.resolve("orders-api/references/source.json"))).path("generatorVersion").asText());
         assertTrue(Files.readString(operation(output.resolve("orders-api"))).contains("new"));
     }
@@ -111,7 +112,7 @@ class ServiceSkillUpdaterTest {
         for (Map<String, String> invalid : List.of(
                 Map.of("SKILL.md", "---\nname: orders-api\n---\n"),
                 with(skill("orders", "orders-api", "new"), "../escape.txt", "escape"),
-                with(skill("orders", "orders-api", "new"), "References/catalog.md", "collision"),
+                with(skill("orders", "orders-api", "new"), "References/index.md", "collision"),
                 with(skill("orders", "orders-api", "new"), "references/broken.md", "[missing](absent.md)")
         )) {
             var result = updater.update("orders", "orders-api", output, Duration.ofSeconds(2), () -> invalid);
@@ -133,7 +134,7 @@ class ServiceSkillUpdaterTest {
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS,
                 updater.update("orders", "orders-api", output, Duration.ofSeconds(2),
                         () -> new SkillGenerator().generate("orders", "orders-api", initialDocuments)).outcome());
-        assertTrue(Files.isDirectory(output.resolve("orders-api/references/documents/business")));
+        assertTrue(Files.isRegularFile(output.resolve("orders-api/references/operations/orders--business--get-orders.md")));
         assertTrue(tree(output.resolve("orders-api")).values().stream().anyMatch(value -> value.contains("/users")));
 
         var result = updater.update("orders", "orders-api", output, Duration.ofSeconds(2),
@@ -141,9 +142,10 @@ class ServiceSkillUpdaterTest {
 
         Map<String, String> after = tree(output.resolve("orders-api"));
         assertEquals(ServiceSkillUpdater.Outcome.SUCCESS, result.outcome());
-        assertFalse(Files.exists(output.resolve("orders-api/references/documents/business")));
+        assertFalse(Files.exists(output.resolve("orders-api/references/operations/orders--business--get-orders.md")));
         assertTrue(after.values().stream().anyMatch(value -> value.contains("/profiles")));
-        assertFalse(after.values().stream().anyMatch(value -> value.contains("/users") || value.contains("/orders")));
+        for (String row : after.get("references/operations.jsonl").split("\n"))
+            assertEquals("/profiles", mapper.readTree(row).path("path").asText());
     }
 
     @Test
@@ -218,7 +220,7 @@ class ServiceSkillUpdaterTest {
     }
 
     static Path operation(Path skill) throws Exception {
-        try (var paths = Files.walk(skill.resolve("references/documents"))) {
+        try (var paths = Files.walk(skill.resolve("references/operations"))) {
             return paths.filter(path -> path.toString().contains("operations"))
                     .filter(Files::isRegularFile).findFirst().orElseThrow();
         }
