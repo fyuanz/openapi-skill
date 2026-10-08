@@ -1,5 +1,5 @@
 import { constants } from 'node:fs';
-import { access, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, rename, rm, rmdir, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { identity } from './generator.js';
@@ -28,10 +28,29 @@ export async function publishSkill(outputParent: string, serviceId: string, skil
     validateFiles(await readTree(staging), serviceId, skillName);
     if (previous) { await mkdir(dirname(backup), { recursive: true }); await rename(skill, backup); }
     try { await mkdir(output, { recursive: true }); await rename(staging, skill); }
-    catch (error) { if (previous && await exists(backup)) await rename(backup, skill); throw error; }
+    catch (error) {
+      if (previous && await exists(backup)) {
+        try { await rename(backup, skill); }
+        catch (recoveryError) {
+          throw new Error(`OUTPUT: publication and recovery failed; previous Skill retained at ${backup}`, {
+            cause: new AggregateError([error, recoveryError], 'publication and recovery failed')
+          });
+        }
+      }
+      throw error;
+    }
     if (await exists(backup)) await rm(backup, { recursive: true });
     return skill;
-  } finally { if (await exists(staging)) await rm(staging, { recursive: true }); }
+  } finally {
+    try { if (await exists(staging)) await rm(staging, { recursive: true }); }
+    finally {
+      // Never recursively remove shared state: other attempts or recovery backups may still need it.
+      for (const directory of [dirname(staging), dirname(backup), state]) {
+        try { await rmdir(directory); }
+        catch { /* Best effort only: non-empty, busy or inaccessible state must remain intact. */ }
+      }
+    }
+  }
 }
 
 function validateFiles(files: ReadonlyMap<string, string>, ownerId: string, skillName: string): 'service' | 'project' {

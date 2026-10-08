@@ -99,6 +99,8 @@ Configuration remains compatible. Install 2.2.0 and regenerate: successful publi
 
 ## Run and atomic updates
 
+`skill:generate` uses `.openapi-skill/` only for staging and backups during publication. Normal completion removes empty working directories, including those left by older versions, leaving only the configured Skill such as `api-docs/`. Failure cleanup also attempts to remove empty directories, but never deletes non-empty backups, other attempts, or Java state. If rollback fails, the error reports the retained backup path: recover it before deleting anything. Permission or busy-directory errors may leave empty directories without affecting the published Skill.
+
 Add an npm script and run it after every configured API service is available:
 
 ```json

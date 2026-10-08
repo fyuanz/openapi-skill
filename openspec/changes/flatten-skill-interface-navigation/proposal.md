@@ -9,6 +9,7 @@
 - **BREAKING**：单服务、Node 项目和 Java 聚合统一生成扁平布局 v4：`references/index.md`、共享 conventions/source、operations/schemas/refs 类型目录。
 - 总索引每个接口一行，直接链接契约，保留服务、文档、method/path、summary、operationId、tags、配置 keywords。
 - 删除生成结果中的逐级 catalog/context/group 导航；契约保留生效参数、servers/security、完整引用集合。
+- 后续补充：Node `skill:generate` 完成后清理空的 `.openapi-skill` 工作目录，保留非空恢复数据；不改变 Java 状态目录。
 - 保留机器 JSONL 索引用于验证及聚合，更新其中的路径；兼容旧树替换和 Java 旧服务输入。
 - 同步 Node/Java 测试及使用说明，按用户要求准备 Node 2.2.0，说明布局路径变化；只推送源码，不执行 npm 发布。
 

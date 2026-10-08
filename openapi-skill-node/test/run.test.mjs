@@ -44,6 +44,7 @@ test('generates once and publishes the same complete Skill to multiple outputs',
   assert.equal(result.skillDirectory, expected[0]);
   assert.equal(result.fileCount, (await readTree(expected[0])).size);
   assert.deepEqual(await readTree(expected[0]), await readTree(expected[1]));
+  for (const output of outputs) assert.deepEqual(await readdir(output), ['api-docs']);
 });
 
 test('continues after a middle output fails and reports partial publication without rollback', async () => {

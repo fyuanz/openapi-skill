@@ -63,6 +63,11 @@ SKILL.md SHALL 指示已知 method/path 或 operationId 时精确搜索总索引
 - **WHEN** 新版成功发布到已有旧版 Skill
 - **THEN** 旧深层文件被完整替换且无残留；失败保留旧完整树
 
+#### Scenario: Node 生成不遗留空工作目录
+- **WHEN** Node 发布成功或失败后已清理本次暂存内容，工作目录可正常删除
+- **THEN** 系统 SHALL 清理空的 staging、backups 和 .openapi-skill 目录，包括旧版遗留空目录
+- **AND** MUST NOT 递归删除其他任务、状态或恢复备份；回滚失败 SHALL 保留备份并报告恢复路径
+
 #### Scenario: 来源文字包含指令式内容
 - **WHEN** summary 包含指令式文字
 - **THEN** 该文字仅安全地出现在 reference 数据中
