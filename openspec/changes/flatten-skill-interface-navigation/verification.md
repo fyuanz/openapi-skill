@@ -16,3 +16,5 @@
 ## 交付边界
 
 Node 包版本为 2.2.0，不升至 3.0.0。Java Maven 坐标保持不变。本次只提交和推送源码，不执行 npm 或 Maven 发布。使用新版本需重新生成并完整替换旧 Skill；依赖旧物理路径的外部消费者需更新路径。
+
+实现提交 `c59e6ba` 已普通推送至 `origin/main`（GitHub：fyuanz/openapi-skill）。OpenSpec 任务全部完成，本变更保留待归档。

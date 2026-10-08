@@ -14,4 +14,4 @@
 
 - [x] 3.1 更新双语文档和项目事实，Node 版本设为 2.2.0，验证包元数据。
 - [x] 3.2 运行 npm test、Maven reactor 测试、npm pack --dry-run 及 OpenSpec 校验，记录结果。
-- [ ] 3.3 审查 diff，提交任务相关变更并普通 push，报告提交和远端状态；不发布 npm。
+- [x] 3.3 审查 diff，提交任务相关变更并普通 push，报告提交和远端状态；不发布 npm。
