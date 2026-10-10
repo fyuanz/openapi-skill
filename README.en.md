@@ -2,152 +2,145 @@
 
 [简体中文](README.md) | **English**
 
-Turn the current OpenAPI contract of a running Spring Boot service into a downloadable Skill ZIP. After startup, one
-read-only endpoint returns the complete catalog, request/response contracts, and Schema references. OpenAPI Skill no longer
-needs Maven phases, a second application process, HTTP capture of `/v3/api-docs`, or build-directory intermediates.
+Turn OpenAPI documents into API documentation Skills for AI coding agents. Help agents look up actual parameters, requests, responses, and schemas while writing API clients and integrating services. Generate a Skill in your project with the Node.js CLI, or download a Skill ZIP from a running service with the Spring Boot Starter.
 
-## Features and scope
+## Features
 
-- **Runtime download**: adding the starter exposes `GET /openapi-skill/skill.zip`, generated from the current instance on demand.
-- **Automatic discovery**: reuses SpringDoc's final resources and enumerates `GroupedOpenApi` without duplicate OpenAPI URL configuration.
-- **Configurable output**: runtime defaults to one Skill per application; the Node CLI can aggregate explicitly configured services into one project Skill.
-- **Contract preservation**: parameters, request bodies, responses, media types, authentication definitions, and Schema data, with semantic operation IDs, machine indexes, and local-reference navigation.
-- **No filesystem side effects**: validates a complete result and creates a deterministic ZIP in memory; unchanged contracts produce identical bytes.
-- **Local conversion**: the core does not call LLMs, business APIs, or external reference URLs. Source free text stays separate from trusted Skill instructions.
-- **Explicit input**: JSON declaring `openapi: 3.0.x` or `3.1.x` is accepted; any other root marker is rejected. Production documents come from SpringDoc / NextDoc4j; those producers own Java package scanning and document export.
+- **Documentation for agents**: search an operation index, then read contracts and related schemas as needed.
+- **Preserved API details**: parameters, request bodies, responses, media types, security requirements, and examples retain their service and document ownership.
+- **Multiple services**: the Node CLI combines microservices and third-party APIs into one project Skill.
+- **Runtime export**: the Spring Boot Starter discovers SpringDoc documents and groups and serves a downloadable ZIP.
+- **Local conversion**: conversion requires no LLM and does not call business APIs or external reference URLs.
 
-YAML, Swagger 2.0, other OpenAPI versions, external references, full OpenAPI validation, automatic cross-project
-installation/synchronization, WebFlux, cross-service runtime aggregation, and package repositories are outside
-the current scope. Runtime evidence comes from the SpringDoc WebMVC testbed.
+## Contents
 
-## Generate a Skill in Vue 3 / Node.js projects
+- [Choose an integration](#choose-an-integration)
+- [Quick start: Node.js](#quick-start-nodejs)
+- [Quick start: Spring Boot](#quick-start-spring-boot)
+- [Use with your agent](#use-with-your-agent)
+- [Supported scope](#supported-scope)
+- [Troubleshooting](#troubleshooting)
+- [Documentation and repository](#documentation-and-repository)
+- [Local development and verification](#local-development-and-verification)
+- [License](#license)
 
-The TypeScript source is the pending `openapi-skill@2.2.0` release. Single-service and project Skills use a flat layout: search one interface index, open the matching operation directly, then read schemas as needed. Every operation retains service/document ownership, complete contracts and computed reference closures. The default output is `.agents/skills/api-docs/`.
+## Choose an integration
+
+| Your goal | Integration | Requirements |
+| --- | --- | --- |
+| Generate a Skill from OpenAPI URLs or local files in a frontend or other project | **Node CLI** | Node.js 20+ |
+| Combine services or distribute documentation to multiple agents | **Node CLI** | Node.js 20+ |
+| Download a Skill ZIP from a running Spring Boot service | **Spring Boot Starter** | JDK 17+, Spring Boot WebMVC, SpringDoc |
+| Integrate conversion into your own Java tools | **Java Core** | JDK 17+ |
+
+The two generation options work independently. The Node CLI does not require the backend to install the Starter; the Starter does not require Node.js.
+
+## Quick start: Node.js
+
+### 1. Install
+
+Run in the project where you want to use the documentation:
+
+```shell
+npm install --save-dev openapi-skill
+```
+
+### 2. Configure sources
+
+Create `openapi-skill.config.json` in your project root:
 
 ```json
 {
-  "keywords": ["API documentation", "frontend integration"],
   "services": [
     {
-      "serviceId": "account-service",
-      "sourceType": "internal",
-      "keywords": ["users", "accounts"],
+      "serviceId": "my-service",
       "documents": [
-        {
-          "id": "account",
-          "url": "http://127.0.0.1:18080/v3/api-docs/account",
-          "keywords": ["login", "profiles"]
-        }
-      ]
-    },
-    {
-      "serviceId": "logistics-provider",
-      "sourceType": "third-party",
-      "keywords": ["logistics", "shipping"],
-      "documents": [
-        {
-          "id": "shipping",
-          "url": "https://api.example.com/openapi.json",
-          "keywords": ["waybills", "tracking"]
-        }
+        { "id": "public", "url": "./openapi.json" }
       ]
     }
   ]
 }
 ```
 
-Root, service, and document `keywords` respectively support Skill discovery, service selection, and document lookup.
-`sourceType` is `internal` by default and also accepts `third-party`. Every service reference is physically included and
-reached through relative Markdown links; no filesystem symbolic link or separately installed service Skill is needed.
+Replace `./openapi.json` with your OpenAPI JSON file path, or use an HTTP(S) URL such as `http://localhost:8080/v3/api-docs`. Relative paths resolve from the directory where you run the command.
 
-OpenAPI Skill downloads and validates every configured service and document before replacing the complete directory once.
-Any failure retains the previous complete Skill instead of publishing a subset. The original
-`serviceId + skillName + documents` single-service configuration remains supported. Install the package as a development
-dependency and see the [Node package guide](openapi-skill-node/README.en.md) for scripts, overrides, and migration details.
+### 3. Generate
 
-## Release and requirements
+```shell
+npx openapi-skill
+```
 
-The first release under the new name is `1.0.0`, and both the npm package and the Maven Central artifacts have been
-published manually. The published `2.0.0` moved the generated layout from the `openapi-skill-core/1` and
-`openapi-skill-core/2` trees to `openapi-skill-core/3`, on npm and Maven Central both. The Maven source line is now
-`2.1.1-SNAPSHOT`, accepting OpenAPI 3.0.x / 3.1.x and generating the same flat core/4 layout as Node. Historical releases remain unchanged.
-SpringDoc applications should use the runtime Starter.
+The default output is `.agents/skills/api-docs/`. Rerun after your API documentation changes.
 
-| Artifact | Purpose |
-| --- | --- |
-| `io.github.fyuanz:openapi-skill:2.0.0` | Parent POM |
-| `io.github.fyuanz:openapi-skill-core:2.0.0` | Offline conversion and safe output publication |
-| `io.github.fyuanz:openapi-skill-spring-boot-starter:2.0.0` | Runtime discovery and ZIP download |
+Add entries to `services` for additional services. To distribute the Skill to multiple agents, set this field at the configuration root:
 
-Use JDK 17 and Maven. The verified environment is Maven 3.9.16 / JDK 17.0.19. Repository integration scripts require PowerShell. The sample uses Spring Boot 3.5.9 and springdoc 2.8.15.
+```json
+{
+  "output": [".codex/skills", ".trae/skills"]
+}
+```
 
-## Quick start
+This is a field fragment to add to your complete configuration. Each output parent receives the same `api-docs/` directory.
 
-Clone the repository and run from its root:
+See the [Node guide](openapi-skill-node/README.en.md) for full configuration, npm scripts, error handling, and the library API.
+
+## Quick start: Spring Boot
+
+The Starter adds `GET /openapi-skill/skill.zip` to a WebMVC application with SpringDoc. It discovers document groups automatically and uses the default document when there are no groups.
+
+This example uses the repository's **`2.1.1-SNAPSHOT` source version**, which you must first install into your local Maven repository. These are not installation instructions for a Maven Central release. The repository test application uses Spring Boot 3.5.9 and SpringDoc 2.8.15.
+
+### 1. Install the current source
 
 ```shell
 git clone https://github.com/fyuanz/openapi-skill.git
 cd openapi-skill
 mvn -B install
-mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-The first command installs the current source artifacts locally. The second runs ordinary tests and packaging with no OpenAPI Skill application
-start/stop, OpenAPI capture, or generated files. Tests verify the runtime ZIP on a random port.
+### 2. Add the dependency
 
-For a manual check, start the application:
-
-```shell
-mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
-```
-
-Then download `http://127.0.0.1:18080/openapi-skill/skill.zip`. It contains the account/business groups, 4 operations,
-and 7 document-local Schemas.
-
-## Recommended: add the runtime starter
-
-For a Spring Boot WebMVC service whose SpringDoc output is OpenAPI 3.0.x or 3.1.x, add one dependency:
+In an application already configured with SpringDoc WebMVC, add:
 
 ```xml
 <dependency>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>openapi-skill-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>2.1.1-SNAPSHOT</version>
 </dependency>
 ```
 
-No OpenAPI Skill Maven plugin, execution, phase, OpenAPI URL, document directory, or output directory is required. The
-project no longer ships a build-time Maven compatibility plugin. Once the
-application is running, `GET /openapi-skill/skill.zip` downloads the Skill. The starter:
+### 3. Start and download
 
-- enumerates the `GroupedOpenApi` beans used by Swagger UI, or uses the default document when there are no groups;
-- calls `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` in process to obtain the post-controller-scan JSON;
-- converts and validates those current documents, then creates a deterministic ZIP with a `<skillName>/` root;
-- derives serviceId from `spring.application.name` and defaults the Skill name to `<serviceId>-api`.
+Start your application and open its `/openapi-skill/skill.zip` path.
 
-Injecting an application's base `OpenAPI` bean is not equivalent to the complete document: it commonly contains the
-manually defined Info, Components, and Servers, while SpringDoc's resource scans and assembles `paths` at runtime.
-`GroupedOpenApi` is likewise configuration, not the final group document. The starter therefore uses the final resources
-without issuing an HTTP self-request.
+Alternatively, run the repository's sample service:
 
-All overrides are optional:
-
-```properties
-openapi.skill.runtime.enabled=true
-openapi.skill.runtime.path=/openapi-skill/skill.zip
-openapi.skill.runtime.service-id=my-service
-openapi.skill.runtime.skill-name=my-service-api
+```shell
+mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 ```
 
-The endpoint follows the application's existing Spring Security rules; explicitly protect it when the API contract is
-sensitive. See the [starter guide](openapi-skill-spring-boot-starter/README.md).
+Once it starts, open the [sample Skill download](http://127.0.0.1:18080/openapi-skill/skill.zip) in your browser.
 
-## Use the Skill in a frontend project
+### Optional configuration
 
-Download the ZIP and extract its **entire Skill directory** into the frontend project's `.agents/skills/`, preserving every reference file:
+| Property | Default or behavior |
+| --- | --- |
+| `openapi.skill.runtime.enabled` | `true` |
+| `openapi.skill.runtime.path` | `/openapi-skill/skill.zip` |
+| `openapi.skill.runtime.service-id` | Derived from `spring.application.name` |
+| `openapi.skill.runtime.skill-name` | `<serviceId>-api` |
+
+Each download generates and validates a complete ZIP from the current running instance, packaging files in memory. The endpoint follows the application's Spring Security rules; configure access according to your documentation permissions.
+
+## Use with your agent
+
+The Node CLI writes directly to the output directory. With the Starter, extract the **entire Skill directory** from the ZIP into the consuming project's `.agents/skills/` or your agent's Skill directory. Keep all reference files.
+
+The current source generates this structure:
 
 ```text
-api-docs/
+<skillName>/
 |-- SKILL.md
 +-- references/
     |-- index.md
@@ -155,66 +148,96 @@ api-docs/
     |-- source.json
     |-- operations.jsonl
     |-- schemas.jsonl
-    |-- operations/<service>--<document>--<operation>.md
-    |-- schemas/<service>--<document>--<schema>.md
-    +-- refs/<service>--<document>--<reference>.md
+    |-- operations/
+    |-- schemas/
+    +-- refs/
 ```
 
-This is the current source's core/4 layout. Each index record includes summary, operationId, HTTP method/path, service, document, tags and keywords, with a direct contract link. Regenerate and replace the complete Skill when upgrading; external catalog/context/group path consumers must migrate. npm 2.2.0 will be published manually; existing Maven releases do not change with the source.
+| Content | Purpose |
+| --- | --- |
+| `SKILL.md` | Skill entry point and reading instructions |
+| `references/index.md` | Find operations and open their contracts directly |
+| `operations/` | Parameters, requests, responses, and related operation details |
+| `schemas/`, `refs/` | Schemas and referenced contracts for on-demand reading |
+| Other metadata and indexes | Source records, conventions, and tool processing |
 
-Try this task in the frontend project and verify that your agent actually discovers and uses the Skill:
+Once your agent has loaded the Skill, try:
 
 ```text
-Use the my-service-api Skill to find the create-order endpoint, explain its required fields,
-and generate calling code using this project's existing request wrapper. Identify the service
-and document group. Do not guess missing contract details.
+Use the api-docs Skill to find the create-order endpoint, explain its required fields,
+and generate calling code using this project's existing request wrapper.
+Identify the service and document group. Do not guess missing contract details.
 ```
 
-For the repository sample, use `springdoc-multi-package-api` instead. It describes a fictional test service; its server address and authentication metadata do not represent a production environment.
+Replace `api-docs` with your Skill name. The Starter defaults to `<serviceId>-api`; the repository sample uses `springdoc-multi-package-api`.
 
-After an API change, download again and replace the complete old Skill so deleted operations do not remain. The runtime endpoint does not write `target/` and does not automatically synchronize frontend copies.
+After API changes, regenerate or download again and replace the entire old Skill. The Starter does not automatically synchronize copies downloaded into other projects.
 
-## Runtime troubleshooting
+## Supported scope
 
-| Observation | What to check |
+These capabilities describe the current source. Published versions may support different inputs or generate a different layout.
+
+| Item | Scope |
 | --- | --- |
-| Download endpoint returns 404 | Ensure the starter is on the runtime classpath and `openapi.skill.runtime.enabled` is not `false` |
-| Download endpoint returns 500 | Check that SpringDoc is enabled, the final JSON is OpenAPI 3.0.x or 3.1.x, and local `$ref` targets are complete |
-| Unexpected ZIP name | Set `spring.application.name`, or override `openapi.skill.runtime.service-id` / `skill-name` |
-| 401/403 with Spring Security | Authorize the download path according to project policy; do not expose restricted API contracts just for download |
+| Input format | OpenAPI 3.0.x / 3.1.x JSON |
+| Node sources | HTTP(S) URLs or regular local files |
+| Starter sources | Final SpringDoc WebMVC document resources in the current application |
+| `$ref` | In-document references; no external files, remote or cross-document references |
+| Multiple services | Explicit Node configuration; each Starter application exports independently |
+| Not supported | YAML, Swagger 2.0, WebFlux, full OpenAPI specification validation |
 
-Runtime generation has no stale-file fallback: a successful request returns one fully validated ZIP, while a failed request
-returns an application error and no partial archive.
+Services and documents remain separate: OpenAPI objects are not merged, and gateway prefixes are not inferred. See the [Node input and output limits](openapi-skill-node/README.en.md#supported-inputs-and-limits) for size, document count, and output directory limits.
 
-## Development and verification
+## Troubleshooting
 
-Run from the repository root:
+| Problem | What to check |
+| --- | --- |
+| Node cannot find configuration or local files | Working directory, configuration location, and relative document paths |
+| Node download or validation fails | Inspect the reported source; use `npx openapi-skill --debug` for more detail |
+| Starter endpoint returns 404 | Runtime dependency and whether `openapi.skill.runtime.enabled` is disabled |
+| Starter endpoint returns 500 | SpringDoc availability, document version, and complete `$ref` targets |
+| Download returns 401/403 | Application authorization for the download path |
+| Agent cannot find the Skill | Agent Skill directory and whether `SKILL.md` and all references are present |
+
+Node preserves existing Skills when reading, validation, or generation fails. Multiple outputs update independently; check CLI diagnostics for each result. A failed Starter request returns an error instead of an incomplete ZIP.
+
+## Documentation and repository
+
+| Path | Contents |
+| --- | --- |
+| [Node guide](openapi-skill-node/README.en.md) | CLI, configuration, library API, and upgrades |
+| [Java Core](openapi-skill-core/) | OpenAPI input validation and Skill conversion |
+| [Spring Boot Starter](openapi-skill-spring-boot-starter/) | SpringDoc integration and runtime ZIP download |
+| [SpringDoc sample](testbeds/springdoc-multi-package/) | Runnable multi-group application and integration tests |
+| [Vue / TypeScript sample (Chinese)](testbeds/vue-ts-consumer/README.md) | Frontend integration example |
+| [Design (Chinese)](docs/openapi-skill-design.md) | Architecture and generation flow |
+| [Publishing guide (Chinese)](docs/maven-central.md) | Maven Central setup and maintainer publishing workflow |
+
+## Local development and verification
+
+Run from the repository root. Java requires JDK 17 and Maven; Node requires Node.js 20+.
+
+**Node build and tests:**
 
 ```shell
-mvn -B clean test
+npm ci --prefix openapi-skill-node
+npm test --prefix openapi-skill-node
+```
+
+**Java build, tests, and local installation:**
+
+```shell
+mvn -B clean install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml test
 ```
 
-Runtime integration verification is separate from root unit tests:
+**Additional runtime integration verification (requires PowerShell):**
 
 ```powershell
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 ```
 
-The SpringDoc script proves that an ordinary build performs no application start/stop, HTTP capture, or OpenAPI Skill Maven
-goal, then downloads and checks the ZIP on a real random port.
-
-`1.0.0` adds single-document/multi-group runtime starter tests and six testbed checks. See
-
-## Repository and documentation
-
-| Path | Contents |
-| --- | --- |
-| [openapi-skill-core](openapi-skill-core/) | Input validation, contract conversion, safe publication |
-| [openapi-skill-spring-boot-starter](openapi-skill-spring-boot-starter/) | Runtime SpringDoc discovery, conversion, and ZIP download |
-| [SpringDoc testbed](testbeds/springdoc-multi-package/) | Multi-package, multi-group sample and runtime verification |
-| [Design (Chinese)](docs/openapi-skill-design.md) | Runtime and Node project-Skill primary paths |
-| [Release and usage (Chinese)](docs/maven-central.md) | Maven Central setup and maintainer publishing workflow |
+Integration verification checks the runtime ZIP download and its contents. See the [SpringDoc sample guide (Chinese)](testbeds/springdoc-multi-package/README.md) for details.
 
 ## License
 

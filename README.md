@@ -2,156 +2,145 @@
 
 **简体中文** | [English](README.en.md)
 
-将运行中 Spring Boot 服务的 OpenAPI 文档转换为前端开发可使用的 Skill ZIP。服务启动后访问一个只读接口，
-即可下载包含接口目录、请求响应契约和 Schema 引用的完整 Skill；不再为 OpenAPI Skill 修改 Maven phase、启动第二个
-应用进程、通过 HTTP 抓取 `/v3/api-docs`，也不在构建目录生成中间文件。
+将 OpenAPI 文档转换为 AI 编程助手可读取的 API 文档 Skill，帮助 Agent 在编写调用代码、联调接口和理解业务 API 时，查阅真实的参数、请求、响应及 Schema。支持通过 Node.js CLI 在项目中生成文档，也支持通过 Spring Boot Starter 下载运行中服务的 Skill ZIP。
 
-## 功能与边界
+## 主要功能
 
-- **纯运行时下载**：加入 Starter 后自动提供 `GET /openapi-skill/skill.zip`，每次请求基于当前运行实例生成。
-- **自动发现**：直接复用 SpringDoc 最终文档资源；自动枚举 `GroupedOpenApi`，无需重复配置 OpenAPI URL。
-- **可配置输出**：运行时默认一应用一 Skill；Node CLI 可将显式配置的多个服务汇总为一个项目 Skill。
-- **保留契约**：保留参数、请求体、响应、媒体类型、认证定义和 Schema 数据，提供语义化接口 ID、机器索引和本地引用导航。
-- **无磁盘副作用**：生成结果先完整校验，再确定性地内存打包；相同契约得到相同 ZIP 字节。
-- **本地转换**：核心不调用 LLM、业务接口或外部引用地址；源文档自由文本与可信 Skill 指令分离。
-- **明确输入**：接受 `openapi: 3.0.x` 与 `3.1.x` 的 JSON（根标记写成其他版本一律拒绝）；生产文档来源限定为 SpringDoc / NextDoc4j。Java 包扫描和文档导出由文档生产工具负责。
+- **面向 Agent 的接口文档**：提供可搜索的接口索引，按需读取接口契约及相关 Schema。
+- **保留接口信息**：包含参数、请求体、响应、媒体类型、认证要求和示例，并标明服务与文档归属。
+- **多服务汇总**：Node CLI 可将多个微服务和第三方 API 汇总为一份项目 Skill。
+- **运行时导出**：Spring Boot Starter 自动发现 SpringDoc 文档与分组，通过 HTTP 接口提供 ZIP 下载。
+- **本地转换**：转换过程不依赖 LLM，不调用业务接口，也不访问外部引用地址。
 
-当前不支持 YAML、Swagger 2.0、其他 OpenAPI 版本、外部引用、全量 OpenAPI 规范校验、自动跨项目安装/同步、
-WebFlux 或跨服务运行时汇总。仓库中的运行时集成证据来自 SpringDoc WebMVC 测试服务。
+## 目录
 
-## Vue 3 / Node.js 项目生成 Skill
+- [选择使用方式](#选择使用方式)
+- [快速开始：Node.js](#快速开始nodejs)
+- [快速开始：Spring Boot](#快速开始spring-boot)
+- [在 Agent 中使用](#在-agent-中使用)
+- [支持范围](#支持范围)
+- [常见问题](#常见问题)
+- [文档与项目结构](#文档与项目结构)
+- [本地开发与验证](#本地开发与验证)
+- [许可证](#许可证)
 
-`openapi-skill-node` 当前源码为待发布的 `openapi-skill@2.2.0`。单服务和多服务均采用扁平布局：Agent 搜索总索引后直接打开接口，再按需读取 Schema。每个接口保留服务与文档归属、完整契约及预计算引用集合。默认生成 `.agents/skills/api-docs/`。
+## 选择使用方式
+
+| 你的需求 | 使用方式 | 环境要求 |
+| --- | --- | --- |
+| 在前端或其他项目中，从 OpenAPI 地址或本地文件生成 Skill | **Node CLI** | Node.js 20+ |
+| 汇总多个服务的文档，或分发给多个 Agent | **Node CLI** | Node.js 20+ |
+| 从运行中的 Spring Boot 服务下载 Skill ZIP | **Spring Boot Starter** | JDK 17+、Spring Boot WebMVC、SpringDoc |
+| 在自己的 Java 工具中集成文档转换 | **Java Core** | JDK 17+ |
+
+两种生成方式可独立使用。Node CLI 不要求后端安装 Starter；Starter 不要求安装 Node.js。
+
+## 快速开始：Node.js
+
+### 1. 安装
+
+在需要使用接口文档的项目中执行：
 
 ```shell
 npm install --save-dev openapi-skill
 ```
 
+### 2. 配置文档来源
+
 在项目根目录创建 `openapi-skill.config.json`：
 
 ```json
 {
-  "keywords": ["接口文档", "前后端联调"],
   "services": [
     {
-      "serviceId": "account-service",
-      "sourceType": "internal",
-      "keywords": ["用户", "账号"],
+      "serviceId": "my-service",
       "documents": [
-        {
-          "id": "account",
-          "url": "http://127.0.0.1:18080/v3/api-docs/account",
-          "keywords": ["登录", "用户资料"]
-        }
-      ]
-    },
-    {
-      "serviceId": "logistics-provider",
-      "sourceType": "third-party",
-      "keywords": ["物流", "快递"],
-      "documents": [
-        {
-          "id": "shipping",
-          "url": "https://api.example.com/openapi.json",
-          "keywords": ["运单", "轨迹"]
-        }
+        { "id": "public", "url": "./openapi.json" }
       ]
     }
   ]
 }
 ```
 
-将 `"skill:generate": "openapi-skill"` 加入 `package.json#scripts`，执行 `npm run skill:generate`。
-根级、服务级和文档级 `keywords` 分别用于发现项目 Skill、选择服务和定位文档；`sourceType` 支持
-`internal`（默认）与 `third-party`。生成结果物理包含所有服务的引用文件，通过 Skill 内的相对 Markdown
-链接直接导航，不依赖文件系统符号链接或其他已安装 Skill。
+将 `./openapi.json` 替换为实际的 OpenAPI JSON 文件路径，也可使用 HTTP(S) 地址，例如 `http://localhost:8080/v3/api-docs`。相对路径以运行命令的目录为基准。
 
-工具会先下载和校验全部服务的全部文档，再一次性替换完整 `api-docs` 目录。任一成员失败时保留上一份
-完整结果，不发布缺服务的部分 Skill。`skillName`、`output` 和 `timeoutMs` 均可在根级覆盖；旧版
-`serviceId + skillName + documents` 单服务配置继续兼容。完整配置和迁移示例见
-[Node 包中文 README](openapi-skill-node/README.md)；[English](openapi-skill-node/README.en.md)。
+### 3. 生成
 
-## 版本与环境
+```shell
+npx openapi-skill
+```
 
-改名后的首个版本为 `1.0.0`，npm 包与 Maven Central 制品均已由维护者手动发布。已发布的 `2.0.0` 把生成产物布局
-从 `openapi-skill-core/1`、`openapi-skill-core/2` 升级为 `openapi-skill-core/3`，npm 与 Maven Central 两侧均已上线。
-Maven 源码线当前为 `2.1.1-SNAPSHOT`，接受 OpenAPI 3.0.x / 3.1.x，并与 Node 同步生成 core/4 扁平布局；历史发布制品保持不变。
-对于 SpringDoc 应用，推荐使用运行时 Starter。
+默认生成到 `.agents/skills/api-docs/`。API 文档更新后，重新运行即可。
 
-| 构件 | 用途 |
-| --- | --- |
-| `io.github.fyuanz:openapi-skill:2.0.0` | 父 POM |
-| `io.github.fyuanz:openapi-skill-core:2.0.0` | 离线转换与安全输出 |
-| `io.github.fyuanz:openapi-skill-spring-boot-starter:2.0.0` | 运行时自动发现与 ZIP 下载 |
+如需多个服务，在 `services` 中添加条目；如需分发给多个 Agent，可在配置根级设置：
 
-使用 JDK 17 和 Maven；已验证环境为 Maven 3.9.16 / JDK 17.0.19。仓库集成验证脚本使用 PowerShell。示例服务使用 Spring Boot 3.5.9 和 springdoc 2.8.15。
+```json
+{
+  "output": [".codex/skills", ".trae/skills"]
+}
+```
 
-## 快速体验
+上面是需要加入完整配置的字段片段。每个输出父目录下都会生成同名的 `api-docs/`。
 
-克隆仓库后，在仓库根目录执行：
+完整配置、npm 脚本、错误处理和库 API 见 [Node 使用指南](openapi-skill-node/README.md)。
+
+## 快速开始：Spring Boot
+
+Starter 为已有 SpringDoc 的 WebMVC 应用提供 `GET /openapi-skill/skill.zip`，自动收录文档分组，无分组时使用默认文档。
+
+以下示例使用当前仓库的 **`2.1.1-SNAPSHOT` 源码版本**，需要先安装到本地 Maven 仓库；它不是 Maven Central 发布版的安装命令。仓库测试应用使用 Spring Boot 3.5.9 和 SpringDoc 2.8.15。
+
+### 1. 安装当前源码
 
 ```shell
 git clone https://github.com/fyuanz/openapi-skill.git
 cd openapi-skill
 mvn -B install
-mvn -B -f testbeds/springdoc-multi-package/pom.xml clean verify
 ```
 
-第一条命令将当前源码安装到本地 Maven 仓库，第二条只执行普通测试和打包，不包含 OpenAPI Skill 的应用启停、OpenAPI 抓取或文件生成。
-测试会在随机端口验证运行时 ZIP 接口，详见[测试服务说明](testbeds/springdoc-multi-package/README.md)。
+### 2. 添加依赖
 
-手动体验时启动应用：
-
-```shell
-mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
-```
-
-随后下载 `http://127.0.0.1:18080/openapi-skill/skill.zip`。该样例 ZIP 包含 account/business 两组、4 个接口和
-7 个文档内 Schema。
-
-## 推荐：接入运行时 Starter
-
-目标 Spring Boot WebMVC 服务已有 SpringDoc 且输出受支持的 OpenAPI `3.0.x` / `3.1.x` 时，只增加依赖：
+在已有 SpringDoc WebMVC 配置的应用中添加：
 
 ```xml
 <dependency>
     <groupId>io.github.fyuanz</groupId>
     <artifactId>openapi-skill-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>2.1.1-SNAPSHOT</version>
 </dependency>
 ```
 
-无需 OpenAPI Skill Maven plugin、execution、phase、OpenAPI URL、文档目录或输出目录。项目不再提供 Maven
-构建期兼容插件。应用启动后访问
-`GET /openapi-skill/skill.zip` 即可下载。Starter 自动执行：
+### 3. 启动并下载
 
-- 从 `GroupedOpenApi` Bean 枚举与 Swagger UI 对应的分组；无分组时使用默认文档。
-- 调用 `MultipleOpenApiWebMvcResource` / `OpenApiWebMvcResource` 在进程内取得扫描 Controller 后的最终 JSON。
-- 将当前文档交给 core 转换和校验，在内存中生成带 `<skillName>/` 顶层目录的确定性 ZIP。
-- 用 `spring.application.name` 自动派生安全的 serviceId，Skill 名默认为 `<serviceId>-api`。
+启动你的应用后，访问其 `/openapi-skill/skill.zip` 路径。
 
-直接注入业务代码中的基础 `OpenAPI` Bean 并不等于完整文档：它通常只有手工定义的 Info、Components、Servers，
-而 `paths` 是 SpringDoc 资源在运行时扫描和组装的；`GroupedOpenApi` 同样只是分组规则。因此 Starter 使用最终资源，
-但不会对本机发 HTTP 请求。
+也可以直接运行仓库自带的示例服务：
 
-以下覆盖项全部可选：
-
-```properties
-openapi.skill.runtime.enabled=true
-openapi.skill.runtime.path=/openapi-skill/skill.zip
-openapi.skill.runtime.service-id=my-service
-openapi.skill.runtime.skill-name=my-service-api
+```shell
+mvn -B -f testbeds/springdoc-multi-package/pom.xml spring-boot:run
 ```
 
-下载接口沿用应用已有的 Spring Security 规则；受限契约应显式保护该路径。完整说明见
-[Starter README](openapi-skill-spring-boot-starter/README.md)。
+启动完成后，在浏览器打开 [示例 Skill 下载地址](http://127.0.0.1:18080/openapi-skill/skill.zip)。
 
-## 在前端项目中使用
+### 可选配置
 
-下载 ZIP 后，将其中的**整个 Skill 目录**解压到前端项目的 `.agents/skills/`，保留所有引用文件：
+| 配置项 | 默认值或行为 |
+| --- | --- |
+| `openapi.skill.runtime.enabled` | `true` |
+| `openapi.skill.runtime.path` | `/openapi-skill/skill.zip` |
+| `openapi.skill.runtime.service-id` | 从 `spring.application.name` 派生 |
+| `openapi.skill.runtime.skill-name` | `<serviceId>-api` |
+
+每次下载都从当前运行实例生成并校验完整 ZIP，文件在内存中打包。下载路径沿用应用的 Spring Security 规则，请按项目的文档访问权限配置。
+
+## 在 Agent 中使用
+
+Node CLI 已将 Skill 写入输出目录。使用 Starter 时，将 ZIP 中的**整个 Skill 目录**解压到使用方项目的 `.agents/skills/` 或所用 Agent 的 Skill 目录，保留所有引用文件。
+
+当前源码生成的主要内容如下：
 
 ```text
-api-docs/
+<skillName>/
 |-- SKILL.md
 +-- references/
     |-- index.md
@@ -159,63 +148,95 @@ api-docs/
     |-- source.json
     |-- operations.jsonl
     |-- schemas.jsonl
-    |-- operations/<service>--<document>--<operation>.md
-    |-- schemas/<service>--<document>--<schema>.md
-    +-- refs/<service>--<document>--<reference>.md
+    |-- operations/
+    |-- schemas/
+    +-- refs/
 ```
 
-以上为当前源码的 core/4 布局。`index.md` 每个接口一条记录，包含 summary、operationId、HTTP method/path、服务、文档、tags 和关键词，直接链接对应契约。升级后应重新生成并整体替换旧 Skill；外部脚本中的旧 catalog/context/group 路径需迁移。npm 2.2.0 由维护者手动发布，已有 Maven 发布制品不随源码自动更新。
+| 内容 | 用途 |
+| --- | --- |
+| `SKILL.md` | Skill 入口与阅读指引 |
+| `references/index.md` | 搜索接口并直接打开对应契约 |
+| `operations/` | 接口参数、请求、响应与相关信息 |
+| `schemas/`、`refs/` | 按需查阅的 Schema 与引用契约 |
+| 其他元数据与索引 | 来源记录、使用约定及工具处理 |
 
-然后在前端项目中尝试以下任务，并确认所用 Agent 实际发现并使用了该 Skill：
+确认 Agent 已加载该 Skill 后，可以这样提问：
 
 ```text
-使用 my-service-api Skill，找到创建订单接口，解释必填字段，
-并按项目现有请求封装生成调用代码。标明服务与文档分组，缺失的契约信息不要猜测。
+使用 api-docs Skill，找到创建订单接口，说明必填字段，
+并按项目现有请求封装生成调用代码。标明服务与文档分组，不要猜测缺失信息。
 ```
 
-使用仓库样例时，将名称替换为 `springdoc-multi-package-api`。样例描述虚构测试服务，其服务器地址和认证元数据不代表业务生产环境。
+将 `api-docs` 替换为实际 Skill 名称。Starter 默认是 `<serviceId>-api`，仓库示例为 `springdoc-multi-package-api`。
 
-后端接口变化后重新下载并整体替换旧 Skill，避免残留已删除接口。运行时端点不写 `target/`，也不会自动同步前端副本。
+接口变更后，重新生成或下载并整体替换旧 Skill。Starter 不会自动同步已下载到其他项目中的副本。
 
-## 运行时故障排查
+## 支持范围
 
-| 现象 | 检查方式 |
+以下说明针对当前源码；已发布版本的输入范围和生成布局可能不同。
+
+| 项目 | 范围 |
 | --- | --- |
-| 下载接口 404 | 确认 Starter 依赖已进入运行时 classpath，且 `openapi.skill.runtime.enabled` 未设为 `false` |
-| 下载接口 500 | 检查 SpringDoc 是否启用、最终 JSON 是否为受支持的 OpenAPI `3.0.x` / `3.1.x`，以及本地 `$ref` 是否完整 |
-| ZIP 名称不符合预期 | 设置 `spring.application.name`，或覆盖 `openapi.skill.runtime.service-id` / `skill-name` |
-| 有 Spring Security 时 401/403 | 按项目安全策略授权下载路径；不要为了下载公开受限 API 文档 |
+| 输入格式 | OpenAPI 3.0.x / 3.1.x JSON |
+| Node 文档来源 | HTTP(S) 地址或普通本地文件 |
+| Starter 文档来源 | 当前应用的 SpringDoc WebMVC 最终文档资源 |
+| `$ref` | 文档内引用；不支持外部文件、远程或跨文档引用 |
+| 多服务 | Node 显式配置汇总；Starter 每个应用独立导出 |
+| 不支持 | YAML、Swagger 2.0、WebFlux、全量 OpenAPI 规范校验 |
 
-运行时生成没有旧文件回退：请求成功即返回一份完整校验后的 ZIP，请求失败则返回服务错误且不产生半成品。
+服务与文档保持独立边界，不合并 OpenAPI 对象，也不推断网关前缀。Node 的输入大小、文档数量和输出目录限制见 [Node 使用指南](openapi-skill-node/README.md#支持范围与限制)。
 
-## 开发与验证
+## 常见问题
 
-从仓库根目录运行：
+| 问题 | 处理方式 |
+| --- | --- |
+| Node 找不到配置或本地文件 | 检查当前目录、配置文件位置及文档相对路径 |
+| Node 下载或校验失败 | 按诊断检查来源；需要更多信息时使用 `npx openapi-skill --debug` |
+| Starter 下载接口返回 404 | 确认依赖进入运行时 classpath，且未禁用 `openapi.skill.runtime.enabled` |
+| Starter 下载接口返回 500 | 检查 SpringDoc 是否启用、文档版本及 `$ref` 是否完整 |
+| 下载接口返回 401/403 | 检查应用对下载路径的访问授权 |
+| Agent 找不到 Skill | 检查 Agent 使用的 Skill 目录及 `SKILL.md` 是否随完整目录保留 |
+
+Node 在文档读取、校验或生成失败时保留已有 Skill；多个输出目录独立更新，具体结果见 CLI 诊断。Starter 请求失败时返回错误，不提供不完整 ZIP。
+
+## 文档与项目结构
+
+| 路径 | 内容 |
+| --- | --- |
+| [Node 使用指南](openapi-skill-node/README.md) | CLI、配置参考、库 API 与升级说明 |
+| [Java Core](openapi-skill-core/) | OpenAPI 输入校验与 Skill 转换 |
+| [Spring Boot Starter](openapi-skill-spring-boot-starter/) | SpringDoc 集成与运行时 ZIP 下载 |
+| [SpringDoc 示例](testbeds/springdoc-multi-package/) | 可启动的多分组应用与集成测试 |
+| [Vue / TypeScript 示例](testbeds/vue-ts-consumer/README.md) | 前端项目接入示例 |
+| [设计文档](docs/openapi-skill-design.md) | 架构与生成流程 |
+| [发布指南](docs/maven-central.md) | Maven Central 配置与维护者发布流程 |
+
+## 本地开发与验证
+
+在仓库根目录执行。Java 需要 JDK 17 和 Maven；Node 需要 Node.js 20+。
+
+**Node 构建与测试：**
 
 ```shell
-mvn -B clean test
+npm ci --prefix openapi-skill-node
+npm test --prefix openapi-skill-node
+```
+
+**Java 构建、测试及本地安装：**
+
+```shell
+mvn -B clean install
 mvn -B -f testbeds/springdoc-multi-package/pom.xml test
 ```
 
-运行时集成验证独立于根单元测试：
+**额外的运行时集成验证（需要 PowerShell）：**
 
 ```powershell
 powershell -NoProfile -File testbeds/springdoc-multi-package/verify-generated-integration.ps1
 ```
 
-SpringDoc 脚本验证普通构建中没有应用启停、HTTP 抓取或 OpenAPI Skill Maven goal，并在随机真实端口下载、检查 ZIP。
-
-`1.0.0` 增加运行时 Starter 单文档/多分组测试和 6 项测试服务验证；最新结果见
-
-## 项目结构与文档
-
-| 路径 | 内容 |
-| --- | --- |
-| [openapi-skill-core](openapi-skill-core/) | 输入校验、契约转换、安全发布 |
-| [openapi-skill-spring-boot-starter](openapi-skill-spring-boot-starter/) | 运行时 SpringDoc 发现、转换与 ZIP 下载 |
-| [SpringDoc 测试服务](testbeds/springdoc-multi-package/) | 多包、多分组示例与运行时验证 |
-| [设计文档](docs/openapi-skill-design.md) | 运行时与 Node 项目 Skill 主链路 |
-| [发布与使用](docs/maven-central.md) | Maven Central 配置与维护者发布流程 |
+集成验证检查运行时 ZIP 下载及其内容，详细步骤见 [SpringDoc 示例说明](testbeds/springdoc-multi-package/README.md)。
 
 ## 许可证
 
