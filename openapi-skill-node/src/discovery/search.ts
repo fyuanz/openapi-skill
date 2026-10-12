@@ -4,6 +4,7 @@ export interface SearchOptions { query: string; service?: string; document?: str
 export interface SearchHit {
   id: string; serviceId: string; documentId: string; method: string; path: string;
   summary: string; operationId: string | null; file: string;
+  summaryTruncated?: true;
 }
 export interface SearchResult { total: number; offset: number; limit: number; hasMore: boolean; results: SearchHit[] }
 type SearchRow = SearchHit & { tags: string[]; aliases: string[]; scope: string[] };
@@ -40,8 +41,14 @@ export function searchSkill(files: ReadonlyMap<string, string>, options: SearchO
   const offset = options.offset ?? 0, limit = options.limit ?? 10;
   return { total: ranked.length, offset, limit, hasMore: offset + limit < ranked.length,
     results: ranked.slice(offset, offset + limit).map(({ row }) => ({ id: row.id, serviceId: row.serviceId,
-      documentId: row.documentId, method: row.method, path: row.path, summary: row.summary,
+      documentId: row.documentId, method: row.method, path: row.path, ...previewSummary(row.summary),
       operationId: row.operationId, file: `references/${row.file}` })) };
+}
+
+function previewSummary(summary: string): Pick<SearchHit, 'summary' | 'summaryTruncated'> {
+  const characters = [...summary];
+  return characters.length <= 160 ? { summary }
+    : { summary: characters.slice(0, 159).join('') + '…', summaryTruncated: true };
 }
 
 function score(row: SearchRow, terms: string[]): number {

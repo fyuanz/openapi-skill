@@ -18,6 +18,10 @@
 - **WHEN** 搜索旧 v4 输出且 operationId 在多个来源重复
 - **THEN** 可返回全部匹配来源并按 service/document 收窄，不合并同名契约
 
+#### Scenario: 长摘要仅作为有界候选预览
+- **WHEN** 命中接口的摘要超过 160 个 Unicode 码点
+- **THEN** 系统 SHALL 只在搜索结果中返回前 159 个码点加省略号，设置 summaryTruncated=true；短摘要保持原值且不增加标记；全文匹配、排序、原始索引和接口契约 MUST 保持不变
+
 ### Requirement: 生效契约消除可重建重复参数
 
 系统 SHALL 保留生效 parameters、servers、security、请求响应与示例；只在原始参数与生效参数结构相同时省略副本并标注来源位置。引用、覆盖差异、显式空值 MUST 可解释且保留。

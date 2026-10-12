@@ -216,6 +216,8 @@ npx --no-install openapi-skill search "upload file" --skill .agents/skills/api-d
 
 Search reads local metadata only; it neither calls an API nor regenerates files. Single-line JSON contains `total`, `limit`, `offset`, `hasMore` and `results`. Candidates include ownership and a contract path relative to the Skill root, without contract bodies. The default page has 10 results (maximum 100). Space-separated terms use AND. A complete method/path or operationId query returns exact matches only; otherwise endpoint terms rank above scope keywords, with stable identity ordering for ties. Broad terms may still cover an entire document: filter or paginate rather than assuming the first page is complete. File search with `rg` needs no search CLI.
 
+Lightweight search saves context by returning a few candidates before the agent opens the selected contract. Start with `--limit 5` and extract action/entity keywords from the request; arbitrary natural-language sentences are not supported. Candidate `summary` previews contain at most 160 Unicode code points including the ellipsis, with `summaryTruncated: true` when shortened. Matching still uses the full summary; indexes and contracts remain complete, and short summaries are unchanged.
+
 Document configuration accepts explicit aliases, without changing source contracts:
 
 ```json

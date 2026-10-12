@@ -217,6 +217,8 @@ npx --no-install openapi-skill search "上传 文件" --skill .agents/skills/api
 
 搜索只读取本地元数据，不请求 API、不重新生成文档。返回单行 JSON，包含 `total`、`limit`、`offset`、`hasMore`、`results`；候选带归属和相对 Skill 根目录的契约路径，不包含契约正文。默认 10 条、上限 100 条；多个空格分隔词按 AND 匹配。查询完整匹配 method/path 或 operationId 时只返回精确匹配；其他查询中接口自身词高于公共范围关键词，同分按稳定接口身份排序。宽词仍可能覆盖整个文档，需筛选或分页，不能把第一页当作全部结果。`rg` 文件搜索不依赖搜索 CLI。
 
+轻量搜索的收益来自只让 LLM 读取少量候选，再打开选中的契约，而不是读入整个索引。常见查询可先用 `--limit 5`；让 LLM 将需求提炼为动作和实体（如“用户 列表”），不要求工具理解任意中文整句。候选 `summary` 最多 160 个 Unicode 码点（含省略号），超出时带 `summaryTruncated: true`；匹配仍使用完整摘要，索引和契约不截断。短摘要保持原值。
+
 为缺少中文摘要的接口配置别名，例如在 document 对象中加入：
 
 ```json

@@ -39,6 +39,27 @@ test('pagination is complete, deterministic and filtered without reading operati
     assert.throws(() => api.searchSkill(tree, options), /CONFIG/);
 });
 
+test('search bounds long summary previews without losing tail matches or changing source contracts', () => {
+  const summary = '🚁'.repeat(159) + '查询航线尾部';
+  const tree = api.generateProjectSkill({ services: [{ serviceId: 'demo', documents: new Map([
+    ['public', Buffer.from(JSON.stringify({ openapi: '3.1.0', paths: {
+      '/long': { get: { summary, responses: {} } },
+      '/short': { get: { summary: '🚁'.repeat(160), responses: {} } }
+    } }))]
+  ]) }] });
+  const snapshot = [...tree];
+  const page = api.searchSkill(tree, { query: '查询航线尾部' });
+  assert.equal(page.total, 1);
+  assert.equal(page.results[0].summary, '🚁'.repeat(159) + '…');
+  assert.equal([...page.results[0].summary].length, 160);
+  assert.equal(page.results[0].summaryTruncated, true);
+  assert.ok(tree.get(page.results[0].file).includes(summary));
+  assert.deepEqual([...tree], snapshot);
+  const short = api.searchSkill(tree, { query: 'GET /short' }).results[0];
+  assert.equal(short.summary, '🚁'.repeat(160));
+  assert.equal(Object.hasOwn(short, 'summaryTruncated'), false);
+});
+
 test('old v4 indexes work while malformed, duplicate and unsafe paths fail explicitly', () => {
   const tree = files();
   const rows = tree.get('references/operations.jsonl').trim().split('\n').map(JSON.parse);

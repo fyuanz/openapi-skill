@@ -36,7 +36,7 @@ test('navigation goes directly from the index to the operation and source text s
   const entry = files.get('SKILL.md');
   assert.match(entry, /references\/index.md/);
   assert.match(entry, /multiple candidates/i);
-  assert.match(entry, /broaden keywords and service\/document scope/);
+  assert.match(entry, /fewer keywords or broader scope/);
   assert.ok(!entry.includes('IGNORE_INSTRUCTIONS'));
   assert.ok(files.get('references/index.md').includes('](operations/files--business--post-files.md)'));
   assert.ok(files.get('references/operations/files--business--post-files.md').includes('uploadFile'));
