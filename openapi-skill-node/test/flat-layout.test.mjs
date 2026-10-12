@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { posix } from 'node:path';
 import { generateSkill, generateProjectSkill } from '../dist/index.js';
-import { publishSkill } from '../dist/publisher.js';
+import { publishSkill } from '../dist/publication/publisher.js';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -61,7 +61,7 @@ test('project flat index isolates sources and preserves keywords with determinis
   const files = generateProjectSkill({ keywords: ['项目'], services });
   check(files, 2);
   assert.equal(new Set(rows(files).map(row => row.file)).size, 2);
-  assert.match(files.get('references/index.md'), /项目.*上传.*文件服务/);
+  for (const term of ['项目', '上传', '文件服务']) assert.ok(files.get('references/index.md').includes(term));
   assert.deepEqual(files, generateProjectSkill({ keywords: ['项目'], services: [...services].reverse() }));
 });
 

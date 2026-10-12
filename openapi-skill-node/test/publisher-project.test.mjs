@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { generateProjectSkill, generateSkill, publishSkill } from '../dist/index.js';
 
-import { generateProjectTree } from '../dist/project-generator.js';
+import { generateProjectTree } from '../dist/generation/project.js';
 
 const bytes = new TextEncoder().encode('{"openapi":"3.1.0","paths":{}}');
 

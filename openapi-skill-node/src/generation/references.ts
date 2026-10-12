@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
-import { asObject, isObject, JsonObject, own } from './input.js';
+import { asObject, isObject, JsonObject, own } from '../input/parse.js';
 
 const DATA = new Set(['example', 'default', 'enum', 'const']);
 const CONTAINERS = ['schemas', 'responses', 'parameters', 'examples', 'requestBodies', 'headers', 'securitySchemes', 'links', 'callbacks', 'pathItems'];
@@ -9,6 +9,8 @@ export interface ReferenceClosure {
   direct: string[];
   transitive: string[];
   recursiveEdges: string[];
+  request?: string[];
+  response?: string[];
 }
 
 export class DocumentReferences {
@@ -18,7 +20,7 @@ export class DocumentReferences {
   private readonly exampleOnly = new Set<string>();
   private readonly regular = new Set<string>();
 
-  constructor(private readonly id: string, private readonly root: JsonObject) {
+  constructor(id: string, private readonly root: JsonObject) {
     this.base = `references/documents/${id}/`;
     this.validateContainers();
     const schemas = asObject(asObject(root.components)?.schemas) ?? {};
@@ -111,8 +113,8 @@ export class DocumentReferences {
     if (closure) {
       result += '\n## Complete referenced contracts\n\n';
       if (closure.direct.length + closure.transitive.length === 0) result += 'No document-local references.\n';
-      for (const edge of closure.direct) result += this.referenceLine(filename, edge, 'direct');
-      for (const edge of closure.transitive) result += this.referenceLine(filename, edge, 'transitive');
+      for (const edge of closure.direct) result += this.referenceLine(filename, edge, role(edge, 'direct', closure));
+      for (const edge of closure.transitive) result += this.referenceLine(filename, edge, role(edge, 'transitive', closure));
       if (closure.recursiveEdges.length) {
         result += '\n## Recursive reference edges\n\n';
         for (const edge of closure.recursiveEdges) result += `- \`${label(edge)}\`\n`;
@@ -407,3 +409,8 @@ function slug(value: string): string {
 }
 
 function compareText(left: string, right: string): number { return left < right ? -1 : left > right ? 1 : 0; }
+
+function role(edge: string, kind: string, closure: ReferenceClosure): string {
+  const roles = [closure.request?.includes(edge) ? 'request' : '', closure.response?.includes(edge) ? 'response' : ''].filter(Boolean);
+  return `${kind}; ${roles.length ? roles.join(', ') : 'other'}`;
+}

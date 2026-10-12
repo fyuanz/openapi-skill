@@ -1,4 +1,4 @@
-import { DiagnosticError } from './diagnostics.js';
+import { DiagnosticError } from '../diagnostics/errors.js';
 
 const decoder = new TextDecoder('utf-8', { fatal: true });
 

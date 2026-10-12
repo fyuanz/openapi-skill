@@ -1,9 +1,11 @@
+import { OperationAliases } from './aliases.js';
 export type SourceType = 'internal' | 'third-party';
 export type DocumentSourceKind = 'remote' | 'local';
 
 export interface DocumentSource {
   id: string;
   url: string;
+  operationAliases?: OperationAliases;
   keywords?: string[];
 }
 
@@ -67,6 +69,7 @@ export interface GenerateOptions {
   sourceType?: SourceType;
   keywords?: readonly string[];
   documentKeywords?: ReadonlyMap<string, readonly string[]>;
+  documentOperationAliases?: ReadonlyMap<string, OperationAliases>;
 }
 
 export interface ProjectServiceInput {
@@ -75,6 +78,7 @@ export interface ProjectServiceInput {
   keywords?: readonly string[];
   documents: ReadonlyMap<string, Uint8Array>;
   documentKeywords?: ReadonlyMap<string, readonly string[]>;
+  documentOperationAliases?: ReadonlyMap<string, OperationAliases>;
 }
 
 export interface GenerateProjectOptions {

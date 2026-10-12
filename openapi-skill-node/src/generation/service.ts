@@ -1,9 +1,12 @@
-import { asObject, isObject, JsonObject, own, parseOpenApi } from './input.js';
-import { DiagnosticError } from './diagnostics.js';
-import { boundedKeywords, normalizeKeywords } from './keywords.js';
+import { normalizeAliases } from '../config/aliases.js';
+import { compactContract } from './compact-contract.js';
+import { identity } from '../config/identity.js';
+import { asObject, isObject, JsonObject, own, parseOpenApi } from '../input/parse.js';
+import { DiagnosticError } from '../diagnostics/errors.js';
+import { boundedKeywords, normalizeKeywords } from '../config/keywords.js';
 import { digest, DocumentReferences, label, operationFiles, operationIdentity, sorted, tagFiles } from './references.js';
-import { GenerateOptions } from './types.js';
-import { catalogDiscovery, CATALOG_MATCHING } from './catalog-discovery.js';
+import { GenerateOptions } from '../config/types.js';
+import { catalogDiscovery, CATALOG_MATCHING } from './legacy-catalog.js';
 import { flattenSkill } from './flat-layout.js';
 
 const METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
@@ -57,6 +60,7 @@ export function generateServiceTree(options: GenerateOptions): ReadonlyMap<strin
   if (options.documents.size > 32) throw new Error('LIMIT: at most 32 documents');
   for (const id of options.documents.keys()) identity(id);
   const documentKeywords = normalizedDocumentKeywords(options);
+  for (const id of options.documentOperationAliases?.keys() ?? []) if (!options.documents.has(id)) throw new Error(`CONFIG: aliases configured for unknown document ${id}`);
   const groups = boundedList([...options.documents.keys()]);
   const files = new Map<string, string>();
   const sources: JsonObject[] = [];
@@ -93,6 +97,9 @@ export function generateServiceTree(options: GenerateOptions): ReadonlyMap<strin
         }
       }
       operations.sort((left, right) => compareText(left.path, right.path) || compareText(left.method, right.method));
+      const aliases = normalizeAliases(options.documentOperationAliases?.get(id));
+      const routes = new Set(operations.map(op => `${op.method.toUpperCase()} ${op.path}`));
+      for (const key of Object.keys(aliases)) if (!routes.has(key)) throw new Error(`CONFIG: unknown operation alias ${key}`);
       const operationNames = operationFiles(operations.map(({ method, path }) => [method, path]));
       const groupEntries = new Map<string, string[]>();
       for (const operation of operations) {
@@ -115,7 +122,12 @@ export function generateServiceTree(options: GenerateOptions): ReadonlyMap<strin
         };
         if (own(rawPathItem, '$ref')) contract.pathItemReference = rawPathItem;
         const closure = refs.closure(contract);
-        files.set(target, refs.renderOperation(`${method.toUpperCase()} ${apiPath}`, contract, target,
+        const requestClosure = refs.closure({ parameters: contract.parameters, requestBody: rawOperation.requestBody });
+        const responseClosure = refs.closure(rawOperation.responses);
+        const requestRefs = [...requestClosure.direct, ...requestClosure.transitive];
+        const responseRefs = [...responseClosure.direct, ...responseClosure.transitive];
+        closure.request = requestRefs; closure.response = responseRefs;
+        files.set(target, refs.renderOperation(`${method.toUpperCase()} ${apiPath}`, compactContract(contract), target,
           DocumentReferences.semantics(contract), closure));
         const tags = refs.tags(rawOperation);
         const group = tags[0] ?? UNTAGGED;
@@ -135,6 +147,9 @@ export function generateServiceTree(options: GenerateOptions): ReadonlyMap<strin
           file: target.slice('references/'.length),
           closureFiles: [...closure.direct, ...closure.transitive].map((pointer) =>
             refs.target(pointer).slice('references/'.length)).sort(compareText),
+          aliases: aliases[`${method.toUpperCase()} ${apiPath}`] ?? [],
+          requestFiles: requestRefs.map(pointer => refs.target(pointer).slice('references/'.length)).sort(compareText),
+          responseFiles: responseRefs.map(pointer => refs.target(pointer).slice('references/'.length)).sort(compareText),
           recursiveEdges: closure.recursiveEdges
         });
       }
@@ -323,8 +338,5 @@ function normalizedDocumentKeywords(options: GenerateOptions): Map<string, strin
   return result;
 }
 
-export function identity(value: string): void {
-  if (typeof value !== 'string' || value.length > 63 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) || /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/.test(value)) throw new Error('IDENTITY: use a safe lowercase name under 64 characters');
-}
 
 function message(error: unknown): string { return error instanceof Error ? error.message : String(error); }

@@ -1,10 +1,11 @@
-import { boundedList, generateServiceTree, identity } from './generator.js';
+import { identity } from '../config/identity.js';
+import { boundedList, generateServiceTree } from './service.js';
 import { flattenSkill } from './flat-layout.js';
-import { boundedKeywords, normalizeKeywords } from './keywords.js';
+import { boundedKeywords, normalizeKeywords } from '../config/keywords.js';
 import { label, sorted } from './references.js';
-import { GenerateProjectOptions, ProjectServiceInput, SourceType } from './types.js';
-import { JsonObject } from './input.js';
-import { catalogDiscovery, catalogOperations, CATALOG_MATCHING } from './catalog-discovery.js';
+import { GenerateProjectOptions, ProjectServiceInput, SourceType } from '../config/types.js';
+import { JsonObject } from '../input/parse.js';
+import { catalogDiscovery, catalogOperations, CATALOG_MATCHING } from './legacy-catalog.js';
 
 const encoder = new TextEncoder();
 
@@ -40,7 +41,8 @@ export function generateProjectTree(options: GenerateProjectOptions): ReadonlyMa
         sourceType,
         keywords: serviceKeywords,
         documents: service.documents,
-        documentKeywords: service.documentKeywords
+        documentKeywords: service.documentKeywords,
+        ...(service.documentOperationAliases ? { documentOperationAliases: service.documentOperationAliases } : {})
       });
     } catch (error) {
       const detail = message(error);

@@ -109,6 +109,7 @@ npm run skill:generate
 | `id` | 字符串 | 必填 | 服务内唯一的文档标识；不同服务可使用相同文档标识 |
 | `url` | 字符串 | 必填 | HTTP(S) 地址或普通本地文件路径 |
 | `keywords` | 字符串数组 | `[]` | 模块或分组关键词，出现在接口索引中 |
+| `operationAliases` | 对象 | `{}` | 按 `METHOD /path` 配置接口别名，每项最多 16 个、每个最多 64 字符；方法须大写且接口必须存在 |
 
 标识命名：`skillName`、`serviceId` 和文档 `id` 使用小写字母、数字及单个连字符分隔，不超过 63 个字符，并避开 Windows 保留设备名。
 
@@ -204,6 +205,34 @@ api-docs/
 
 Agent 从总索引直接打开接口文件，再按链接读取相关 Schema。不同服务和文档的契约保持独立，不合并 OpenAPI 对象，也不推断网关前缀。
 
+### 降低接口查找成本
+
+项目、服务、文档关键词分别出现在所属范围摘要中，不再逐接口复制。接口行保留来源、摘要、method/path、operationId 和全部 tags（第一项代表分组）；没有 tag 时标为 `untagged`。入口描述包含受控配置中的业务能力，源文档描述不会被提升为 Skill 指令。
+
+已知路径可直接搜索：`rg -n -F 'GET /users' .agents/skills/api-docs/references/index.md`，再核对完整路径以排除前缀匹配。仅有业务描述时先搜索动作和实体，再按服务/文档收窄。安装本包后，也可从项目目录运行只读搜索：
+
+```sh
+npx --no-install openapi-skill search "上传 文件" --skill .agents/skills/api-docs --service storage --document public --limit 10 --offset 0
+```
+
+搜索只读取本地元数据，不请求 API、不重新生成文档。返回单行 JSON，包含 `total`、`limit`、`offset`、`hasMore`、`results`；候选带归属和相对 Skill 根目录的契约路径，不包含契约正文。默认 10 条、上限 100 条；多个空格分隔词按 AND 匹配。查询完整匹配 method/path 或 operationId 时只返回精确匹配；其他查询中接口自身词高于公共范围关键词，同分按稳定接口身份排序。宽词仍可能覆盖整个文档，需筛选或分页，不能把第一页当作全部结果。`rg` 文件搜索不依赖搜索 CLI。
+
+为缺少中文摘要的接口配置别名，例如在 document 对象中加入：
+
+```json
+{
+  "id": "public",
+  "url": "./openapi.json",
+  "operationAliases": { "GET /devices/status": ["设备状态", "在线状态"] }
+}
+```
+
+别名只用于检索，不修改契约；配置指向不存在的接口时生成失败。不会自动猜测业务同义词。
+
+接口页只省略与生效 `parameters` 完全相同的原始副本。`omittedEqualParameters` 记录被省略位置，需要重建时将生效参数复制回这些位置；覆盖差异和 `$ref` 保留。完整引用集合中的 `request` / `response` 标签包含直接、传递及共同依赖，可按任务选择读取，避免读取整个响应模型。
+
+`references/source.json` 的 `quality.findings` 是非阻断质量报告：`MISSING_SUMMARY` 提示缺少摘要；`OPAQUE_JSON_BODY` 提示内联 JSON 媒体类型缺少 schema，或字符串 schema 未提供 enum/const/pattern/format 等结构线索。这些是人工复核提示，不代表接口无效，也不提供猜测字段。报告不复制正文和示例，生成成功时 stderr 仍为空。
+
 ## 支持范围与限制
 
 | 项目 | 支持范围 |
@@ -280,7 +309,11 @@ console.log(`Generated ${result.serviceCount} service(s)`);
 | `generateProjectSkill` | 从多个服务的文档生成文件集合 |
 | `generateSkill` | 从旧单服务输入生成文件集合 |
 | `publishSkill` | 将文件集合写入 Skill 目录 |
+| `searchSkill(files, options)` | 对内存文件集合搜索，只需 `source.json` 和 `operations.jsonl` |
+| `searchSkillDirectory(directory, options)` | 对已有 Node v4 Skill 目录搜索，不读取接口正文 |
 | `MultiOutputPublishError` | 输出写入失败时抛出的错误，`results` 包含各目标结果 |
+
+搜索 options 为 `{ query, service?, document?, limit?, offset? }`。生成 API 可通过服务输入的 `documentOperationAliases: Map<documentId, Record<"METHOD /path", string[]>>` 配置别名。
 
 ## 升级与兼容性
 
@@ -291,6 +324,7 @@ console.log(`Generated ${result.serviceCount} service(s)`);
 - 通过 `references/index.md` 直接定位接口。
 - 若自有脚本依赖旧 catalog/context/group 路径，需要调整。
 - 若读取 JSONL，注意 `groupFile` 已移除，`file` 和 `closureFiles` 指向新版路径。
+- 紧凑输出增加可选的 `aliases`、`requestFiles`、`responseFiles`；完整 `closureFiles` 不变。`source.json` 的 `discoveryFormat=scoped-v1` 标识分层关键词布局，质量报告作为元数据扩展保存；旧 v4 输出仍可搜索与替换。
 - 手动复制或解压生成内容时，请整体替换旧 Skill 目录。
 
 ### 旧单服务配置
@@ -308,6 +342,8 @@ console.log(`Generated ${result.serviceCount} service(s)`);
 ```
 
 根级 `serviceId`、`documents` 不能与 `services` 混用。新项目建议使用快速开始中的 `services` 结构。
+
+源码按职责分目录，包根 API 和 `dist/cli.js` 保持不变；未公开的 `dist` 深层路径不属于兼容接口。开发、检索基准及实测结果见 [DEVELOPMENT.md](DEVELOPMENT.md)。
 
 ## 许可证
 

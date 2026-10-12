@@ -35,8 +35,7 @@ test('explains OpenAPI default semantics and carries Chinese triggers', async ()
   for (const verb of ['查找', '解释', '实现', '调试', 'finding', 'explaining', 'implementing', 'debugging']) {
     assert.ok(description.includes(verb), `description must include the task verb ${verb}`);
   }
-  for (const keyword of ['接口', '前端', '文档', '调用', '参数校验', '接口联调', '字段缺失', '鉴权', '报错排查',
-    '状态码', '前端请求代码', 'index', 'HTTP', 'REST', 'OpenAPI']) {
+  for (const keyword of ['接口', '前端', '文档', '调用', '接口联调', '鉴权', 'HTTP']) {
     assert.ok(description.includes(keyword), `description must include ${keyword}: ${description}`);
   }
   assert.ok(description.includes('springdoc-multi-package'), 'description must still name the service');
@@ -166,7 +165,7 @@ test('generates one self-contained project Skill with logical service navigation
   assert.match(files.get('references/index.md'), /下单/);
   assert.match(files.get('SKILL.md'), /接口文档/);
   assert.match(files.get('SKILL.md'), /订单/);
-  assert.doesNotMatch(files.get('SKILL.md'), /下单/);
+  assert.match(files.get('SKILL.md'), /下单/, 'configured document capabilities belong in discovery');
   const source = JSON.parse(files.get('references/source.json'));
   assert.equal(source.generatorVersion, 'openapi-skill-core/4');
   assert.equal(source.kind, 'project');

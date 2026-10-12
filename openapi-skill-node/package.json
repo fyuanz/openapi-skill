@@ -18,12 +18,14 @@
     "dist",
     "README.md",
     "README.en.md",
-    "LICENSE"
+    "LICENSE",
+    "DEVELOPMENT.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/build.mjs",
     "test": "npm run build && node --test",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "benchmark": "npm run build && node scripts/benchmark-retrieval.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -47,6 +49,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "js-tiktoken": "1.0.21",
     "typescript": "^5.9.0"
   }
 }

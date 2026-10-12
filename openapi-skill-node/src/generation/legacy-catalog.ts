@@ -1,4 +1,4 @@
-import { JsonObject } from './input.js';
+import { JsonObject } from '../input/parse.js';
 import { label } from './references.js';
 
 const compare = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;

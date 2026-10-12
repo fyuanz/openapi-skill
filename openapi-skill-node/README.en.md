@@ -204,6 +204,34 @@ api-docs/
 
 Agents open operations directly from the index, then follow links to related schemas. Service and document boundaries remain intact: OpenAPI objects are not merged, and gateway prefixes are not inferred.
 
+### Lower-cost discovery
+
+Project, service and document keywords appear once at their scope, instead of being repeated on every operation row. Each row retains ownership, summary, method/path, operationId and all tags (the first tag is the group; missing tags use `untagged`). The short Skill description includes configured business capabilities, never instructions derived from source descriptions.
+
+For a known route, use `rg -n -F 'GET /users' .agents/skills/api-docs/references/index.md` and verify the complete path to exclude prefix matches. For business requests, search actions and entities, then narrow the service/document. An installed package also provides local search:
+
+```sh
+npx --no-install openapi-skill search "upload file" --skill .agents/skills/api-docs --service storage --document public --limit 10 --offset 0
+```
+
+Search reads local metadata only; it neither calls an API nor regenerates files. Single-line JSON contains `total`, `limit`, `offset`, `hasMore` and `results`. Candidates include ownership and a contract path relative to the Skill root, without contract bodies. The default page has 10 results (maximum 100). Space-separated terms use AND. A complete method/path or operationId query returns exact matches only; otherwise endpoint terms rank above scope keywords, with stable identity ordering for ties. Broad terms may still cover an entire document: filter or paginate rather than assuming the first page is complete. File search with `rg` needs no search CLI.
+
+Document configuration accepts explicit aliases, without changing source contracts:
+
+```json
+{
+  "id": "public",
+  "url": "./openapi.json",
+  "operationAliases": { "GET /devices/status": ["device status", "online status"] }
+}
+```
+
+Keys use uppercase `METHOD /path` and must identify an existing operation. Each entry allows up to 16 aliases of at most 64 characters. Unknown operations and invalid aliases fail generation; synonyms are never inferred.
+
+Operation pages omit raw parameter copies only when they exactly equal effective `parameters`. `omittedEqualParameters` records locations that can be reconstructed by copying effective parameters; differing overrides and `$ref` values remain intact. Complete reference links are labeled `request` / `response`, including transitive and shared dependencies, so readers can select the contracts their task needs.
+
+`references/source.json` contains non-blocking `quality.findings`: `MISSING_SUMMARY` flags absent summaries; `OPAQUE_JSON_BODY` flags inline JSON media types without a schema, or string schemas without enum/const/pattern/format and related structural clues. These are review hints, not invalid-API assertions or invented fields. Reports omit source descriptions/examples. Successful generation still leaves stderr empty.
+
 ## Supported inputs and limits
 
 | Item | Support |
@@ -280,7 +308,11 @@ Additional exports support custom integrations:
 | `generateProjectSkill` | Generate a file collection from multiple services |
 | `generateSkill` | Generate a file collection from legacy single-service input |
 | `publishSkill` | Write a file collection to a Skill directory |
+| `searchSkill(files, options)` | Search in-memory metadata; only source.json and operations.jsonl are required |
+| `searchSkillDirectory(directory, options)` | Search an existing Node v4 Skill without loading operation bodies |
 | `MultiOutputPublishError` | Output write error whose `results` property contains per-target outcomes |
+
+Search options are `{ query, service?, document?, limit?, offset? }`. Generation API service inputs accept `documentOperationAliases: Map<documentId, Record<"METHOD /path", string[]>>`.
 
 ## Upgrading and compatibility
 
@@ -291,6 +323,7 @@ Configuration remains compatible. Upgrade and rerun generation. Version 2.2.0 us
 - Find operations directly through `references/index.md`.
 - Update custom scripts that depend on old catalog/context/group paths.
 - For JSONL consumers, `groupFile` has been removed; `file` and `closureFiles` use the new paths.
+- Compact output adds optional `aliases`, `requestFiles` and `responseFiles`, retaining full `closureFiles`. `source.json` marks the scoped index as `discoveryFormat=scoped-v1` and stores quality findings as metadata. Existing v4 output remains searchable and replaceable.
 - Replace the entire old Skill directory when copying or extracting generated content manually.
 
 ### Legacy single-service configuration
@@ -312,3 +345,5 @@ Do not combine root-level `serviceId` or `documents` with `services`. For new pr
 ## License
 
 [MIT](LICENSE)
+
+Source files are organized by responsibility, with the package-root API and `dist/cli.js` preserved. Internal `dist` paths are not public compatibility interfaces. See [DEVELOPMENT.md](DEVELOPMENT.md) for architecture, verification commands and retrieval measurements.

@@ -1,4 +1,4 @@
-import { MultiOutputPublishError } from './output-publication.js';
+import { MultiOutputPublishError } from '../publication/result.js';
 
 export type DiagnosticPhase = 'CONFIG' | 'DOWNLOAD' | 'LOCAL' | 'PARSE' | 'VALIDATE' | 'GENERATE' | 'PUBLISH' | 'INTERNAL';
 

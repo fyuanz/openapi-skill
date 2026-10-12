@@ -1,59 +1,13 @@
-import { constants } from 'node:fs';
-import { access, mkdir, readFile, readdir, rename, rm, rmdir, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
-import { randomUUID } from 'node:crypto';
-import { identity } from './generator.js';
-import { FLAT_VERSION } from './flat-layout.js';
+import { isAbsolute, posix } from 'node:path';
+import { identity } from '../config/identity.js';
+import { FLAT_VERSION } from '../generation/flat-layout.js';
 
 /** Layout version this generator emits; the publisher accepts it plus the former identities below. */
 const CURRENT_VERSION = FLAT_VERSION;
 /** Versions that carry the machine-only operation and schema JSONL indexes. */
 const INDEX_BEARING_VERSIONS = [CURRENT_VERSION, 'openapi-skill-core/3', 'openapi-skill-core/2', 'openapi-skill-core/1', 'smartdoc-agent-core/3'];
 
-export async function publishSkill(outputParent: string, serviceId: string, skillName: string, files: ReadonlyMap<string, string>): Promise<string> {
-  identity(serviceId); identity(skillName);
-  const nextKind = validateFiles(files, serviceId, skillName);
-  const output = resolve(outputParent);
-  if (dirname(output) === output) throw new Error('CONFIG: output parent cannot be a filesystem root');
-  const skill = join(output, skillName); const state = join(output, '.openapi-skill');
-  const staging = join(state, 'staging', `${skillName}-${randomUUID()}`); const backup = join(state, 'backups', `${skillName}-${randomUUID()}`);
-  await mkdir(staging, { recursive: true });
-  let previous = false;
-  try {
-    if (await exists(skill)) {
-      validatePreviousFiles(await readTree(skill), serviceId, skillName, nextKind);
-      previous = true;
-    }
-    for (const [path, content] of files) { const target = join(staging, ...path.split('/')); await mkdir(dirname(target), { recursive: true }); await writeFile(target, content, { encoding: 'utf8', flag: 'wx' }); }
-    validateFiles(await readTree(staging), serviceId, skillName);
-    if (previous) { await mkdir(dirname(backup), { recursive: true }); await rename(skill, backup); }
-    try { await mkdir(output, { recursive: true }); await rename(staging, skill); }
-    catch (error) {
-      if (previous && await exists(backup)) {
-        try { await rename(backup, skill); }
-        catch (recoveryError) {
-          throw new Error(`OUTPUT: publication and recovery failed; previous Skill retained at ${backup}`, {
-            cause: new AggregateError([error, recoveryError], 'publication and recovery failed')
-          });
-        }
-      }
-      throw error;
-    }
-    if (await exists(backup)) await rm(backup, { recursive: true });
-    return skill;
-  } finally {
-    try { if (await exists(staging)) await rm(staging, { recursive: true }); }
-    finally {
-      // Never recursively remove shared state: other attempts or recovery backups may still need it.
-      for (const directory of [dirname(staging), dirname(backup), state]) {
-        try { await rmdir(directory); }
-        catch { /* Best effort only: non-empty, busy or inaccessible state must remain intact. */ }
-      }
-    }
-  }
-}
-
-function validateFiles(files: ReadonlyMap<string, string>, ownerId: string, skillName: string): 'service' | 'project' {
+export function validateFiles(files: ReadonlyMap<string, string>, ownerId: string, skillName: string): 'service' | 'project' {
   const source = validateTree(files, skillName);
   if (source.kind === 'project') {
     if (ownerId !== skillName) throw new Error('OUTPUT: project owner must match the configured Skill name');
@@ -65,7 +19,7 @@ function validateFiles(files: ReadonlyMap<string, string>, ownerId: string, skil
   return 'service';
 }
 
-function validatePreviousFiles(files: ReadonlyMap<string, string>, ownerId: string, skillName: string, nextKind: 'service' | 'project'): void {
+export function validatePreviousFiles(files: ReadonlyMap<string, string>, ownerId: string, skillName: string, nextKind: 'service' | 'project'): void {
   const source = validateTree(files, skillName, true);
   const previousKind = source.kind === 'project' ? 'project' : 'service';
   if (previousKind === 'project') validateProjectSource(source, files, true);
@@ -258,6 +212,12 @@ function validateClosures(files: ReadonlyMap<string, string>, references: string
       const relative = posix.relative(posix.dirname(operationPath), target);
       if (!operation.includes(`](${relative})`)) throw new Error(`OUTPUT: ${operationPath} omits a declared closure link`);
     }
+    for (const field of ['requestFiles', 'responseFiles']) {
+      const subset = row[field];
+      if (subset === undefined) continue; // Old v4 output remains replaceable.
+      if (!Array.isArray(subset) || subset.some((file, index) => typeof file !== 'string' || !unique.has(file)
+        || index > 0 && String(subset[index - 1]) >= file)) throw new Error('OUTPUT: invalid task-specific reference closure');
+    }
   }
 }
 
@@ -319,6 +279,23 @@ function validateFlat(files: ReadonlyMap<string, string>, source: Record<string,
   if (index.split('\n').filter(line => line.startsWith('- [')).length !== rows.length) throw new Error('OUTPUT: flat index contains extra operation entries');
   if (!files.has('references/conventions.md')) throw new Error('OUTPUT: references/conventions.md is missing');
   validateClosures(files, 'references/', rows);
+  const quality = source.quality;
+  if (source.discoveryFormat === 'scoped-v1' && quality === undefined) throw new Error('OUTPUT: quality report missing');
+  if (quality !== undefined) {
+    const findings = quality && typeof quality === 'object' ? (quality as Record<string, unknown>).findings : undefined;
+    if (!Array.isArray(findings)) throw new Error('OUTPUT: invalid quality report');
+    const identities = new Set(rows.map(row => row.id));
+    const seen = new Set<string>();
+    for (const raw of findings) {
+      if (!raw || typeof raw !== 'object') throw new Error('OUTPUT: invalid quality finding');
+      const finding = raw as Record<string, unknown>;
+      const id = `operation:${finding.serviceId}:${finding.documentId}:${String(finding.method).toLowerCase()}:${finding.path}`;
+      const key = `${id}/${finding.code}`;
+      if (!identities.has(id) || !['MISSING_SUMMARY', 'OPAQUE_JSON_BODY'].includes(String(finding.code)) || seen.has(key))
+        throw new Error('OUTPUT: invalid quality finding ownership or code');
+      seen.add(key);
+    }
+  }
 }
 
 function validateLinks(path: string, content: string, files: ReadonlyMap<string, string>): void {
@@ -335,17 +312,3 @@ function validateLinks(path: string, content: string, files: ReadonlyMap<string,
   }
   if (fenced) throw new Error(`OUTPUT: unclosed code fence in ${path}`);
 }
-
-async function readTree(root: string): Promise<Map<string, string>> {
-  const result = new Map<string, string>();
-  async function walk(directory: string): Promise<void> {
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      const path = join(directory, entry.name);
-      if (entry.isSymbolicLink()) throw new Error('symbolic links are not allowed in a generated Skill');
-      if (entry.isDirectory()) await walk(path); else if (entry.isFile()) result.set(relative(root, path).split(sep).join('/'), await readFile(path, 'utf8')); else throw new Error('unsupported filesystem entry in generated Skill');
-    }
-  }
-  await walk(root); return new Map([...result].sort(([a], [b]) => a.localeCompare(b, 'en')));
-}
-
-async function exists(path: string): Promise<boolean> { try { await access(path, constants.F_OK); return true; } catch { return false; } }

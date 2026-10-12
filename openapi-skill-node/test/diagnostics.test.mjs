@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateSkill } from '../dist/index.js';
-import { DiagnosticError, formatDebugChain, formatDiagnostic, normalizeDiagnostic } from '../dist/diagnostics.js';
+import { DiagnosticError, formatDebugChain, formatDiagnostic, normalizeDiagnostic } from '../dist/diagnostics/errors.js';
 import { MultiOutputPublishError } from '../dist/index.js';
-import { formatMultiOutputDiagnostic } from '../dist/diagnostics.js';
+import { formatMultiOutputDiagnostic } from '../dist/diagnostics/errors.js';
 
 const bytes = (value) => new TextEncoder().encode(value);
 const failure = (text) => {

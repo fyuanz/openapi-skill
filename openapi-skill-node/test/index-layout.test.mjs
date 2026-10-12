@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { generateProjectSkill, generateSkill } from '../dist/index.js';
-import { semanticFiles } from '../dist/references.js';
+import { semanticFiles } from '../dist/generation/references.js';
 
 const encoder = new TextEncoder();
 const input = encoder.encode(JSON.stringify({
@@ -28,8 +28,8 @@ test('emits core/4 flat navigation, clean paths and retained machine indexes', (
   assert.ok(files.has('references/schemas/svc--public--payload.md'));
   assert.equal([...files.keys()].filter((path) => /\/schemas\/svc--public--user-view--[0-9a-f]{6}\.md$/.test(path)).length, 2);
   const index = files.get('references/index.md');
-  assert.match(index, /group=users/);
-  assert.match(index, /group=untagged/);
+  assert.match(index, /tags=users/);
+  assert.match(index, /tags=untagged/);
   assert.ok(index.includes('](operations/svc--public--get-users-by-id.md)'));
   assert.doesNotMatch(files.get('SKILL.md'), /context.md|catalog.md/);
 

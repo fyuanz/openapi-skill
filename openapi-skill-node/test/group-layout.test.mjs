@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { generateSkill } from '../dist/index.js';
-import { publishSkill } from '../dist/publisher.js';
-import { tagFiles } from '../dist/references.js';
+import { publishSkill } from '../dist/publication/publisher.js';
+import { tagFiles } from '../dist/generation/references.js';
 
 const encoder = new TextEncoder();
 

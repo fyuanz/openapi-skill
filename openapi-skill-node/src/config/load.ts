@@ -1,6 +1,7 @@
+import { normalizeAliases } from './aliases.js';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { identity } from './generator.js';
+import { identity } from '../config/identity.js';
 import { normalizeKeywords } from './keywords.js';
 import { DocumentSourceKind, ResolvedDocumentSource, ResolvedServiceSource, ResolvedOpenApiSkillConfig, SourceType } from './types.js';
 
@@ -113,10 +114,10 @@ function parseDocuments(cwd: string, value: unknown, serviceId: string): Resolve
       try { url = new URL(source.url); }
       catch { throw new Error(`CONFIG: invalid URL for ${serviceId}/${id}`); }
       if (!['http:', 'https:'].includes(url.protocol)) throw new Error(`CONFIG: ${serviceId}/${id} URL must use http or https`);
-      return { id, url: source.url, keywords: normalizeKeywords(source.keywords, `${serviceId}/${id}`), kind, path: source.url };
+      return { id, url: source.url, operationAliases: normalizeAliases(source.operationAliases), keywords: normalizeKeywords(source.keywords, `${serviceId}/${id}`), kind, path: source.url };
     }
     return {
-      id, url: source.url, keywords: normalizeKeywords(source.keywords, `${serviceId}/${id}`),
+      id, url: source.url, operationAliases: normalizeAliases(source.operationAliases), keywords: normalizeKeywords(source.keywords, `${serviceId}/${id}`),
       kind, path: resolve(cwd, source.url)
     };
   });

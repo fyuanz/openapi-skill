@@ -236,3 +236,9 @@ core 仍不依赖 Spring Boot、SpringDoc、Maven 或 HTTP。运行时适配被�
 - RAG、搜索、AI enrichment、聊天、生成 API 客户端或其他知识源。
 
 实施状态、设计和验证证据维护在 `openspec/changes/flatten-skill-interface-navigation/`。
+
+## Node 紧凑发现与源码组织
+
+Node 的 v4 索引按项目、服务、文档保存公共关键词；接口行保留自身动作、来源、路径、operationId 和 tags。可选本地 search API/CLI 只读机器索引，支持来源过滤、精确路由及分页，不请求业务 API。参数仅省略可精确重建的重复副本，完整引用按 request/response 用途标记。质量提示保存在 source.json 的 quality.findings 中，以保持 Java v4 校验兼容。Java 继续输出原格式，跨实现验证比较事实与引用集合。
+
+Node 源码拆为 application、config、input、generation、discovery、publication、diagnostics；公开入口与原子发布行为保持不变。具体配置、模块边界和 token 基准见 [Node 开发说明](../openapi-skill-node/DEVELOPMENT.md)。
