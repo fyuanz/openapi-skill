@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -84,4 +84,29 @@ test('search CLI returns JSON, distinguishes usage errors and never triggers gen
   await writeFile(join(directory, 'references/operations.jsonl'), '{');
   const broken = spawnSync(process.execPath, args, { encoding: 'utf8' });
   assert.equal(broken.status, 1); assert.equal(broken.stdout, ''); assert.doesNotMatch(broken.stderr, /at .*\.js:/);
+});
+
+test('generated local CLI example works from a project with an external Skill and no global command', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'local cli '));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const project = join(root, 'project with spaces');
+  const installed = join(project, 'node_modules/openapi-skill');
+  await mkdir(installed, { recursive: true });
+  await cp(new URL('../dist', import.meta.url), join(installed, 'dist'), { recursive: true });
+  await cp(new URL('../package.json', import.meta.url), join(installed, 'package.json'));
+  const tree = api.generateProjectSkill({ services: [{ serviceId: 'demo', documents: new Map([
+    ['public', Buffer.from(JSON.stringify({ openapi: '3.1.0', paths: {
+      '/files': { post: { summary: '上传文件', responses: {} } }
+    } }))]
+  ]) }] });
+  const directory = await api.publishSkill(join(root, 'external skills'), 'api-docs', 'api-docs', tree);
+  const entry = tree.get('SKILL.md');
+  const command = entry.match(/`node (node_modules\/openapi-skill\/dist\/cli\.js) search '([^']+)' --skill "<absolute Skill directory>" --limit (\d+)`/);
+  assert.ok(command, 'Skill must provide a project-local command with an explicit absolute Skill path');
+  const page = JSON.parse(execFileSync(process.execPath, [command[1], 'search', command[2], '--skill', directory, '--limit', command[3]], {
+    cwd: project, encoding: 'utf8', env: { ...process.env, PATH: '' }
+  }));
+  assert.equal(page.total, 1);
+  assert.equal(page.results[0].path, '/files');
+  assert.ok(tree.has(page.results[0].file));
 });

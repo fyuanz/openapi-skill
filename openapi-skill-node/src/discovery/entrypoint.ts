@@ -13,10 +13,11 @@ export function renderEntrypoint(source: JsonObject): string {
     ...documents.flatMap(doc => values(doc.keywords))].map(value => label(String(value))), 140);
   const description = `查找、解释、实现或调试 ${owners} 的 API 文档与前端调用（${modules}${terms ? `；${terms}` : ''}）；用于接口联调、参数和响应核对、鉴权与排错。Use for finding, explaining, implementing or debugging project HTTP APIs.`;
   return `---\nname: ${source.skillName}\ndescription: ${description}\n---\n\n`
-    + `Find candidates, then open the returned operation file. Work from this Skill directory; first extract method/path from any user-named request source file.\n\n`
-    + `- If the CLI is installed: \`openapi-skill search '上传 文件' --skill . --limit 5\`. Use a known method/path or operationId, otherwise extract a few action/entity keywords from the request; space-separated terms use AND, not natural-language understanding.\n`
+    + `Find candidates, then open the operation. Returned file paths are relative to this Skill directory. First extract method/path from any user-named request source file.\n\n`
+    + `- The CLI belongs to the installed npm package, not this Skill. Find the project root containing node_modules/openapi-skill/dist/cli.js; from that root run \`node node_modules/openapi-skill/dist/cli.js search '上传 文件' --skill "<absolute Skill directory>" --limit 5\`, replacing the placeholder with this Skill's actual directory. In pnpm projects, \`pnpm exec openapi-skill\` can replace the node/script prefix. A bare command missing from PATH does not mean the local CLI is absent.\n`
+    + `- Use a known method/path or operationId, otherwise extract a few action/entity keywords; space-separated terms use AND.\n`
     + `- Check total/hasMore; narrow with --service/--document or paginate with --offset. Summaries are previews; summaryTruncated marks shortened text. Read the operation for complete facts.\n`
-    + `- Without the CLI, search [the interface index](references/index.md): \`rg -n -F '上传' references/index.md\` or \`rg -n -F 'GET /items' references/index.md\`. Verify full routes and ownership; avoid loading the whole index.\n`
+    + `- If Node or the local package is unavailable, work from this Skill directory and search [the interface index](references/index.md): \`rg -n -F '上传' references/index.md\` or \`rg -n -F 'GET /items' references/index.md\`. Verify full routes and ownership; avoid loading the whole index.\n`
     + `- For multiple candidates compare ownership and contracts; never merge them. On no match, try fewer keywords or broader scope before concluding an API is absent.\n\n`
     + `Operations preserve effective parameters, servers/security, media types, responses and examples. Complete referenced contracts labels request/response dependencies, including transitive/shared ones; read only what the task needs. Do not expand recursion indefinitely.\n`
     + `omittedEqualParameters names source fields identical to effective parameters. Other overrides remain explicit.\n`

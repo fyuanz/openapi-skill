@@ -218,6 +218,8 @@ Search reads local metadata only; it neither calls an API nor regenerates files.
 
 Lightweight search saves context by returning a few candidates before the agent opens the selected contract. Start with `--limit 5` and extract action/entity keywords from the request; arbitrary natural-language sentences are not supported. Candidate `summary` previews contain at most 160 Unicode code points including the ellipsis, with `summaryTruncated: true` when shortened. Matching still uses the full summary; indexes and contracts remain complete, and short summaries are unchanged.
 
+The CLI ships at `node_modules/openapi-skill/dist/cli.js` with the npm package, not inside generated Skills. A locally installed bare command may be absent from the shell PATH. From the project root containing the installed package, run `node node_modules/openapi-skill/dist/cli.js search "upload file" --skill "<absolute Skill directory>" --limit 5`, replacing the placeholder. pnpm projects can use `pnpm exec openapi-skill search ...` instead. Returned file paths are relative to the Skill directory. Upgrade to 2.2.2 and regenerate the Skill to receive the corrected instructions.
+
 Document configuration accepts explicit aliases, without changing source contracts:
 
 ```json
