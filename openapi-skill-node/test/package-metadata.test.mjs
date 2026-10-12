@@ -5,12 +5,17 @@ import test from "node:test";
 const packageJson = JSON.parse(
   await readFile(new URL("../package.json", import.meta.url), "utf8"),
 );
+const packageLock = JSON.parse(
+  await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
+);
 const readmeZh = await readFile(new URL("../README.md", import.meta.url), "utf8");
 const readmeEn = await readFile(new URL("../README.en.md", import.meta.url), "utf8");
 
 test("publishes under the unscoped openapi-skill name", () => {
   assert.equal(packageJson.name, "openapi-skill");
-  assert.equal(packageJson.version, "2.2.0");
+  assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
+  assert.equal(packageLock.version, packageJson.version);
+  assert.equal(packageLock.packages[""].version, packageJson.version);
   assert.equal(packageJson.bin["openapi-skill"], "dist/cli.js");
   assert.equal(packageJson.repository.url, "git+https://github.com/fyuanz/openapi-skill.git");
   assert.equal(packageJson.homepage, "https://github.com/fyuanz/openapi-skill#readme");
